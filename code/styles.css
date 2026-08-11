@@ -1,0 +1,139 @@
+/* ============================================
+   TAMI - Tecnología Amigable para Mayores
+   Design System: Cian Glacial #EBF8FA / Teal Oscuro #0A4B5C
+   ============================================ */
+
+:root {
+  --color-fondo: #EBF8FA;        /* Cian Glacial */
+  --color-primario: #0A4B5C;     /* Teal Oscuro */
+  --color-texto: #1F2D33;
+  --color-blanco: #FFFFFF;
+  --radio-borde: 8px;
+  --espaciado: 16px;
+  --fuente-base: "Segoe UI", "Tahoma", "Verdana", sans-serif;
+  --tam-fuente-base: 18px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: var(--tam-fuente-base);
+}
+
+body {
+  margin: 0;
+  font-family: var(--fuente-base);
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--color-texto);
+  background-color: var(--color-fondo);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaciado);
+  padding: var(--espaciado);
+  background-color: var(--color-primario);
+  color: var(--color-blanco);
+}
+
+.header__logo {
+  height: 48px;
+}
+
+.nav__list {
+  display: flex;
+  gap: var(--espaciado);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nav__link {
+  color: var(--color-blanco);
+  text-decoration: none;
+}
+
+.nav__link:hover,
+.nav__link:focus {
+  text-decoration: underline;
+}
+
+.main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: calc(var(--espaciado) * 2);
+}
+
+.hero {
+  text-align: center;
+  padding: calc(var(--espaciado) * 2);
+  background-color: var(--color-blanco);
+  border-radius: var(--radio-borde);
+}
+
+.hero__titulo {
+  color: var(--color-primario);
+  font-size: 2rem;
+}
+
+.btn {
+  font-size: 1.1rem;
+  padding: 12px 24px;
+  border: none;
+  border-radius: var(--radio-borde);
+  cursor: pointer;
+}
+
+.btn--primario {
+  background-color: var(--color-primario);
+  color: var(--color-blanco);
+}
+
+.btn--primario:hover,
+.btn--primario:focus {
+  opacity: 0.9;
+}
+
+.mensaje {
+  margin-top: var(--espaciado);
+  padding: var(--espaciado);
+  border-radius: var(--radio-borde);
+  background-color: var(--color-blanco);
+  border: 2px solid var(--color-primario);
+}
+
+.footer {
+  text-align: center;
+  padding: var(--espaciado);
+  background-color: var(--color-primario);
+  color: var(--color-blanco);
+}
+
+/* ============================================
+   Accesibilidad
+   ============================================ */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
