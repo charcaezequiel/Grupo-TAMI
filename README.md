@@ -16,8 +16,9 @@ Curso: 6° 2° - Proyecto Integrador III.
 ## Tecnología y Arquitectura
 
 - **Frontend**: HTML5, CSS3 y JavaScript nativo.
+- **Backend**: Node.js + Express + PostgreSQL (carpeta `server/`).
 - **Arquitectura**: Cliente-Servidor en 3 capas (Presentación, Lógica y Datos).
-- **Persistencia**: LocalStorage (evita dependencias externas y servidores propios).
+- **Persistencia**: PostgreSQL (principal) y LocalStorage (caché/fallback sin conexión).
 - **Nomenclatura**: kebab-case en archivos y carpetas.
 - **Design System**: "Protección Proactiva" (`#EBF8FA` y `#0A4B5C`).
 
@@ -26,10 +27,17 @@ Curso: 6° 2° - Proyecto Integrador III.
 ```text
 grupo-tami/
 ├── README.md               Documentación principal del proyecto
-├── code/                   Capas de Presentación y Lógica
+├── code/                   Capas de Presentación y Lógica (frontend)
 │   ├── index.html          Estructura accesible (Presentación)
 │   ├── styles.css          Design System "Protección Proactiva" (Presentación)
-│   ├── main.js             Lógica + Escudo de Seguridad + LocalStorage (Lógica/Datos)
+│   ├── main.js             Lógica + Escudo de Seguridad + fetch a la API
+│   └── README.md
+├── server/                 Backend Node.js + Express + PostgreSQL
+│   ├── index.js            Servidor y rutas API
+│   ├── db.js               Conexión a PostgreSQL (pg Pool)
+│   ├── schema.sql          Esquema de base de datos y datos iniciales
+│   ├── routes/             Endpoints (usuarios, cursos, alertas)
+│   ├── .env.example        Variables de entorno de ejemplo
 │   └── README.md
 ├── resources/              Activos multimedia
 │   ├── img/                Imágenes
