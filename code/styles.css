@@ -109,6 +109,86 @@ body {
   border: 2px solid var(--color-primario);
 }
 
+.seccion {
+  margin-top: calc(var(--espaciado) * 2);
+  padding: var(--espaciado);
+  background-color: var(--color-blanco);
+  border-radius: var(--radio-borde);
+}
+
+.seccion__titulo {
+  color: var(--color-primario);
+  font-size: 1.5rem;
+  margin-top: 0;
+}
+
+.seccion__lista {
+  display: grid;
+  gap: var(--espaciado);
+}
+
+.seccion__lista--puntos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tarjeta {
+  padding: var(--espaciado);
+  border: 1px solid var(--color-primario);
+  border-radius: var(--radio-borde);
+}
+
+.tarjeta__titulo {
+  margin: 0 0 8px;
+  color: var(--color-primario);
+}
+
+.tarjeta__texto {
+  margin: 0 0 8px;
+}
+
+.tarjeta__meta {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #55666D;
+}
+
+.tarjeta__nota {
+  font-size: 0.9rem;
+  font-style: italic;
+  color: #55666D;
+}
+
+.alerta {
+  padding: var(--espaciado);
+  border-radius: var(--radio-borde);
+  border-left: 6px solid var(--color-primario);
+  background-color: var(--color-fondo);
+}
+
+.alerta--alta {
+  border-left-color: #B00020;
+}
+
+.alerta--media {
+  border-left-color: #E07B00;
+}
+
+.alerta--baja {
+  border-left-color: var(--color-primario);
+}
+
+.alerta__titulo {
+  display: block;
+  color: var(--color-primario);
+}
+
+.alerta__texto {
+  display: block;
+  margin-top: 4px;
+}
+
 .footer {
   text-align: center;
   padding: var(--espaciado);
