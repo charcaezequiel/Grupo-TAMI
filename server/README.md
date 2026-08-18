@@ -7,6 +7,7 @@ Capa de **Datos** y servicios de la aplicación. Expone una **API REST** que el 
 - **Node.js** + **Express** (servidor HTTP y enrutado).
 - **pg** (driver de PostgreSQL).
 - **dotenv** (variables de entorno) y **cors** (permite que el frontend consuma la API).
+- **crypto** (hashing SHA-256 de contraseñas, nativo de Node.js).
 
 ## Estructura
 
@@ -14,56 +15,78 @@ Capa de **Datos** y servicios de la aplicación. Expone una **API REST** que el 
 server/
 ├── index.js         Punto de entrada: app Express y rutas montadas
 ├── db.js            Pool de conexiones a PostgreSQL
-├── schema.sql       Esquema de tablas + datos iniciales
+├── schema.sql       Esquema de 7 tablas + datos iniciales
 ├── routes/
-│   ├── usuarios.js  GET/POST de usuarios
-│   ├── cursos.js    GET de cursos
-│   └── alertas.js   GET de alertas de fraude
+│   ├── usuarios.js  Registro, login, listado y progreso de usuarios
+│   ├── cursos.js    Listado de módulos/curso
+│   ├── alertas.js   Alertas de fraude
+│   └── progreso.js  Test, exámenes y progreso de módulos
 ├── .env.example     Plantilla de configuración
 └── package.json     Dependencias y scripts
 ```
 
+## Base de Datos
+
+### Tablas
+
+| Tabla | Descripción |
+|-------|-------------|
+| `usuarios` | Usuarios con nombre, email, password_hash, nivel_digital |
+| `cursos` | 5 módulos del Campus Educativo |
+| `alertas_fraude` | 6 alertas con título, descripción, que_hacer, severidad |
+| `inscripciones` | Relación usuario-curso |
+| `test_nivelacion` | Resultados del test inicial (respuestas JSONB, nivel, puntaje) |
+| `examenes` | Resultados del examen post-lección |
+| `progreso_modulos` | Avance paso a paso en cada módulo |
+
 ## Endpoints
 
-| Método | Ruta                    | Descripción                         |
-|--------|-------------------------|-------------------------------------|
-| GET    | `/`                     | Estado de la API                    |
-| GET    | `/api/usuarios`         | Listar usuarios                     |
-| GET    | `/api/usuarios/:id`     | Obtener un usuario                  |
-| POST   | `/api/usuarios`         | Crear usuario (nombre, email, ...)  |
-| GET    | `/api/cursos`           | Listar cursos activos               |
-| GET    | `/api/cursos/:id`       | Obtener un curso                    |
-| GET    | `/api/alertas`          | Listar alertas de fraude            |
+| Método | Ruta | Descripción | Body requerido |
+|--------|------|-------------|----------------|
+| GET | `/` | Estado de la API | — |
+| GET | `/api/usuarios` | Listar usuarios | — |
+| GET | `/api/usuarios/:id` | Obtener un usuario | — |
+| POST | `/api/usuarios/registrar` | Registrar usuario | `{ nombre, email, password }` |
+| POST | `/api/usuarios/login` | Iniciar sesión | `{ email, password }` |
+| GET | `/api/usuarios/:id/progreso` | Progreso completo | — |
+| GET | `/api/cursos` | Listar cursos activos | — |
+| GET | `/api/cursos/:id` | Obtener un curso | — |
+| GET | `/api/alertas` | Listar alertas de fraude | — |
+| POST | `/api/progreso/test` | Guardar test nivelación | `{ usuarioId, respuestas, nivel, puntaje, totalPreguntas }` |
+| POST | `/api/progreso/examen` | Guardar examen | `{ usuarioId, moduloId, respuestas, puntaje, totalPreguntas }` |
+| POST | `/api/progreso/modulo` | Guardar progreso módulo | `{ usuarioId, moduloId, pasoActual, completado }` |
+| GET | `/api/progreso/:usuarioId` | Obtener progreso | — |
 
-## Puesta en marcha
+## Puesta en Marcha
 
 1. **Instalar Node.js** (https://nodejs.org) y **PostgreSQL** (https://www.postgresql.org).
+
 2. Crear la base de datos:
 
-   ```sql
-   CREATE DATABASE tami_db;
+   ```bash
+   createdb -U postgres tami_db
    ```
 
 3. Ejecutar el esquema:
 
-   ```powershell
+   ```bash
    psql -U postgres -d tami_db -f schema.sql
    ```
 
 4. Configurar credenciales:
 
-   ```powershell
-   Copy-Item .env.example .env
+   ```bash
+   cp .env.example .env
    # Editar .env con usuario/contraseña de PostgreSQL
    ```
 
 5. Instalar dependencias y levantar el servidor:
 
-   ```powershell
+   ```bash
    npm install
    npm start
    ```
 
    La API queda en `http://localhost:3000`.
 
-> El frontend (`code/main.js`) intenta consumir la API y, si no está disponible, usa la caché de LocalStorage.
+> El frontend (`code/main.js`) intenta consumir la API y, si no está disponible, usa la caché de LocalStorage como fallback offline.

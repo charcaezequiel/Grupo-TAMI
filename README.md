@@ -5,6 +5,8 @@ Curso: 6° 2° - Proyecto Integrador III.
 
 **Misión**: Reducir la brecha digital y mitigar los riesgos de fraude en adultos mayores mediante una plataforma web amigable, inclusiva y accesible.
 
+---
+
 ## Equipo (Scrum) y Responsabilidades
 
 | Integrante             | Rol de Scrum               | Responsabilidades específicas                                          |
@@ -13,36 +15,75 @@ Curso: 6° 2° - Proyecto Integrador III.
 | Rachael Choque         | Scrum Master (SM)          | Facilitar las ceremonias, eliminar impedimentos y cuidar el proceso.    |
 | Ezequiel Charca        | Equipo de Desarrollo (Dev) | Diseñar y construir la interfaz, la lógica y la capa de persistencia.   |
 
+---
+
 ## Tecnología y Arquitectura
 
-- **Frontend**: HTML5, CSS3 y JavaScript nativo.
-- **Backend**: Node.js + Express + PostgreSQL (carpeta `server/`).
+- **Frontend**: HTML5, CSS3 y JavaScript nativo (sin framework).
+- **Backend**: Node.js + Express + PostgreSQL.
 - **Arquitectura**: Cliente-Servidor en 3 capas (Presentación, Lógica y Datos).
 - **Persistencia**: PostgreSQL (principal) y LocalStorage (caché/fallback sin conexión).
-- **Nomenclatura**: kebab-case en archivos y carpetas.
-- **Design System**: "Protección Proactiva" (`#EBF8FA` y `#0A4B5C`).
+- **Accesibilidad**: WCAG 2.1 AA, ARIA roles, contraste alto, botones mínimos 52px.
+- **Design System**: "Protección Proactiva" (paleta 60-30-10: `#EBF8FA` / `#0A4B5C` / `#007A87`).
+
+---
+
+## PMV V1.0 - Funcionalidades Implementadas
+
+### 1. Pantalla de Registro y Login
+- Formulario con campos: Nombre, Correo Electrónico, Contraseña.
+- Validación de nombre no vacío, formato de email válido y contraseña mínima de 6 caracteres.
+- Hashing de contraseña (SHA-256 en servidor, simulado en cliente como fallback).
+- Persistencia en PostgreSQL (principal) y LocalStorage (fallback offline).
+
+### 2. Test de Nivelación Obligatorio
+- 3 preguntas sencillas con botones gigantes de opción múltiple.
+- Evalúa nivel digital inicial del usuario ("Principiante" o "Protegido").
+- Resultados guardados en PostgreSQL y LocalStorage.
+
+### 3. Dashboard Principal (Entorno Seguro)
+- Saludo personalizado: "¡Hola, [Nombre]! Estás en un entorno totalmente seguro 🔒".
+- 3 accesos masivos tipo tarjeta: Campus Educativo, Escudo de Seguridad, Mi Progreso.
+
+### 4. Campus Educativo (Módulo de Fraude Digital)
+- 5 módulos teóricos: Smartphones, Redes, Trámites, Fraudes, Comunicación.
+- Solo el Módulo 4 (Fraudes Digitales/Phishing) está activo en esta versión.
+- Lección interactiva paso a paso con navegación lineal (5 pasos).
+
+### 5. Escudo de Seguridad (Centro de Alertas)
+- 6 alertas de seguridad en tiempo real con explicaciones y consejos.
+- Cada alerta incluye: título, descripción, severidad y "Qué hacer".
+- Datos cargados desde la API (con fallback offline).
+
+### 6. Sistema de Evaluación y Progreso
+- Examen rápido post-lección (3 preguntas sobre phishing).
+- Gráficos de barras CSS que comparan nivel inicial vs. examen.
+- Progreso guardado en PostgreSQL y mostrado en "Mi Progreso".
+
+---
 
 ## Mapa del Repositorio
 
 ```text
-grupo-tami/
+Grupo-TAMI/
 ├── README.md               Documentación principal del proyecto
 ├── code/                   Capas de Presentación y Lógica (frontend)
-│   ├── index.html          Estructura accesible (Presentación)
-│   ├── styles.css          Design System "Protección Proactiva" (Presentación)
-│   ├── main.js             Lógica + Escudo de Seguridad + fetch a la API
+│   ├── index.html          Estructura accesible con 9 pantallas SPA
+│   ├── styles.css          Design System "Protección Proactiva"
+│   ├── main.js             Lógica + conexión API + fallback LocalStorage
 │   └── README.md
 ├── server/                 Backend Node.js + Express + PostgreSQL
 │   ├── index.js            Servidor y rutas API
 │   ├── db.js               Conexión a PostgreSQL (pg Pool)
-│   ├── schema.sql          Esquema de base de datos y datos iniciales
-│   ├── routes/             Endpoints (usuarios, cursos, alertas)
+│   ├── schema.sql          Esquema de 7 tablas + datos iniciales
+│   ├── routes/
+│   │   ├── usuarios.js     Registro, login y progreso de usuarios
+│   │   ├── cursos.js       Listado de módulos/curso
+│   │   ├── alertas.js      Alertas de fraude
+│   │   └── progreso.js     Test, exámenes y progreso de módulos
 │   ├── .env.example        Variables de entorno de ejemplo
 │   └── README.md
 ├── resources/              Activos multimedia
-│   ├── img/                Imágenes
-│   ├── icons/              Iconos de trazo grueso (SVG)
-│   ├── fonts/              Fuentes de alta legibilidad
 │   ├── branding-guide.md   Paleta cromática proactiva
 │   └── README.md
 └── docs/                   Documentación obligatoria (ET N°20)
@@ -54,13 +95,127 @@ grupo-tami/
     └── README.md
 ```
 
+---
+
+## Base de Datos (PostgreSQL)
+
+### Tablas
+
+| Tabla | Descripción |
+|-------|-------------|
+| `usuarios` | Usuarios registrados con nombre, email, password_hash y nivel_digital |
+| `cursos` | 5 módulos del Campus Educativo |
+| `alertas_fraude` | 6 alertas con título, descripción, que_hacer, severidad e icono |
+| `inscripciones` | Relación many-to-many usuario-curso |
+| `test_nivelacion` | Resultados del test inicial (respuestas JSONB, nivel, puntaje) |
+| `examenes` | Resultados del examen post-lección |
+| `progreso_modulos` | Avance paso a paso en cada módulo |
+
+### API REST - Endpoints
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| GET | `/` | Estado de la API |
+| GET | `/api/usuarios` | Listar todos los usuarios |
+| GET | `/api/usuarios/:id` | Obtener un usuario por ID |
+| POST | `/api/usuarios/registrar` | Registrar nuevo usuario (nombre, email, password) |
+| POST | `/api/usuarios/login` | Iniciar sesión (email, password) |
+| GET | `/api/usuarios/:id/progreso` | Obtener progreso completo de un usuario |
+| GET | `/api/cursos` | Listar cursos activos |
+| GET | `/api/cursos/:id` | Obtener un curso |
+| GET | `/api/alertas` | Listar alertas de fraude |
+| POST | `/api/progreso/test` | Guardar resultado de test de nivelación |
+| POST | `/api/progreso/examen` | Guardar resultado de examen post-lección |
+| POST | `/api/progreso/modulo` | Guardar/actualizar progreso en un módulo |
+| GET | `/api/progreso/:usuarioId` | Obtener progreso de un usuario |
+
+---
+
+## Puesta en Marcha
+
+### Requisitos Previos
+- [Node.js](https://nodejs.org) (v16 o superior)
+- [PostgreSQL](https://www.postgresql.org) (v12 o superior)
+
+### 1. Clonar el repositorio
+
+```bash
+git clone https://github.com/charcaezequiel/Grupo-TAMI.git
+cd Grupo-TAMI
+```
+
+### 2. Configurar la base de datos
+
+```bash
+# Crear la base de datos
+createdb -U postgres tami_db
+
+# Ejecutar el esquema (tablas + datos iniciales)
+psql -U postgres -d tami_db -f server/schema.sql
+```
+
+### 3. Configurar el servidor
+
+```bash
+cd server
+
+# Copiar archivo de entorno
+cp .env.example .env
+
+# Editar .env con tus credenciales de PostgreSQL
+# DB_USER=postgres
+# DB_PASSWORD=tu_contraseña
+# DB_NAME=tami_db
+# PORT=3000
+```
+
+### 4. Instalar dependencias y arrancar
+
+```bash
+cd server
+npm install
+npm start
+# o para desarrollo con auto-reload:
+npm run dev
+```
+
+El servidor queda disponible en `http://localhost:3000`.
+
+### 5. Abrir el frontend
+
+Abrí `code/index.html` directamente en tu navegador (doble clic o arrastrá el archivo).
+
+> **Nota**: El frontend intenta conectarse a la API en `http://localhost:3000`. Si el servidor no está disponible, funciona automáticamente con LocalStorage como caché offline.
+
+---
+
+## Diseño de Software (ISO/IEC 25010)
+
+- **Alta Cohesión y Bajo Acoplamiento**: Funciones modulares con responsabilidad única, comunicación vía eventos y llamadas directas.
+- **Reusabilidad**: Funciones de validación, renderizado y guardado reutilizables en todas las pantallas.
+- **Nomenclatura Estricta**: camelCase para variables (sustantivos), infinitivo para funciones (verbos), booleanos como preguntas.
+- **Comentarios Profesionales**: Solo explican el "porqué" de decisiones complejas.
+- **Accesibilidad**: ARIA labels, roles, aria-live, contraste WCAG AA, target size 52px+.
+
+---
+
 ## Justificación: Relación Teoría-Práctica
 
-- **Scrum**: los roles (PO, SM, Dev) organizan la colaboración del equipo y el avance por sprints documentado en `docs/backlog-sprints.md`.
-- **DCU (Diseño Centrado en el Usuario)**: la paleta proactiva, los iconos de trazo grueso y las fuentes de alta legibilidad responden a las necesidades y limitaciones de los adultos mayores.
-- **PMV (Producto Mínimo Viable)**: se parte de una página funcional con persistencia local antes de sumar funciones avanzadas, priorizando lo esencial del PMV.
+- **Scrum**: Roles (PO, SM, Dev) organizan la colaboración y el avance por sprints documentado en `docs/backlog-sprints.md`.
+- **DCU (Diseño Centrado en el Usuario)**: Paleta proactiva, iconos de trazo grueso, fuentes de alta legibilidad y botones masivos para adultos mayores.
+- **PMV (Producto Mínimo Viable)**: Sistema funcional completo con backend, frontend, base de datos y persistencia offline.
+
+---
 
 ## Enlaces
 
 - [Documentación técnica](docs/README.md)
 - [Guía de marca](resources/branding-guide.md)
+- [Backend - API REST](server/README.md)
+- [Frontend - Interfaz](code/README.md)
+
+---
+
+## Licencia
+
+Proyecto educativo - ET N°20 "Carolina Muzilli" (2026).

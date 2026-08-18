@@ -3,46 +3,411 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="TAMI - Tecnología Amigable para Mayores e Inclusiva. Reducir la brecha digital y mitigar riesgos de fraude en adultos mayores.">
+  <meta name="description" content="TAMI - Tecnología Amigable para Mayores e Inclusiva. Aprender a usar tecnología de forma segura.">
   <meta name="theme-color" content="#0A4B5C">
   <title>TAMI | Tecnología Amigable para Mayores</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+
+  <!-- ============================================
+       HEADER GLOBAL
+       ============================================ -->
   <header class="header" role="banner">
-    <img src="../resources/img/logo-tami.png" alt="Logo TAMI" class="header__logo">
-    <nav class="nav" aria-label="Navegación principal">
-      <ul class="nav__list">
-        <li class="nav__item"><a href="#" class="nav__link">Inicio</a></li>
-        <li class="nav__item"><a href="#" class="nav__link">Cursos</a></li>
-        <li class="nav__item"><a href="#" class="nav__link">Prevención de fraude</a></li>
-        <li class="nav__item"><a href="#" class="nav__link">Contacto</a></li>
-      </ul>
-    </nav>
+    <div class="header__inner">
+      <span class="header__logo" aria-hidden="true">🛡️</span>
+      <h1 class="header__titulo">TAMI</h1>
+      <button
+        class="header__cerrar-sesion btn btn--fantasma"
+        id="btn-cerrar-sesion"
+        type="button"
+        hidden
+        aria-label="Cerrar sesión y volver al inicio"
+      >Cerrar sesión</button>
+    </div>
   </header>
 
+  <!-- ============================================
+       ZONA DE MENSAJES GLOBALES (aria-live)
+       ============================================ -->
+  <div id="zona-mensajes" class="zona-mensajes" aria-live="polite" role="status" hidden>
+    <p id="texto-mensaje" class="zona-mensajes__texto"></p>
+  </div>
+
   <main id="contenido-principal" class="main" role="main">
-    <section class="hero" aria-labelledby="hero-titulo">
-      <h1 id="hero-titulo" class="hero__titulo">Bienvenido a TAMI</h1>
-      <p class="hero__texto">Tecnología amigable para cerrar la brecha digital y protegerte de las estafas en línea.</p>
-      <button class="btn btn--primario" id="btn-acceder" type="button">Comenzar ahora</button>
+
+    <!-- ============================================
+         PANTALLA: BIENVENIDA / INICIO
+         ============================================ -->
+    <section
+      id="pantalla-inicio"
+      class="pantalla"
+      aria-labelledby="inicio-titulo"
+    >
+      <div class="hero">
+        <span class="hero__icono" aria-hidden="true">🛡️</span>
+        <h2 id="inicio-titulo" class="hero__titulo">Bienvenido a TAMI</h2>
+        <p class="hero__texto">
+          Tecnología amigable para aprender a usar tus dispositivos de forma segura y protegerte de las estafas en línea.
+        </p>
+        <button class="btn btn--primario btn--masivo" id="btn-registrarse" type="button">
+          Crear mi cuenta
+        </button>
+        <button class="btn btn--secundario btn--masivo" id="btn-ir-login" type="button">
+          Ya tengo cuenta, ingresar
+        </button>
+      </div>
     </section>
 
-    <section class="mensaje" id="zona-mensaje" aria-live="polite" hidden>
-      <p class="mensaje__texto" id="texto-mensaje"></p>
+    <!-- ============================================
+         PANTALLA: REGISTRO
+         ============================================ -->
+    <section
+      id="pantalla-registro"
+      class="pantalla"
+      aria-labelledby="registro-titulo"
+      hidden
+    >
+      <div class="contenedor-formulario">
+        <h2 id="registro-titulo" class="contenedor-formulario__titulo">
+          Crear mi cuenta 🔒
+        </h2>
+        <p class="contenedor-formulario__subtitulo">
+          Tus datos quedan guardados solo en este dispositivo. Estás en un entorno seguro.
+        </p>
+        <form id="formulario-registro" novalidate>
+          <div class="campo">
+            <label for="campo-nombre" class="campo__etiqueta">Nombre completo</label>
+            <input
+              type="text"
+              id="campo-nombre"
+              class="campo__input"
+              placeholder="Ej: María López"
+              autocomplete="name"
+              required
+              aria-required="true"
+            >
+            <span id="error-nombre" class="campo__error" role="alert" hidden></span>
+          </div>
+          <div class="campo">
+            <label for="campo-email-registro" class="campo__etiqueta">Correo electrónico</label>
+            <input
+              type="email"
+              id="campo-email-registro"
+              class="campo__input"
+              placeholder="Ej: maria@correo.com"
+              autocomplete="email"
+              required
+              aria-required="true"
+            >
+            <span id="error-email-registro" class="campo__error" role="alert" hidden></span>
+          </div>
+          <div class="campo">
+            <label for="campo-password-registro" class="campo__etiqueta">Contraseña</label>
+            <input
+              type="password"
+              id="campo-password-registro"
+              class="campo__input"
+              placeholder="Mínimo 6 caracteres"
+              autocomplete="new-password"
+              required
+              aria-required="true"
+              minlength="6"
+            >
+            <span id="error-password-registro" class="campo__error" role="alert" hidden></span>
+          </div>
+          <button type="submit" class="btn btn--primario btn--masivo">
+            Registrar mi cuenta 🔒
+          </button>
+          <button type="button" class="btn btn--fantasma btn--volver" id="btn-volver-registro" type="button">
+            ← Volver
+          </button>
+        </form>
+      </div>
     </section>
 
-    <section class="seccion" aria-labelledby="cursos-titulo">
-      <h2 id="cursos-titulo" class="seccion__titulo">Cursos disponibles</h2>
-      <div class="seccion__lista" id="lista-cursos"></div>
+    <!-- ============================================
+         PANTALLA: LOGIN
+         ============================================ -->
+    <section
+      id="pantalla-login"
+      class="pantalla"
+      aria-labelledby="login-titulo"
+      hidden
+    >
+      <div class="contenedor-formulario">
+        <h2 id="login-titulo" class="contenedor-formulario__titulo">
+          Ingresar a mi cuenta 🔒
+        </h2>
+        <p class="contenedor-formulario__subtitulo">
+          Ingresá con el correo y la contraseña que usaste al registrarte.
+        </p>
+        <form id="formulario-login" novalidate>
+          <div class="campo">
+            <label for="campo-email-login" class="campo__etiqueta">Correo electrónico</label>
+            <input
+              type="email"
+              id="campo-email-login"
+              class="campo__input"
+              placeholder="Ej: maria@correo.com"
+              autocomplete="email"
+              required
+              aria-required="true"
+            >
+            <span id="error-email-login" class="campo__error" role="alert" hidden></span>
+          </div>
+          <div class="campo">
+            <label for="campo-password-login" class="campo__etiqueta">Contraseña</label>
+            <input
+              type="password"
+              id="campo-password-login"
+              class="campo__input"
+              placeholder="Tu contraseña"
+              autocomplete="current-password"
+              required
+              aria-required="true"
+            >
+            <span id="error-password-login" class="campo__error" role="alert" hidden></span>
+          </div>
+          <button type="submit" class="btn btn--primario btn--masivo">
+            Ingresar 🔒
+          </button>
+          <button type="button" class="btn btn--fantasma btn--volver" id="btn-volver-login">
+            ← Volver
+          </button>
+        </form>
+      </div>
     </section>
 
-    <section class="seccion" aria-labelledby="alertas-titulo">
-      <h2 id="alertas-titulo" class="seccion__titulo">Alertas de fraude</h2>
-      <ul class="seccion__lista seccion__lista--puntos" id="lista-alertas"></ul>
+    <!-- ============================================
+         PANTALLA: TEST DE NIVELACIÓN
+         ============================================ -->
+    <section
+      id="pantalla-test"
+      class="pantalla"
+      aria-labelledby="test-titulo"
+      hidden
+    >
+      <div class="contenedor-formulario">
+        <h2 id="test-titulo" class="contenedor-formulario__titulo">
+          Test de nivelación
+        </h2>
+        <p class="contenedor-formulario__subtitulo">
+          Respondé estas 3 preguntas para que TAMI conozca tu nivel actual. No hay respuestas buenas ni malas.
+        </p>
+
+        <div id="contenedor-preguntas" class="test" aria-live="polite">
+          <!-- Las preguntas se renderizan dinámicamente con JS -->
+        </div>
+
+        <div id="test-resultado" class="test-resultado" hidden aria-live="polite">
+          <p id="test-resultado-texto" class="test-resultado__texto"></p>
+          <button class="btn btn--primario btn--masivo" id="btn-continuar-desde-test" type="button">
+            Entrar a TAMI 🔒
+          </button>
+        </div>
+      </div>
     </section>
+
+    <!-- ============================================
+         PANTALLA: DASHBOARD PRINCIPAL
+         ============================================ -->
+    <section
+      id="pantalla-dashboard"
+      class="pantalla"
+      aria-labelledby="dashboard-titulo"
+      hidden
+    >
+      <div class="dashboard">
+        <h2 id="dashboard-titulo" class="dashboard__saludo" aria-live="polite"></h2>
+        <p class="dashboard__subtitulo">Elegí una opción para comenzar:</p>
+
+        <div class="dashboard__grid">
+          <button class="tarjeta-acceso btn" id="btn-campus" type="button" aria-describedby="desc-campus">
+            <span class="tarjeta-acceso__icono" aria-hidden="true">📚</span>
+            <span class="tarjeta-acceso__titulo">Campus Educativo</span>
+            <span class="tarjeta-acceso__desc" id="desc-campus">Aprender a usar tecnología de forma segura</span>
+          </button>
+
+          <button class="tarjeta-acceso btn" id="btn-escudo" type="button" aria-describedby="desc-escudo">
+            <span class="tarjeta-acceso__icono" aria-hidden="true">🔒</span>
+            <span class="tarjeta-acceso__titulo">Escudo de Seguridad</span>
+            <span class="tarjeta-acceso__desc" id="desc-escudo">Alertas y consejos para protegerte</span>
+          </button>
+
+          <button class="tarjeta-acceso btn" id="btn-progreso" type="button" aria-describedby="desc-progreso">
+            <span class="tarjeta-acceso__icono" aria-hidden="true">📊</span>
+            <span class="tarjeta-acceso__titulo">Mi Progreso</span>
+            <span class="tarjeta-acceso__desc" id="desc-progreso">Mirá cuánto aprendiste</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================
+         PANTALLA: CAMPUS EDUCATIVO
+         ============================================ -->
+    <section
+      id="pantalla-campus"
+      class="pantalla"
+      aria-labelledby="campus-titulo"
+      hidden
+    >
+      <div class="contenedor-lista">
+        <h2 id="campus-titulo" class="contenedor-lista__titulo">Campus Educativo</h2>
+        <p class="contenedor-lista__subtitulo">Elegí un módulo para aprender</p>
+
+        <ul id="lista-modulos" class="lista-modulos" role="list">
+          <li class="modulo modulo--bloqueado" aria-disabled="true">
+            <span class="modulo__icono" aria-hidden="true">📱</span>
+            <span class="modulo__info">
+              <strong class="modulo__nombre">Módulo 1: Uso de Smartphones</strong>
+              <span class="modulo__estado">Próximamente</span>
+            </span>
+          </li>
+          <li class="modulo modulo--bloqueado" aria-disabled="true">
+            <span class="modulo__icono" aria-hidden="true">🌐</span>
+            <span class="modulo__info">
+              <strong class="modulo__nombre">Módulo 2: Redes e Internet</strong>
+              <span class="modulo__estado">Próximamente</span>
+            </span>
+          </li>
+          <li class="modulo modulo--bloqueado" aria-disabled="true">
+            <span class="modulo__icono" aria-hidden="true">📄</span>
+            <span class="modulo__info">
+              <strong class="modulo__nombre">Módulo 3: Trámites en Línea</strong>
+              <span class="modulo__estado">Próximamente</span>
+            </span>
+          </li>
+          <li>
+            <button class="modulo modulo--disponible btn" id="btn-modulo-fraudes" type="button">
+              <span class="modulo__icono" aria-hidden="true">⚠️</span>
+              <span class="modulo__info">
+                <strong class="modulo__nombre">Módulo 4: Fraudes Digitales (Phishing)</strong>
+                <span class="modulo__estado modulo__estado--disponible">Disponible ahora</span>
+              </span>
+            </button>
+          </li>
+          <li class="modulo modulo--bloqueado" aria-disabled="true">
+            <span class="modulo__icono" aria-hidden="true">💬</span>
+            <span class="modulo__info">
+              <strong class="modulo__nombre">Módulo 5: Comunicación Digital</strong>
+              <span class="modulo__estado">Próximamente</span>
+            </span>
+          </li>
+        </ul>
+
+        <button class="btn btn--fantasma btn--volver" id="btn-volver-campus" type="button">
+          ← Volver al menú
+        </button>
+      </div>
+    </section>
+
+    <!-- ============================================
+         PANTALLA: LECCIÓN MÓDULO 4 (FRAUDES)
+         ============================================ -->
+    <section
+      id="pantalla-leccion"
+      class="pantalla"
+      aria-labelledby="leccion-titulo"
+      hidden
+    >
+      <div class="contenedor-formulario">
+        <h2 id="leccion-titulo" class="contenedor-formulario__titulo">Módulo 4: Fraudes Digitales</h2>
+
+        <div id="contenido-leccion" class="leccion" aria-live="polite">
+          <!-- Se renderiza dinámicamente -->
+        </div>
+
+        <div class="leccion__navegacion">
+          <button class="btn btn--secundario btn--masivo" id="btn-leccion-anterior" type="button">
+            ← Anterior
+          </button>
+          <button class="btn btn--primario btn--masivo" id="btn-leccion-siguiente" type="button">
+            Siguiente →
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================
+         PANTALLA: ESCUDO DE SEGURIDAD
+         ============================================ -->
+    <section
+      id="pantalla-escudo"
+      class="pantalla"
+      aria-labelledby="escudo-titulo"
+      hidden
+    >
+      <div class="contenedor-lista">
+        <h2 id="escudo-titulo" class="contenedor-lista__titulo">🔒 Escudo de Seguridad</h2>
+        <p class="contenedor-lista__subtitulo">Alertas y consejos para protegerte de fraudes</p>
+
+        <div id="lista-alertas-escudo" class="lista-alertas" aria-live="polite">
+          <!-- Se renderiza dinámicamente -->
+        </div>
+
+        <button class="btn btn--fantasma btn--volver" id="btn-volver-escudo" type="button">
+          ← Volver al menú
+        </button>
+      </div>
+    </section>
+
+    <!-- ============================================
+         PANTALLA: MI PROGRESO
+         ============================================ -->
+    <section
+      id="pantalla-progreso"
+      class="pantalla"
+      aria-labelledby="progreso-titulo"
+      hidden
+    >
+      <div class="contenedor-formulario">
+        <h2 id="progreso-titulo" class="contenedor-formulario__titulo">📊 Mi Progreso</h2>
+
+        <div id="contenido-progreso" class="progreso" aria-live="polite">
+          <!-- Se renderiza dinámicamente -->
+        </div>
+
+        <button class="btn btn--fantasma btn--volver" id="btn-volver-progreso" type="button">
+          ← Volver al menú
+        </button>
+      </div>
+    </section>
+
+    <!-- ============================================
+         PANTALLA: EXAMEN RÁPIDO
+         ============================================ -->
+    <section
+      id="pantalla-examen"
+      class="pantalla"
+      aria-labelledby="examen-titulo"
+      hidden
+    >
+      <div class="contenedor-formulario">
+        <h2 id="examen-titulo" class="contenedor-formulario__titulo">Examen rápido</h2>
+        <p class="contenedor-formulario__subtitulo">
+          Respondé estas 3 preguntas sobre fraudes digitales para ver cuánto aprendiste.
+        </p>
+
+        <div id="contenedor-examen" class="test" aria-live="polite">
+          <!-- Se renderiza dinámicamente -->
+        </div>
+
+        <div id="examen-resultado" class="test-resultado" hidden aria-live="polite">
+          <p id="examen-resultado-texto" class="test-resultado__texto"></p>
+          <button class="btn btn--primario btn--masivo" id="btn-continuar-desde-examen" type="button">
+            Ver mi progreso
+          </button>
+        </div>
+      </div>
+    </section>
+
   </main>
 
+  <!-- ============================================
+       FOOTER
+       ============================================ -->
   <footer class="footer" role="contentinfo">
     <p class="footer__texto">&copy; 2026 TAMI - ET N&deg;20 "Carolina Muzilli". Todos los derechos reservados.</p>
   </footer>
