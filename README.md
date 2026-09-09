@@ -22,8 +22,9 @@ Curso: 6° 2° - Proyecto Integrador III.
 - **Frontend**: HTML5, CSS3 y JavaScript nativo (sin framework).
 - **Backend**: Node.js + Express + PostgreSQL.
 - **Arquitectura**: Cliente-Servidor en 3 capas (Presentación, Lógica y Datos).
+- **Seguridad**: contraseñas con hashing irreversible **bcrypt** y consultas SQL parametrizadas.
 - **Persistencia**: PostgreSQL (principal) y LocalStorage (caché/fallback sin conexión).
-- **Accesibilidad**: WCAG 2.1 AA, ARIA roles, contraste alto, botones mínimos 52px.
+- **Accesibilidad**: WCAG 2.1 AA, ARIA roles, skip link, breadcrumbs, contraste alto, botones mínimos 52px.
 - **Design System**: "Protección Proactiva" (paleta 60-30-10: `#EBF8FA` / `#0A4B5C` / `#007A87`).
 
 ---
@@ -33,7 +34,7 @@ Curso: 6° 2° - Proyecto Integrador III.
 ### 1. Pantalla de Registro y Login
 - Formulario con campos: Nombre, Correo Electrónico, Contraseña.
 - Validación de nombre no vacío, formato de email válido y contraseña mínima de 6 caracteres.
-- Hashing de contraseña (SHA-256 en servidor, simulado en cliente como fallback).
+- Hashing de contraseña con **bcrypt** (costo 12) en el servidor, con consultas SQL parametrizadas.
 - Persistencia en PostgreSQL (principal) y LocalStorage (fallback offline).
 
 ### 2. Test de Nivelación Obligatorio
@@ -44,6 +45,7 @@ Curso: 6° 2° - Proyecto Integrador III.
 ### 3. Dashboard Principal (Entorno Seguro)
 - Saludo personalizado: "¡Hola, [Nombre]! Estás en un entorno totalmente seguro 🔒".
 - 3 accesos masivos tipo tarjeta: Campus Educativo, Escudo de Seguridad, Mi Progreso.
+- **Breadcrumbs** (migas de pan) en cada pantalla: los niveles previos son clicables y el actual es texto plano.
 
 ### 4. Campus Educativo (Módulo de Fraude Digital)
 - 5 módulos teóricos: Smartphones, Redes, Trámites, Fraudes, Comunicación.
@@ -67,8 +69,8 @@ Curso: 6° 2° - Proyecto Integrador III.
 ```text
 Grupo-TAMI/
 ├── README.md               Documentación principal del proyecto
-├── code/                   Capas de Presentación y Lógica (frontend)
-│   ├── index.html          Estructura accesible con 9 pantallas SPA
+├── code/                   Capa de Presentación y Lógica (frontend)
+│   ├── index.html          Estructura accesible con 10 pantallas SPA + breadcrumbs
 │   ├── styles.css          Design System "Protección Proactiva"
 │   ├── main.js             Lógica + conexión API + fallback LocalStorage
 │   └── README.md
@@ -77,21 +79,28 @@ Grupo-TAMI/
 │   ├── db.js               Conexión a PostgreSQL (pg Pool)
 │   ├── schema.sql          Esquema de 7 tablas + datos iniciales
 │   ├── routes/
-│   │   ├── usuarios.js     Registro, login y progreso de usuarios
+│   │   ├── usuarios.js     Registro/login con bcrypt + progreso
 │   │   ├── cursos.js       Listado de módulos/curso
 │   │   ├── alertas.js      Alertas de fraude
 │   │   └── progreso.js     Test, exámenes y progreso de módulos
 │   ├── .env.example        Variables de entorno de ejemplo
 │   └── README.md
 ├── resources/              Activos multimedia
+│   ├── img/                Imágenes (optimizadas)
+│   ├── icons/              Iconografía SVG de trazo grueso
+│   ├── fonts/              Tipografías locales legibles
 │   ├── branding-guide.md   Paleta cromática proactiva
 │   └── README.md
 └── docs/                   Documentación obligatoria (ET N°20)
-    ├── project-charter.md  Project Charter
-    ├── plan-de-proyecto.md Plan de Proyecto
-    ├── cronograma-gantt.md Diagrama de Gantt
-    ├── backlog-sprints.md  Backlog y Sprints
-    ├── design-system.md    Design System
+    ├── project-charter.md        Project Charter
+    ├── plan-de-proyecto.md       Plan de Proyecto
+    ├── cronograma-gantt.md       Diagrama de Gantt + plan de 10 días
+    ├── backlog-sprints.md        Backlog y Sprint 1 (autenticación)
+    ├── design-system.md          Design System
+    ├── convenciones-desarrollo.md  Convenciones ISO/IEC 25010
+    ├── arquitectura-informacion.md Árbol de navegación y breadcrumbs
+    ├── auditoria-usabilidad.md   Auditoría UX (6 dimensiones + QA)
+    ├── plan-ejecucion-10-dias.md Cronograma rápido día a día
     └── README.md
 ```
 
@@ -103,7 +112,7 @@ Grupo-TAMI/
 
 | Tabla | Descripción |
 |-------|-------------|
-| `usuarios` | Usuarios registrados con nombre, email, password_hash y nivel_digital |
+| `usuarios` | Usuarios registrados con nombre, email, password_hash (bcrypt) y nivel_digital |
 | `cursos` | 5 módulos del Campus Educativo |
 | `alertas_fraude` | 6 alertas con título, descripción, que_hacer, severidad e icono |
 | `inscripciones` | Relación many-to-many usuario-curso |
@@ -195,14 +204,15 @@ Abrí `code/index.html` directamente en tu navegador (doble clic o arrastrá el 
 - **Reusabilidad**: Funciones de validación, renderizado y guardado reutilizables en todas las pantallas.
 - **Nomenclatura Estricta**: camelCase para variables (sustantivos), infinitivo para funciones (verbos), booleanos como preguntas.
 - **Comentarios Profesionales**: Solo explican el "porqué" de decisiones complejas.
-- **Accesibilidad**: ARIA labels, roles, aria-live, contraste WCAG AA, target size 52px+.
-
----
+- **Mantenibilidad**: Convenciones documentadas en `docs/convenciones-desarrollo.md`.
+- **Accesibilidad**: ARIA labels, roles, aria-live, skip link, breadcrumbs, contraste WCAG AA, target size 52px+.
 
 ## Justificación: Relación Teoría-Práctica
 
 - **Scrum**: Roles (PO, SM, Dev) organizan la colaboración y el avance por sprints documentado en `docs/backlog-sprints.md`.
 - **DCU (Diseño Centrado en el Usuario)**: Paleta proactiva, iconos de trazo grueso, fuentes de alta legibilidad y botones masivos para adultos mayores.
+- **Arquitectura de Información**: Navegación de 3 niveles con breadcrumbs definida en `docs/arquitectura-informacion.md`.
+- **Calidad (ISO/IEC 25010)**: Métricas, auditoría UX y matriz de hallazgos en `docs/auditoria-usabilidad.md`.
 - **PMV (Producto Mínimo Viable)**: Sistema funcional completo con backend, frontend, base de datos y persistencia offline.
 
 ---

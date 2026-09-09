@@ -18,6 +18,56 @@ const CLAVE_TEST_CACHE = "tami:testCache";
 const CLAVE_EXAMEN_CACHE = "tami:examenCache";
 const CLAVE_ALERTAS_CACHE = "tami:alertasCache";
 
+// Mapa de navegacion: pantalla -> breadcrumb
+// Cada entrada define la ruta completa desde Inicio hasta la pantalla actual.
+// Los niveles previos son clickeables; el ultimo es texto plano.
+const MAPA_NAVEGACION = {
+  "pantalla-inicio": [{ etiqueta: "Inicio", pantalla: null }],
+  "pantalla-registro": [
+    { etiqueta: "Inicio", pantalla: "pantalla-inicio" },
+    { etiqueta: "Registro", pantalla: null }
+  ],
+  "pantalla-login": [
+    { etiqueta: "Inicio", pantalla: "pantalla-inicio" },
+    { etiqueta: "Ingresar", pantalla: null }
+  ],
+  "pantalla-test": [
+    { etiqueta: "Inicio", pantalla: "pantalla-inicio" },
+    { etiqueta: "Test de nivelacion", pantalla: null }
+  ],
+  "pantalla-dashboard": [
+    { etiqueta: "Inicio", pantalla: "pantalla-inicio" },
+    { etiqueta: "Mi entorno seguro", pantalla: null }
+  ],
+  "pantalla-campus": [
+    { etiqueta: "Inicio", pantalla: "pantalla-inicio" },
+    { etiqueta: "Mi entorno seguro", pantalla: "pantalla-dashboard" },
+    { etiqueta: "Campus Educativo", pantalla: null }
+  ],
+  "pantalla-leccion": [
+    { etiqueta: "Inicio", pantalla: "pantalla-inicio" },
+    { etiqueta: "Mi entorno seguro", pantalla: "pantalla-dashboard" },
+    { etiqueta: "Campus Educativo", pantalla: "pantalla-campus" },
+    { etiqueta: "Modulo 4: Fraudes", pantalla: null }
+  ],
+  "pantalla-escudo": [
+    { etiqueta: "Inicio", pantalla: "pantalla-inicio" },
+    { etiqueta: "Mi entorno seguro", pantalla: "pantalla-dashboard" },
+    { etiqueta: "Escudo de Seguridad", pantalla: null }
+  ],
+  "pantalla-progreso": [
+    { etiqueta: "Inicio", pantalla: "pantalla-inicio" },
+    { etiqueta: "Mi entorno seguro", pantalla: "pantalla-dashboard" },
+    { etiqueta: "Mi Progreso", pantalla: null }
+  ],
+  "pantalla-examen": [
+    { etiqueta: "Inicio", pantalla: "pantalla-inicio" },
+    { etiqueta: "Mi entorno seguro", pantalla: "pantalla-dashboard" },
+    { etiqueta: "Campus Educativo", pantalla: "pantalla-campus" },
+    { etiqueta: "Examen rapido", pantalla: null }
+  ]
+};
+
 // ============================================
 // UTILIDADES DE LOCALSTORAGE (CACHÉ/FALLBACK)
 // ============================================
@@ -42,8 +92,8 @@ function guardarLocal(clave, valor) {
 
 // ============================================
 // CAPA DE COMUNICACIÓN CON LA API
-// intention: cada función intenta hablar con el
-// servidor y, si falla, usa LocalStorage como fallback.
+// Cada función intenta hablar con el servidor y,
+// si falla, usa LocalStorage como fallback.
 // ============================================
 
 async function apiGet(recurso) {
@@ -95,6 +145,90 @@ function mostrarPantalla(idPantalla) {
     pantallaObjetivo.hidden = false;
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
+
+  // Actualiza las migas de pan segun la pantalla visible
+  actualizarBreadcrumb(idPantalla);
+
+  // Avisa a los lectores de pantalla que cambio la vista
+  const tituloPantalla = pantallaObjetivo
+    ? pantallaObjetivo.querySelector("h1, h2, h3")
+    : null;
+  if (tituloPantalla) {
+    tituloPantalla.setAttribute("tabindex", "-1");
+    tituloPantalla.focus({ preventScroll: true });
+  }
+}
+
+// ============================================
+// BREADCRUMBS (MIGAS DE PAN)
+// Regla de usabilidad: los niveles previos son
+// enlaces interactivos y el actual es texto plano
+// ============================================
+
+function actualizarBreadcrumb(idPantalla) {
+  const barra = document.getElementById("breadcrumb-bar");
+  const lista = document.getElementById("breadcrumb-lista");
+  if (!barra || !lista) return;
+
+  const ruta = MAPA_NAVEGACION[idPantalla];
+  if (!ruta || ruta.length <= 1) {
+    barra.hidden = true;
+    lista.innerHTML = "";
+    return;
+  }
+
+  barra.hidden = false;
+  lista.innerHTML = "";
+
+  ruta.forEach(function (item, indice) {
+    const esUltimo = indice === ruta.length - 1;
+    const elementoLista = document.createElement("li");
+    elementoLista.className = "breadcrumb__item";
+    elementoLista.setAttribute("itemprop", "itemListElement");
+    elementoLista.setAttribute("itemscope", "");
+    elementoLista.setAttribute("itemtype", "https://schema.org/ListItem");
+
+    if (esUltimo) {
+      // Pagina actual: texto plano NO interactivo
+      const actual = document.createElement("span");
+      actual.className = "breadcrumb__actual";
+      actual.setAttribute("aria-current", "page");
+      actual.textContent = item.etiqueta;
+      elementoLista.appendChild(actual);
+    } else if (item.pantalla) {
+      // Nivel previo: enlace interactivo
+      const enlace = document.createElement("button");
+      enlace.className = "breadcrumb__link";
+      enlace.type = "button";
+      enlace.textContent = item.etiqueta;
+      enlace.addEventListener("click", function () {
+        // No se permite volver al inicio si hay sesion activa:
+        // redirige al dashboard en lugar de cerrar la sesion.
+        if (item.pantalla === "pantalla-inicio" && obtenerSesion()) {
+          mostrarDashboard(obtenerSesion());
+          return;
+        }
+        mostrarPantalla(item.pantalla);
+      });
+      elementoLista.appendChild(enlace);
+    } else {
+      const texto = document.createElement("span");
+      texto.textContent = item.etiqueta;
+      elementoLista.appendChild(texto);
+    }
+
+    // Separador ">" entre niveles
+    if (!esUltimo) {
+      const separador = document.createElement("span");
+      separador.className = "breadcrumb__separador";
+      separador.setAttribute("aria-hidden", "true");
+      separador.textContent = " > ";
+      lista.appendChild(elementoLista);
+      lista.appendChild(separador);
+    } else {
+      lista.appendChild(elementoLista);
+    }
+  });
 }
 
 // ============================================
@@ -850,8 +984,12 @@ function crearBarraDeProgreso(valor, total, claseColor, textoSuperior) {
 
 function actualizarHeaderParaSesion(haIniciadoSesion) {
   const botonCerrar = document.getElementById("btn-cerrar-sesion");
+  const botonNavInicio = document.getElementById("btn-nav-inicio");
   if (botonCerrar) {
     botonCerrar.hidden = !haIniciadoSesion;
+  }
+  if (botonNavInicio) {
+    botonNavInicio.hidden = haIniciadoSesion;
   }
 }
 
@@ -902,6 +1040,17 @@ function inicializar() {
   document.getElementById("btn-ir-login").addEventListener("click", function () {
     ocultarTodosLosErrores();
     mostrarPantalla("pantalla-login");
+  });
+
+  // --- Boton de navegacion "Inicio" en el header ---
+  document.getElementById("btn-nav-inicio").addEventListener("click", function () {
+    const sesion = obtenerSesion();
+    if (sesion) {
+      mostrarDashboard(sesion);
+    } else {
+      ocultarTodosLosErrores();
+      mostrarPantalla("pantalla-inicio");
+    }
   });
 
   // --- Botones de volver ---

@@ -5,9 +5,9 @@ Capa de **Datos** y servicios de la aplicación. Expone una **API REST** que el 
 ## Stack
 
 - **Node.js** + **Express** (servidor HTTP y enrutado).
-- **pg** (driver de PostgreSQL).
+- **pg** (driver de PostgreSQL, consultas parametrizadas).
+- **bcrypt** (hashing irreversibles de contraseñas, costo 12).
 - **dotenv** (variables de entorno) y **cors** (permite que el frontend consuma la API).
-- **crypto** (hashing SHA-256 de contraseñas, nativo de Node.js).
 
 ## Estructura
 
@@ -17,7 +17,7 @@ server/
 ├── db.js            Pool de conexiones a PostgreSQL
 ├── schema.sql       Esquema de 7 tablas + datos iniciales
 ├── routes/
-│   ├── usuarios.js  Registro, login, listado y progreso de usuarios
+│   ├── usuarios.js  Registro, login (bcrypt), listado y progreso
 │   ├── cursos.js    Listado de módulos/curso
 │   ├── alertas.js   Alertas de fraude
 │   └── progreso.js  Test, exámenes y progreso de módulos
@@ -25,13 +25,39 @@ server/
 └── package.json     Dependencias y scripts
 ```
 
-## Base de Datos
+## Seguridad de Contraseñas (bcrypt)
 
-### Tablas
+Se reemplazó `SHA-256` por `bcrypt` porque:
+
+1. **SHA-256 es un hash rápido**, vulnerable a ataques de rainbow tables.
+2. **bcrypt incorpora salt automático** por usuario y es resistente a fuerza bruta.
+3. El **costo de 12 rondas** equilibra seguridad con rendimiento en hardware estándar.
+
+### Registro
+
+```js
+const passwordHash = await bcrypt.hash(password, COSTO_BCRYPT); // 12
+```
+
+### Login (comparación segura)
+
+```js
+const contrasenaValida = await bcrypt.compare(password, usuario.password_hash);
+```
+
+## Validación Estricta de Entradas
+
+- **Email**: expresión regular `^[^\s@]+@[^\s@]+\.[^\s@]+$` validada en el servidor.
+- **Nombre**: mínimo 2 caracteres luego de `.trim()`.
+- **Password**: mínimo 6 caracteres.
+- **SQL**: siempre consultas parametrizadas (`$1`, `$2`) para prevenir inyección SQL.
+- Los mensajes de error no revelan datos internos.
+
+## Base de Datos
 
 | Tabla | Descripción |
 |-------|-------------|
-| `usuarios` | Usuarios con nombre, email, password_hash, nivel_digital |
+| `usuarios` | Usuarios con nombre, email, password_hash (bcrypt), nivel_digital |
 | `cursos` | 5 módulos del Campus Educativo |
 | `alertas_fraude` | 6 alertas con título, descripción, que_hacer, severidad |
 | `inscripciones` | Relación usuario-curso |
@@ -46,8 +72,8 @@ server/
 | GET | `/` | Estado de la API | — |
 | GET | `/api/usuarios` | Listar usuarios | — |
 | GET | `/api/usuarios/:id` | Obtener un usuario | — |
-| POST | `/api/usuarios/registrar` | Registrar usuario | `{ nombre, email, password }` |
-| POST | `/api/usuarios/login` | Iniciar sesión | `{ email, password }` |
+| POST | `/api/usuarios/registrar` | Registrar usuario (bcrypt) | `{ nombre, email, password }` |
+| POST | `/api/usuarios/login` | Iniciar sesión (compare bcrypt) | `{ email, password }` |
 | GET | `/api/usuarios/:id/progreso` | Progreso completo | — |
 | GET | `/api/cursos` | Listar cursos activos | — |
 | GET | `/api/cursos/:id` | Obtener un curso | — |

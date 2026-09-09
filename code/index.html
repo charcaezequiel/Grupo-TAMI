@@ -3,29 +3,48 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="TAMI - Tecnología Amigable para Mayores e Inclusiva. Aprender a usar tecnología de forma segura.">
+  <meta name="description" content="TAMI - Tecnologia Amigable para Mayores e Inclusiva. Aprender a usar tecnologia de forma segura.">
   <meta name="theme-color" content="#0A4B5C">
-  <title>TAMI | Tecnología Amigable para Mayores</title>
+  <title>TAMI | Tecnologia Amigable para Mayores</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
+  <!-- Skip link: permite a usuarios de teclado saltar al contenido principal -->
+  <a href="#contenido-principal" class="skip-link">Saltar al contenido principal</a>
+
   <!-- ============================================
-       HEADER GLOBAL
+       HEADER GLOBAL CON NAVEGACION PRINCIPAL
        ============================================ -->
   <header class="header" role="banner">
     <div class="header__inner">
-      <span class="header__logo" aria-hidden="true">🛡️</span>
+      <span class="header__logo" aria-hidden="true">&#x1F6E1;&#xFE0F;</span>
       <h1 class="header__titulo">TAMI</h1>
+      <nav class="header__nav" aria-label="Navegacion principal">
+        <button
+          class="header__nav-item btn btn--fantasma"
+          id="btn-nav-inicio"
+          type="button"
+          aria-current="page"
+        >Inicio</button>
+      </nav>
       <button
         class="header__cerrar-sesion btn btn--fantasma"
         id="btn-cerrar-sesion"
         type="button"
         hidden
-        aria-label="Cerrar sesión y volver al inicio"
-      >Cerrar sesión</button>
+        aria-label="Cerrar sesion y volver al inicio"
+      >Cerrar sesion</button>
     </div>
   </header>
+
+  <!-- ============================================
+       BREADCRUMBS (Migas de Pan)
+       ============================================ -->
+  <nav id="breadcrumb-bar" class="breadcrumb" aria-label="Migas de pan" hidden>
+    <ol id="breadcrumb-lista" class="breadcrumb__lista" itemscope itemtype="https://schema.org/BreadcrumbList">
+    </ol>
+  </nav>
 
   <!-- ============================================
        ZONA DE MENSAJES GLOBALES (aria-live)
@@ -45,10 +64,10 @@
       aria-labelledby="inicio-titulo"
     >
       <div class="hero">
-        <span class="hero__icono" aria-hidden="true">🛡️</span>
+        <span class="hero__icono" aria-hidden="true">&#x1F6E1;&#xFE0F;</span>
         <h2 id="inicio-titulo" class="hero__titulo">Bienvenido a TAMI</h2>
         <p class="hero__texto">
-          Tecnología amigable para aprender a usar tus dispositivos de forma segura y protegerte de las estafas en línea.
+          Tecnologia amigable para aprender a usar tus dispositivos de forma segura y protegerte de las estafas en linea.
         </p>
         <button class="btn btn--primario btn--masivo" id="btn-registrarse" type="button">
           Crear mi cuenta
@@ -70,27 +89,31 @@
     >
       <div class="contenedor-formulario">
         <h2 id="registro-titulo" class="contenedor-formulario__titulo">
-          Crear mi cuenta 🔒
+          Crear mi cuenta
         </h2>
         <p class="contenedor-formulario__subtitulo">
-          Tus datos quedan guardados solo en este dispositivo. Estás en un entorno seguro.
+          Tus datos quedan guardados solo en este dispositivo. Estas en un entorno seguro.
         </p>
-        <form id="formulario-registro" novalidate>
+        <form id="formulario-registro" novalidate aria-describedby="registro-ayuda">
+          <p id="registro-ayuda" class="campo__ayuda-sr visually-hidden">
+            Todos los campos son obligatorios. La contrasena debe tener al menos 6 caracteres.
+          </p>
           <div class="campo">
             <label for="campo-nombre" class="campo__etiqueta">Nombre completo</label>
             <input
               type="text"
               id="campo-nombre"
               class="campo__input"
-              placeholder="Ej: María López"
+              placeholder="Ej: Maria Lopez"
               autocomplete="name"
               required
               aria-required="true"
+              aria-describedby="error-nombre"
             >
             <span id="error-nombre" class="campo__error" role="alert" hidden></span>
           </div>
           <div class="campo">
-            <label for="campo-email-registro" class="campo__etiqueta">Correo electrónico</label>
+            <label for="campo-email-registro" class="campo__etiqueta">Correo electronico</label>
             <input
               type="email"
               id="campo-email-registro"
@@ -99,28 +122,30 @@
               autocomplete="email"
               required
               aria-required="true"
+              aria-describedby="error-email-registro"
             >
             <span id="error-email-registro" class="campo__error" role="alert" hidden></span>
           </div>
           <div class="campo">
-            <label for="campo-password-registro" class="campo__etiqueta">Contraseña</label>
+            <label for="campo-password-registro" class="campo__etiqueta">Contrasena</label>
             <input
               type="password"
               id="campo-password-registro"
               class="campo__input"
-              placeholder="Mínimo 6 caracteres"
+              placeholder="Minimo 6 caracteres"
               autocomplete="new-password"
               required
               aria-required="true"
+              aria-describedby="error-password-registro"
               minlength="6"
             >
             <span id="error-password-registro" class="campo__error" role="alert" hidden></span>
           </div>
           <button type="submit" class="btn btn--primario btn--masivo">
-            Registrar mi cuenta 🔒
+            Registrar mi cuenta
           </button>
-          <button type="button" class="btn btn--fantasma btn--volver" id="btn-volver-registro" type="button">
-            ← Volver
+          <button type="button" class="btn btn--fantasma btn--volver" id="btn-volver-registro">
+            &#x2190; Volver
           </button>
         </form>
       </div>
@@ -137,14 +162,14 @@
     >
       <div class="contenedor-formulario">
         <h2 id="login-titulo" class="contenedor-formulario__titulo">
-          Ingresar a mi cuenta 🔒
+          Ingresar a mi cuenta
         </h2>
         <p class="contenedor-formulario__subtitulo">
-          Ingresá con el correo y la contraseña que usaste al registrarte.
+          Ingresa con el correo y la contrasena que usaste al registrarte.
         </p>
         <form id="formulario-login" novalidate>
           <div class="campo">
-            <label for="campo-email-login" class="campo__etiqueta">Correo electrónico</label>
+            <label for="campo-email-login" class="campo__etiqueta">Correo electronico</label>
             <input
               type="email"
               id="campo-email-login"
@@ -153,34 +178,36 @@
               autocomplete="email"
               required
               aria-required="true"
+              aria-describedby="error-email-login"
             >
             <span id="error-email-login" class="campo__error" role="alert" hidden></span>
           </div>
           <div class="campo">
-            <label for="campo-password-login" class="campo__etiqueta">Contraseña</label>
+            <label for="campo-password-login" class="campo__etiqueta">Contrasena</label>
             <input
               type="password"
               id="campo-password-login"
               class="campo__input"
-              placeholder="Tu contraseña"
+              placeholder="Tu contrasena"
               autocomplete="current-password"
               required
               aria-required="true"
+              aria-describedby="error-password-login"
             >
             <span id="error-password-login" class="campo__error" role="alert" hidden></span>
           </div>
           <button type="submit" class="btn btn--primario btn--masivo">
-            Ingresar 🔒
+            Ingresar
           </button>
           <button type="button" class="btn btn--fantasma btn--volver" id="btn-volver-login">
-            ← Volver
+            &#x2190; Volver
           </button>
         </form>
       </div>
     </section>
 
     <!-- ============================================
-         PANTALLA: TEST DE NIVELACIÓN
+         PANTALLA: TEST DE NIVELACION
          ============================================ -->
     <section
       id="pantalla-test"
@@ -190,20 +217,19 @@
     >
       <div class="contenedor-formulario">
         <h2 id="test-titulo" class="contenedor-formulario__titulo">
-          Test de nivelación
+          Test de nivelacion
         </h2>
         <p class="contenedor-formulario__subtitulo">
-          Respondé estas 3 preguntas para que TAMI conozca tu nivel actual. No hay respuestas buenas ni malas.
+          Responde estas 3 preguntas para que TAMI conozca tu nivel actual. No hay respuestas buenas ni malas.
         </p>
 
         <div id="contenedor-preguntas" class="test" aria-live="polite">
-          <!-- Las preguntas se renderizan dinámicamente con JS -->
         </div>
 
         <div id="test-resultado" class="test-resultado" hidden aria-live="polite">
           <p id="test-resultado-texto" class="test-resultado__texto"></p>
           <button class="btn btn--primario btn--masivo" id="btn-continuar-desde-test" type="button">
-            Entrar a TAMI 🔒
+            Entrar a TAMI
           </button>
         </div>
       </div>
@@ -220,25 +246,25 @@
     >
       <div class="dashboard">
         <h2 id="dashboard-titulo" class="dashboard__saludo" aria-live="polite"></h2>
-        <p class="dashboard__subtitulo">Elegí una opción para comenzar:</p>
+        <p class="dashboard__subtitulo">Elegi una opcion para comenzar:</p>
 
         <div class="dashboard__grid">
           <button class="tarjeta-acceso btn" id="btn-campus" type="button" aria-describedby="desc-campus">
-            <span class="tarjeta-acceso__icono" aria-hidden="true">📚</span>
+            <span class="tarjeta-acceso__icono" aria-hidden="true">&#x1F4DA;</span>
             <span class="tarjeta-acceso__titulo">Campus Educativo</span>
-            <span class="tarjeta-acceso__desc" id="desc-campus">Aprender a usar tecnología de forma segura</span>
+            <span class="tarjeta-acceso__desc" id="desc-campus">Aprender a usar tecnologia de forma segura</span>
           </button>
 
           <button class="tarjeta-acceso btn" id="btn-escudo" type="button" aria-describedby="desc-escudo">
-            <span class="tarjeta-acceso__icono" aria-hidden="true">🔒</span>
+            <span class="tarjeta-acceso__icono" aria-hidden="true">&#x1F512;</span>
             <span class="tarjeta-acceso__titulo">Escudo de Seguridad</span>
             <span class="tarjeta-acceso__desc" id="desc-escudo">Alertas y consejos para protegerte</span>
           </button>
 
           <button class="tarjeta-acceso btn" id="btn-progreso" type="button" aria-describedby="desc-progreso">
-            <span class="tarjeta-acceso__icono" aria-hidden="true">📊</span>
+            <span class="tarjeta-acceso__icono" aria-hidden="true">&#x1F4CA;</span>
             <span class="tarjeta-acceso__titulo">Mi Progreso</span>
-            <span class="tarjeta-acceso__desc" id="desc-progreso">Mirá cuánto aprendiste</span>
+            <span class="tarjeta-acceso__desc" id="desc-progreso">Mira cuanto aprendiste</span>
           </button>
         </div>
       </div>
@@ -255,56 +281,56 @@
     >
       <div class="contenedor-lista">
         <h2 id="campus-titulo" class="contenedor-lista__titulo">Campus Educativo</h2>
-        <p class="contenedor-lista__subtitulo">Elegí un módulo para aprender</p>
+        <p class="contenedor-lista__subtitulo">Elegi un modulo para aprender</p>
 
         <ul id="lista-modulos" class="lista-modulos" role="list">
           <li class="modulo modulo--bloqueado" aria-disabled="true">
-            <span class="modulo__icono" aria-hidden="true">📱</span>
+            <span class="modulo__icono" aria-hidden="true">&#x1F4F1;</span>
             <span class="modulo__info">
-              <strong class="modulo__nombre">Módulo 1: Uso de Smartphones</strong>
-              <span class="modulo__estado">Próximamente</span>
+              <strong class="modulo__nombre">Modulo 1: Uso de Smartphones</strong>
+              <span class="modulo__estado">Proximamente</span>
             </span>
           </li>
           <li class="modulo modulo--bloqueado" aria-disabled="true">
-            <span class="modulo__icono" aria-hidden="true">🌐</span>
+            <span class="modulo__icono" aria-hidden="true">&#x1F310;</span>
             <span class="modulo__info">
-              <strong class="modulo__nombre">Módulo 2: Redes e Internet</strong>
-              <span class="modulo__estado">Próximamente</span>
+              <strong class="modulo__nombre">Modulo 2: Redes e Internet</strong>
+              <span class="modulo__estado">Proximamente</span>
             </span>
           </li>
           <li class="modulo modulo--bloqueado" aria-disabled="true">
-            <span class="modulo__icono" aria-hidden="true">📄</span>
+            <span class="modulo__icono" aria-hidden="true">&#x1F4C4;</span>
             <span class="modulo__info">
-              <strong class="modulo__nombre">Módulo 3: Trámites en Línea</strong>
-              <span class="modulo__estado">Próximamente</span>
+              <strong class="modulo__nombre">Modulo 3: Tramites en Linea</strong>
+              <span class="modulo__estado">Proximamente</span>
             </span>
           </li>
           <li>
             <button class="modulo modulo--disponible btn" id="btn-modulo-fraudes" type="button">
-              <span class="modulo__icono" aria-hidden="true">⚠️</span>
+              <span class="modulo__icono" aria-hidden="true">&#x26A0;&#xFE0F;</span>
               <span class="modulo__info">
-                <strong class="modulo__nombre">Módulo 4: Fraudes Digitales (Phishing)</strong>
+                <strong class="modulo__nombre">Modulo 4: Fraudes Digitales (Phishing)</strong>
                 <span class="modulo__estado modulo__estado--disponible">Disponible ahora</span>
               </span>
             </button>
           </li>
           <li class="modulo modulo--bloqueado" aria-disabled="true">
-            <span class="modulo__icono" aria-hidden="true">💬</span>
+            <span class="modulo__icono" aria-hidden="true">&#x1F4AC;</span>
             <span class="modulo__info">
-              <strong class="modulo__nombre">Módulo 5: Comunicación Digital</strong>
-              <span class="modulo__estado">Próximamente</span>
+              <strong class="modulo__nombre">Modulo 5: Comunicacion Digital</strong>
+              <span class="modulo__estado">Proximamente</span>
             </span>
           </li>
         </ul>
 
         <button class="btn btn--fantasma btn--volver" id="btn-volver-campus" type="button">
-          ← Volver al menú
+          &#x2190; Volver al menu
         </button>
       </div>
     </section>
 
     <!-- ============================================
-         PANTALLA: LECCIÓN MÓDULO 4 (FRAUDES)
+         PANTALLA: LECCION MODULO 4 (FRAUDES)
          ============================================ -->
     <section
       id="pantalla-leccion"
@@ -313,18 +339,17 @@
       hidden
     >
       <div class="contenedor-formulario">
-        <h2 id="leccion-titulo" class="contenedor-formulario__titulo">Módulo 4: Fraudes Digitales</h2>
+        <h2 id="leccion-titulo" class="contenedor-formulario__titulo">Modulo 4: Fraudes Digitales</h2>
 
         <div id="contenido-leccion" class="leccion" aria-live="polite">
-          <!-- Se renderiza dinámicamente -->
         </div>
 
         <div class="leccion__navegacion">
           <button class="btn btn--secundario btn--masivo" id="btn-leccion-anterior" type="button">
-            ← Anterior
+            &#x2190; Anterior
           </button>
           <button class="btn btn--primario btn--masivo" id="btn-leccion-siguiente" type="button">
-            Siguiente →
+            Siguiente &#x2192;
           </button>
         </div>
       </div>
@@ -340,15 +365,14 @@
       hidden
     >
       <div class="contenedor-lista">
-        <h2 id="escudo-titulo" class="contenedor-lista__titulo">🔒 Escudo de Seguridad</h2>
+        <h2 id="escudo-titulo" class="contenedor-lista__titulo">&#x1F512; Escudo de Seguridad</h2>
         <p class="contenedor-lista__subtitulo">Alertas y consejos para protegerte de fraudes</p>
 
         <div id="lista-alertas-escudo" class="lista-alertas" aria-live="polite">
-          <!-- Se renderiza dinámicamente -->
         </div>
 
         <button class="btn btn--fantasma btn--volver" id="btn-volver-escudo" type="button">
-          ← Volver al menú
+          &#x2190; Volver al menu
         </button>
       </div>
     </section>
@@ -363,20 +387,19 @@
       hidden
     >
       <div class="contenedor-formulario">
-        <h2 id="progreso-titulo" class="contenedor-formulario__titulo">📊 Mi Progreso</h2>
+        <h2 id="progreso-titulo" class="contenedor-formulario__titulo">&#x1F4CA; Mi Progreso</h2>
 
         <div id="contenido-progreso" class="progreso" aria-live="polite">
-          <!-- Se renderiza dinámicamente -->
         </div>
 
         <button class="btn btn--fantasma btn--volver" id="btn-volver-progreso" type="button">
-          ← Volver al menú
+          &#x2190; Volver al menu
         </button>
       </div>
     </section>
 
     <!-- ============================================
-         PANTALLA: EXAMEN RÁPIDO
+         PANTALLA: EXAMEN RAPIDO
          ============================================ -->
     <section
       id="pantalla-examen"
@@ -385,13 +408,12 @@
       hidden
     >
       <div class="contenedor-formulario">
-        <h2 id="examen-titulo" class="contenedor-formulario__titulo">Examen rápido</h2>
+        <h2 id="examen-titulo" class="contenedor-formulario__titulo">Examen rapido</h2>
         <p class="contenedor-formulario__subtitulo">
-          Respondé estas 3 preguntas sobre fraudes digitales para ver cuánto aprendiste.
+          Responde estas 3 preguntas sobre fraudes digitales para ver cuanto aprendiste.
         </p>
 
         <div id="contenedor-examen" class="test" aria-live="polite">
-          <!-- Se renderiza dinámicamente -->
         </div>
 
         <div id="examen-resultado" class="test-resultado" hidden aria-live="polite">

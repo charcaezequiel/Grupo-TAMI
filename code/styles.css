@@ -741,6 +741,79 @@ body {
 }
 
 /* ============================================
+   SKIP LINK (Accesibilidad - saltar navegacion)
+   ============================================ */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: var(--espaciado);
+  background-color: var(--color-primario);
+  color: var(--color-blanco);
+  padding: var(--espaciado-sm) var(--espaciado);
+  border-radius: var(--radio-borde);
+  z-index: 200;
+  font-weight: 700;
+  text-decoration: none;
+  transition: top 0.2s;
+}
+
+.skip-link:focus {
+  top: var(--espaciado-sm);
+}
+
+/* ============================================
+   BREADCRUMBS (Migas de Pan)
+   ============================================ */
+.breadcrumb {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: var(--espaciado-sm) var(--espaciado-lg);
+}
+
+.breadcrumb__lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaciado-xs);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.9rem;
+}
+
+.breadcrumb__item {
+  display: flex;
+  align-items: center;
+  gap: var(--espaciado-xs);
+}
+
+.breadcrumb__link {
+  color: var(--color-acento);
+  text-decoration: underline;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: var(--fuente-base);
+  font-size: inherit;
+  padding: 2px 4px;
+}
+
+.breadcrumb__link:hover,
+.breadcrumb__link:focus {
+  color: var(--color-primario);
+}
+
+.breadcrumb__separador {
+  color: var(--color-texto-claro);
+  user-select: none;
+}
+
+.breadcrumb__actual {
+  color: var(--color-texto-claro);
+  font-weight: 600;
+  cursor: default;
+}
+
+/* ============================================
    ACCESIBILIDAD
    ============================================ */
 .visually-hidden {
