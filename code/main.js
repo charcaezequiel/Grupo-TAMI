@@ -1031,15 +1031,25 @@ function mostrarDashboard(sesion) {
 // ============================================
 
 function inicializar() {
-  // --- Botones de bienvenida ---
-  document.getElementById("btn-registrarse").addEventListener("click", function () {
+  // --- Botones de bienvenida (hero y CTA final) ---
+  function irARegistro() {
     ocultarTodosLosErrores();
     mostrarPantalla("pantalla-registro");
-  });
+  }
 
-  document.getElementById("btn-ir-login").addEventListener("click", function () {
+  function irALogin() {
     ocultarTodosLosErrores();
     mostrarPantalla("pantalla-login");
+  }
+
+  ["btn-registrarse", "btn-registrarse-final"].forEach(function (id) {
+    const boton = document.getElementById(id);
+    if (boton) boton.addEventListener("click", irARegistro);
+  });
+
+  ["btn-ir-login", "btn-ir-login-final"].forEach(function (id) {
+    const boton = document.getElementById(id);
+    if (boton) boton.addEventListener("click", irALogin);
   });
 
   // --- Boton de navegacion "Inicio" en el header ---

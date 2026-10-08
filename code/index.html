@@ -6,6 +6,7 @@
   <meta name="description" content="TAMI - Tecnologia Amigable para Mayores e Inclusiva. Aprender a usar tecnologia de forma segura.">
   <meta name="theme-color" content="#0A4B5C">
   <title>TAMI | Tecnologia Amigable para Mayores</title>
+  <link rel="icon" type="image/svg+xml" href="../img/icono.svg">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -18,7 +19,14 @@
        ============================================ -->
   <header class="header" role="banner">
     <div class="header__inner">
-      <span class="header__logo" aria-hidden="true">&#x1F6E1;&#xFE0F;</span>
+      <img
+        class="header__logo"
+        src="../img/icono.svg"
+        alt=""
+        width="44"
+        height="44"
+        aria-hidden="true"
+      >
       <h1 class="header__titulo">TAMI</h1>
       <nav class="header__nav" aria-label="Navegacion principal">
         <button
@@ -63,11 +71,20 @@
       class="pantalla"
       aria-labelledby="inicio-titulo"
     >
+      <!-- ---------- HERO / BIENVENIDA ---------- -->
       <div class="hero">
-        <span class="hero__icono" aria-hidden="true">&#x1F6E1;&#xFE0F;</span>
+        <img
+          class="hero__logo"
+          src="../img/logo.svg"
+          alt="Logo de TAMI: Tecnología Amigable para Mayores e Inclusiva"
+          width="500"
+          height="140"
+        >
         <h2 id="inicio-titulo" class="hero__titulo">Bienvenido a TAMI</h2>
         <p class="hero__texto">
-          Tecnologia amigable para aprender a usar tus dispositivos de forma segura y protegerte de las estafas en linea.
+          Tecnología Amigable para Mayores e Inclusiva: un espacio para aprender a usar
+          tus dispositivos con confianza, a tu ritmo y sin miedo, y para protegerte de
+          las estafas en línea.
         </p>
         <button class="btn btn--primario btn--masivo" id="btn-registrarse" type="button">
           Crear mi cuenta
@@ -75,6 +92,418 @@
         <button class="btn btn--secundario btn--masivo" id="btn-ir-login" type="button">
           Ya tengo cuenta, ingresar
         </button>
+      </div>
+
+      <!-- ---------- QUÉ QUEREMOS TRANSMITIR ---------- -->
+      <section class="panel" aria-labelledby="propo-titulo">
+        <div class="panel__encabezado">
+          <span class="panel__icono" aria-hidden="true">&#x1F3AF;</span>
+          <h2 id="propo-titulo" class="panel__titulo">Qué queremos transmitir</h2>
+        </div>
+        <p class="panel__texto">
+          TAMI nace en la Escuela Técnica N°20 con una convicción simple:
+          <strong>la tecnología no debería ser una barrera para nadie</strong>.
+          Esta plataforma no existe para enseñar botones por enseñar: existe para que
+          cada persona mayor que entre aquí descubra que <strong>puede, sabe y merece
+          participar del mundo digital</strong>.
+        </p>
+        <p class="panel__texto">
+          Queremos transmitir cuatro ideas que atraviesan todo el proyecto:
+        </p>
+        <ul class="pilares" role="list">
+          <li class="pilar">
+            <span class="pilar__icono" aria-hidden="true">&#x1F91D;</span>
+            <h3 class="pilar__titulo">La tecnología es una aliada</h3>
+            <p class="pilar__texto">
+              No un enemigo ni un motivo de angustia. Sirve para hacer trámites sin
+              filas, para estar cerca de la familia y para aprender algo nuevo todos
+              los días.
+            </p>
+          </li>
+          <li class="pilar">
+            <span class="pilar__icono" aria-hidden="true">&#x1F31F;</span>
+            <h3 class="pilar__titulo">Aprender a tu propio ritmo</h3>
+            <p class="pilar__texto">
+              Letras grandes, botones grandes, pasos cortos y navegación lineal.
+              Acá no hay prisa, no hay letras chiquitas y nadie pierde: se avanza
+              paso a paso y se puede volver atrás siempre.
+            </p>
+          </li>
+          <li class="pilar">
+            <span class="pilar__icono" aria-hidden="true">&#x26D4;&#xFE0F;</span>
+            <h3 class="pilar__titulo">Prevenir es mejor que curar</h3>
+            <p class="pilar__texto">
+              Ante la duda, no actúes: <strong>pará, pensá y consultá</strong>.
+              Ese solo hábito evita la mayoría de los fraudes, y es lo que más
+              insistimos en enseñar.
+            </p>
+          </li>
+          <li class="pilar">
+            <span class="pilar__icono" aria-hidden="true">&#x1F465;</span>
+            <h3 class="pilar__titulo">Nadie queda afuera</h3>
+            <p class="pilar__texto">
+              La inclusión digital es un derecho, no un lujo. Si una persona mayor
+              no puede usar la tecnología, el problema está en el diseño, no en ella.
+            </p>
+          </li>
+        </ul>
+      </section>
+
+      <!-- ---------- EL PROBLEMA QUE QUEREMOS RESOLVER ---------- -->
+      <section class="panel" aria-labelledby="contexto-titulo">
+        <div class="panel__encabezado">
+          <span class="panel__icono" aria-hidden="true">&#x26A0;&#xFE0F;</span>
+          <h2 id="contexto-titulo" class="panel__titulo">El problema que queremos resolver</h2>
+        </div>
+        <p class="panel__texto">
+          Cada vez más servicios —banco, salud, trámites, transporte, comunicaciones—
+          se mueven a internet. Quien no se anima a usarlos queda <strong>doblemente
+          afuera</strong>: pierde autonomía y se vuelve más dependiente de los demás.
+        </p>
+        <p class="panel__texto">
+          Al mismo tiempo, los fraudes digitales crecen y apuntan especialmente a
+          quienes menos experiencia tienen. Un correo que parece del banco, un mensaje
+          de WhatsApp con un premio, una llamada desde un número que parece oficial:
+          hoy el engaño no se ve pobre, <strong>se ve profesional</strong>. Y funciona
+          porque explota la confianza y la urgencia, no la ignorancia.
+        </p>
+        <p class="panel__texto">
+          Detrás de cada estafa hay algo más que dinero perdido: hay vergüenza, miedo
+          a contárselo a la familia y, muchas veces, aislamiento. Eso es exactamente
+          lo que queremos cortar.
+        </p>
+        <div class="meta-dato">
+          <p class="meta-dato__texto">
+            <strong>Nuestra meta:</strong> que al menos el <strong>80% de las personas
+            mayores</strong> que prueben TAMI puedan registrarse, navegar y completar
+            una lección <strong>sin ayuda de otra persona</strong>.
+          </p>
+        </div>
+      </section>
+
+      <!-- ---------- LAS LECCIONES ---------- -->
+      <section class="panel" aria-labelledby="lecciones-titulo">
+        <div class="panel__encabezado">
+          <span class="panel__icono" aria-hidden="true">&#x1F4DA;</span>
+          <h2 id="lecciones-titulo" class="panel__titulo">Las lecciones: qué vas a aprender</h2>
+        </div>
+        <p class="panel__texto">
+          El Campus Educativo está pensado como un recorrido de <strong>5 módulos</strong>.
+          Cada uno se puede hacer en el orden que quieras, durar entre 25 y 45 minutos
+          y siempre podés volver atrás. Estos son todos, con lo que vas a aprender en
+          cada uno:
+        </p>
+
+        <ol class="modulos-detalle" role="list">
+          <!-- MÓDULO 1 -->
+          <li class="modulos-detalle__item">
+            <div class="modulos-detalle__cabecera">
+              <span class="modulos-detalle__numero" aria-hidden="true">1</span>
+              <div>
+                <h3 class="modulos-detalle__titulo">Módulo 1: Uso de Smartphones</h3>
+                <p class="modulos-detalle__meta">
+                  <span class="badge">30 min</span>
+                  <span class="badge">Principiante</span>
+                  <span class="badge badge--proximamente">Próximamente</span>
+                </p>
+              </div>
+            </div>
+            <div class="modulos-detalle__bloque">
+              <h4 class="modulos-detalle__subtitulo">Qué vas a aprender</h4>
+              <ul class="modulos-detalle__lista">
+                <li>Encender el celular, reconocer sus partes y entender los iconos de la pantalla.</li>
+                <li>Hacer y recibir llamadas, enviar mensajes y usar el teclado sin apuro.</li>
+                <li>Sacar fotos y videos, compartirlos y organizar la galería.</li>
+                <li>Conectarse a una red WiFi y saber cuándo una red es pública o insegura.</li>
+                <li>Configurar el bloqueo de pantalla, los permisos de las apps y el permiso de ubicación.</li>
+                <li>Instalar y borrar aplicaciones con seguridad.</li>
+              </ul>
+            </div>
+            <div class="modulos-detalle__bloque">
+              <h4 class="modulos-detalle__subtitulo">Por qué importa</h4>
+              <p class="modulos-detalle__texto">
+                El celular es la puerta de entrada a todo lo demás: si lo dominás,
+                el resto del aprendizaje se vuelve mucho más fácil.
+              </p>
+            </div>
+          </li>
+
+          <!-- MÓDULO 2 -->
+          <li class="modulos-detalle__item">
+            <div class="modulos-detalle__cabecera">
+              <span class="modulos-detalle__numero" aria-hidden="true">2</span>
+              <div>
+                <h3 class="modulos-detalle__titulo">Módulo 2: Redes e Internet</h3>
+                <p class="modulos-detalle__meta">
+                  <span class="badge">40 min</span>
+                  <span class="badge">Principiante</span>
+                  <span class="badge badge--proximamente">Próximamente</span>
+                </p>
+              </div>
+            </div>
+            <div class="modulos-detalle__bloque">
+              <h4 class="modulos-detalle__subtitulo">Qué vas a aprender</h4>
+              <ul class="modulos-detalle__lista">
+                <li>Qué es un navegador y cómo buscar información que sea verdadera.</li>
+                <li>Reconocer un sitio seguro: el candado, la dirección oficial y los errores típicos de un sitio falso.</li>
+                <li>Crear y cuidar una cuenta de correo electrónico, con contraseña fuerte.</li>
+                <li>Configurar la privacidad de las redes sociales: quién puede ver lo que publicás.</li>
+                <li>Entender la publicidad en línea y qué datos quedan de vos cuando navegás.</li>
+              </ul>
+            </div>
+            <div class="modulos-detalle__bloque">
+              <h4 class="modulos-detalle__subtitulo">Por qué importa</h4>
+              <p class="modulos-detalle__texto">
+                Navegar sin saber qué datos dejás es como dejar la puerta de casa
+                abierta: se puede hacer, pero conviene saberlo.
+              </p>
+            </div>
+          </li>
+
+          <!-- MÓDULO 3 -->
+          <li class="modulos-detalle__item">
+            <div class="modulos-detalle__cabecera">
+              <span class="modulos-detalle__numero" aria-hidden="true">3</span>
+              <div>
+                <h3 class="modulos-detalle__titulo">Módulo 3: Trámites en Línea</h3>
+                <p class="modulos-detalle__meta">
+                  <span class="badge">45 min</span>
+                  <span class="badge">Intermedio</span>
+                  <span class="badge badge--proximamente">Próximamente</span>
+                </p>
+              </div>
+            </div>
+            <div class="modulos-detalle__bloque">
+              <h4 class="modulos-detalle__subtitulo">Qué vas a aprender</h4>
+              <ul class="modulos-detalle__lista">
+                <li>Crear y cuidar tu cuenta gov / clave fiscal para trámites oficiales.</li>
+                <li>Descargar constancias, comprobantes y turnos desde casa.</li>
+                <li>Pagar impuestos, servicios y tasas en línea de forma segura.</li>
+                <li>Verificar que el sitio sea el oficial <strong>antes</strong> de ingresar cualquier dato.</li>
+                <li>Qué hacer si un trámite falla o si llegás a un sitio que no esperabas.</li>
+              </ul>
+            </div>
+            <div class="modulos-detalle__bloque">
+              <h4 class="modulos-detalle__subtitulo">Por qué importa</h4>
+              <p class="modulos-detalle__texto">
+                Hacer trámites desde casa significa menos filas, menos traslados y más
+                independencia: siempre que el sitio en el que estés sea el correcto.
+              </p>
+            </div>
+          </li>
+
+          <!-- MÓDULO 4 (ACTIVO) -->
+          <li class="modulos-detalle__item modulos-detalle__item--activo">
+            <div class="modulos-detalle__cabecera">
+              <span class="modulos-detalle__numero" aria-hidden="true">4</span>
+              <div>
+                <h3 class="modulos-detalle__titulo">Módulo 4: Fraudes Digitales (Phishing)</h3>
+                <p class="modulos-detalle__meta">
+                  <span class="badge">35 min</span>
+                  <span class="badge">Principiante</span>
+                  <span class="badge badge--disponible">Disponible ahora</span>
+                </p>
+              </div>
+            </div>
+            <div class="modulos-detalle__bloque">
+              <h4 class="modulos-detalle__subtitulo">Qué vas a aprender (5 pasos)</h4>
+              <ol class="modulos-detalle__lista modulos-detalle__lista--numerica">
+                <li>
+                  <strong>Qué es el phishing:</strong> la técnica que usan los estafadores
+                  para hacerte creer que estás hablando con alguien de confianza (tu banco,
+                  una empresa, una persona conocida) por correo, WhatsApp o llamada.
+                </li>
+                <li>
+                  <strong>Cómo reconocer un mensaje falso:</strong> urgencia artificial,
+                  errores y frases raras, direcciones web que no coinciden con las oficiales
+                  y pedidos de contraseñas, tarjetas o DNI.
+                </li>
+                <li>
+                  <strong>Qué hacer ante un mensaje sospechoso:</strong> no hacer clic, no
+                  descargar adjuntos, no responder con datos, eliminar el mensaje y consultar
+                  directamente a la empresa por el número oficial.
+                </li>
+                <li>
+                  <strong>Ejemplos reales:</strong> «tu cuenta fue bloqueada», «ganaste un
+                  premio», «tu envío está retenido, pagá el impuesto acá». Aprendés a
+                  desarmarlos uno por uno.
+                </li>
+                <li>
+                  <strong>Compromiso final:</strong> nunca compartir datos personales por
+                  mensaje y consultar ante la duda. Luego, un examen rápido de 3 preguntas
+                  para comprobar lo aprendido.
+                </li>
+              </ol>
+            </div>
+            <div class="modulos-detalle__bloque">
+              <h4 class="modulos-detalle__subtitulo">Por qué importa</h4>
+              <p class="modulos-detalle__texto">
+                Es el fraude más extendido y el que más dinero y datos personales le
+                cuesta a las personas. Detectarlo a tiempo protege a toda la familia.
+              </p>
+            </div>
+          </li>
+
+          <!-- MÓDULO 5 -->
+          <li class="modulos-detalle__item">
+            <div class="modulos-detalle__cabecera">
+              <span class="modulos-detalle__numero" aria-hidden="true">5</span>
+              <div>
+                <h3 class="modulos-detalle__titulo">Módulo 5: Comunicación Digital</h3>
+                <p class="modulos-detalle__meta">
+                  <span class="badge">25 min</span>
+                  <span class="badge">Principiante</span>
+                  <span class="badge badge--proximamente">Próximamente</span>
+                </p>
+              </div>
+            </div>
+            <div class="modulos-detalle__bloque">
+              <h4 class="modulos-detalle__subtitulo">Qué vas a aprender</h4>
+              <ul class="modulos-detalle__lista">
+                <li>Usar WhatsApp para hablar y mandar audios, fotos y videos a la familia.</li>
+                <li>Hacer y recibir videollamadas, incluso desde el celular.</li>
+                <li>Crear y administrar grupos familiares sin caer en cadenas ni rumores.</li>
+                <li>Detectar cuando alguien suplanta a un contacto conocido.</li>
+                <li>Qué información no conviene compartir nunca, ni con quién parece ser.</li>
+              </ul>
+            </div>
+            <div class="modulos-detalle__bloque">
+              <h4 class="modulos-detalle__subtitulo">Por qué importa</h4>
+              <p class="modulos-detalle__texto">
+                La tecnología también sirve para abrazar a la distancia: estar en contacto
+                con los tuyos es el mejor motivo para aprender a usarla.
+              </p>
+            </div>
+          </li>
+        </ol>
+      </section>
+
+      <!-- ---------- CÓMO FUNCIONA ---------- -->
+      <section class="panel" aria-labelledby="recorrido-titulo">
+        <div class="panel__encabezado">
+          <span class="panel__icono" aria-hidden="true">&#x1F9ED;</span>
+          <h2 id="recorrido-titulo" class="panel__titulo">Cómo funciona el aprendizaje</h2>
+        </div>
+        <p class="panel__texto">
+          El recorrido está pensado para que siempre sepas dónde estás y qué sigue:
+        </p>
+        <ol class="recorrido" role="list">
+          <li class="recorrido__paso">
+            <span class="recorrido__num" aria-hidden="true">1</span>
+            <h3 class="recorrido__titulo">Test de nivelación</h3>
+            <p class="recorrido__texto">
+              3 preguntas sencillas, sin respuestas buenas ni malas. Sirven para conocer
+              tu punto de partida y adaptar el contenido a tu nivel digital.
+            </p>
+          </li>
+          <li class="recorrido__paso">
+            <span class="recorrido__num" aria-hidden="true">2</span>
+            <h3 class="recorrido__titulo">Lección paso a paso</h3>
+            <p class="recorrido__texto">
+              Un paso por pantalla, con ejemplos concretos y un consejo final en cada uno.
+              Podés avanzar y retroceder tantas veces como quieras.
+            </p>
+          </li>
+          <li class="recorrido__paso">
+            <span class="recorrido__num" aria-hidden="true">3</span>
+            <h3 class="recorrido__titulo">Examen rápido</h3>
+            <p class="recorrido__texto">
+              3 preguntas al final de la lección para comprobar lo aprendido y reforzar
+              las ideas más importantes antes de seguir.
+            </p>
+          </li>
+          <li class="recorrido__paso">
+            <span class="recorrido__num" aria-hidden="true">4</span>
+            <h3 class="recorrido__titulo">Mi Progreso</h3>
+            <p class="recorrido__texto">
+              Barras de avance, nivel alcanzado y resultados guardados. Todo lo que vas
+              aprendiendo queda registrado para que veas cuánto avanzaste.
+            </p>
+          </li>
+          <li class="recorrido__paso">
+            <span class="recorrido__num" aria-hidden="true">5</span>
+            <h3 class="recorrido__titulo">Escudo de Seguridad</h3>
+            <p class="recorrido__texto">
+              Alertas de fraudes reales con su explicación y, sobre todo, con el paso a
+              paso de qué hacer ante cada una.
+            </p>
+          </li>
+        </ol>
+        <p class="panel__texto">
+          <strong>Tus datos están seguros:</strong> se guardan en la nube (Supabase),
+          las contraseñas se almacenan cifradas con bcrypt y nunca en texto plano. Si
+          no tenés internet, la aplicación funciona igualmente con una copia local
+          guardada en tu dispositivo.
+        </p>
+      </section>
+
+      <!-- ---------- IMPACTO ---------- -->
+      <section class="panel panel--impacto" aria-labelledby="impacto-titulo">
+        <div class="panel__encabezado">
+          <span class="panel__icono" aria-hidden="true">&#x1F331;</span>
+          <h2 id="impacto-titulo" class="panel__titulo">El impacto que queremos generar</h2>
+        </div>
+        <p class="panel__texto">
+          No medimos el éxito solo con código que funciona, sino con lo que cambia en
+          las personas. Este es el impacto que buscamos, de adentro hacia afuera:
+        </p>
+        <ul class="impacto" role="list">
+          <li class="impacto__item">
+            <h3 class="impacto__titulo">&#x1F475; En cada persona mayor</h3>
+            <p class="impacto__texto">
+              Autonomía para hacer sus propios trámites, autostima digital («yo puedo
+              con esto»), dinero y datos protegidos, y sobre todo menos miedo a
+              preguntar y a equivocarse.
+            </p>
+          </li>
+          <li class="impacto__item">
+            <h3 class="impacto__titulo">&#x1F46A; En las familias</h3>
+            <p class="impacto__texto">
+              Menos angustia y más conversación: la tecnología deja de ser un tema
+              tabú o de discusión y pasa a ser un puente entre generaciones, donde
+              todos aportan algo.
+            </p>
+          </li>
+          <li class="impacto__item">
+            <h3 class="impacto__titulo">&#x1F3E0; En la comunidad</h3>
+            <p class="impacto__texto">
+              Una cultura de prevención: personas que revisan un mensaje antes de hacer
+              clic, que avisan a sus vecinos, que ayudan en el club o en el centro de
+              retiro y que enseñan lo que aprendieron.
+            </p>
+          </li>
+          <li class="impacto__item">
+            <h3 class="impacto__titulo">&#x1F30D; En el mundo</h3>
+            <p class="impacto__texto">
+              Un modelo replicable: la prueba de que desde una escuela pública se puede
+              construir una solución real que reduzca la brecha digital y el fraude,
+              con diseño inclusivo y pensado para cualquier edad.
+            </p>
+          </li>
+        </ul>
+        <blockquote class="manifiesto">
+          «Ninguna persona mayor debería quedarse afuera del mundo digital por falta de
+          acompañamiento. Si la tecnología no se puede usar a los 70 años, el problema
+          no es la edad: es el diseño.»
+        </blockquote>
+      </section>
+
+      <!-- ---------- LLAMADA A LA ACCIÓN ---------- -->
+      <div class="cta-final">
+        <span class="cta-final__icono" aria-hidden="true">&#x1F44B;</span>
+        <h2 class="cta-final__titulo">¿Te animás a empezar?</h2>
+        <p class="cta-final__texto">
+          Creá tu cuenta, hacé el test de nivelación y comprobá en diez minutos que
+          podés aprender esto vos mismo. Es gratuito, es seguro y está pensado para vos.
+        </p>
+        <div class="cta-final__botones">
+          <button class="btn btn--primario btn--masivo" id="btn-registrarse-final" type="button">
+            Crear mi cuenta
+          </button>
+          <button class="btn btn--secundario btn--masivo" id="btn-ir-login-final" type="button">
+            Ya tengo cuenta, ingresar
+          </button>
+        </div>
       </div>
     </section>
 
@@ -431,6 +860,14 @@
        FOOTER
        ============================================ -->
   <footer class="footer" role="contentinfo">
+    <img
+      class="footer__logo"
+      src="../img/icono.svg"
+      alt=""
+      width="40"
+      height="40"
+      aria-hidden="true"
+    >
     <p class="footer__texto">&copy; 2026 TAMI - ET N&deg;20 "Carolina Muzilli". Todos los derechos reservados.</p>
   </footer>
 

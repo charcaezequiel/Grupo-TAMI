@@ -21,6 +21,7 @@ Capa de **Presentación** y **Lógica** del proyecto. Interfaz de usuario accesi
 - Atributos ARIA: `aria-live`, `aria-pressed`, `aria-required`, `aria-label`, `role`, `aria-describedby`, `aria-current`.
 - **Skip link** "Saltar al contenido principal" para usuarios de teclado (WCAG 2.4.1).
 - **Breadcrumbs** dinámicos con `<nav aria-label="Migas de pan">` y microdatos Schema.org.
+- **Marca del sitio**: favicon (`../img/icono.svg`), logo institucional (`../img/logo.svg`) en la pantalla de Inicio e icono de escudo en el header y el footer.
 - Navegación lineal sin `target="_blank"`.
 
 ### `styles.css` (Design System)
@@ -49,7 +50,7 @@ Capa de **Presentación** y **Lógica** del proyecto. Interfaz de usuario accesi
 
 | # | Pantalla | Descripción |
 |---|----------|-------------|
-| 1 | Inicio | Bienvenida con opciones de Registro y Login |
+| 1 | Inicio | Presentación detallada: propósito y pilares del proyecto, el problema que resuelve, detalle de las 5 lecciones, recorrido de aprendizaje, impacto buscado y CTA de registro/ingreso |
 | 2 | Registro | Formulario accesible con validación client-side |
 | 3 | Login | Inicio de sesión verificando credenciales |
 | 4 | Test | 3 preguntas de nivelación digital |
