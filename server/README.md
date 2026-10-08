@@ -5,6 +5,7 @@ Capa de **Datos** y servicios de la aplicación. Expone una **API REST** que el 
 ## Stack
 
 - **Node.js** + **Express** (servidor HTTP y enrutado).
+- **Supabase** (PostgreSQL gestionado en la nube, conexión por pooler con SSL).
 - **pg** (driver de PostgreSQL, consultas parametrizadas).
 - **bcrypt** (hashing irreversibles de contraseñas, costo 12).
 - **dotenv** (variables de entorno) y **cors** (permite que el frontend consuma la API).
@@ -13,16 +14,19 @@ Capa de **Datos** y servicios de la aplicación. Expone una **API REST** que el 
 
 ```text
 server/
-├── index.js         Punto de entrada: app Express y rutas montadas
-├── db.js            Pool de conexiones a PostgreSQL
-├── schema.sql       Esquema de 7 tablas + datos iniciales
+├── index.js           Punto de entrada: app Express y rutas montadas
+├── db.js              Pool de conexiones a Supabase (PostgreSQL) + verificación
+├── schema.sql         Esquema de 7 tablas + datos iniciales
+├── scripts/
+│   └── migrate.js     Aplica schema.sql contra Supabase (npm run db:migrate)
 ├── routes/
-│   ├── usuarios.js  Registro, login (bcrypt), listado y progreso
-│   ├── cursos.js    Listado de módulos/curso
-│   ├── alertas.js   Alertas de fraude
-│   └── progreso.js  Test, exámenes y progreso de módulos
-├── .env.example     Plantilla de configuración
-└── package.json     Dependencias y scripts
+│   ├── usuarios.js    Registro, login (bcrypt), listado y progreso
+│   ├── cursos.js      Listado de módulos/curso
+│   ├── alertas.js     Alertas de fraude
+│   └── progreso.js    Test, exámenes y progreso de módulos
+├── .env               Credenciales de Supabase (no se sube al repositorio)
+├── .env.example       Plantilla de configuración
+└── package.json       Dependencias y scripts
 ```
 
 ## Seguridad de Contraseñas (bcrypt)
@@ -53,7 +57,36 @@ const contrasenaValida = await bcrypt.compare(password, usuario.password_hash);
 - **SQL**: siempre consultas parametrizadas (`$1`, `$2`) para prevenir inyección SQL.
 - Los mensajes de error no revelan datos internos.
 
-## Base de Datos
+## Base de Datos (Supabase)
+
+La base corre en **Supabase** (PostgreSQL gestionado). La configuración vive en
+`.env` y **no se sube al repositorio** (`.env` está en `.gitignore`):
+
+```env
+DB_HOST=aws-0-us-east-1.pooler.supabase.com
+DB_PORT=5432
+DB_USER=postgres.wpsgmnmrvmhywnxrytyt
+DB_PASSWORD=<password de Supabase>
+DB_NAME=postgres
+DB_SSL=true
+```
+
+También se puede usar la cadena completa en `DATABASE_URL`, que tiene prioridad:
+
+```env
+DATABASE_URL=postgresql://postgres.XXXXX:<password>@aws-0-us-east-1.pooler.supabase.com:5432/postgres
+```
+
+> Supabase exige SSL. `db.js` lo habilita por defecto con
+> `ssl: { rejectUnauthorized: false }` porque el certificado del pooler no está
+> en el almacén de confianzas de Node.
+
+### Scripts de base de datos
+
+| Comando | Descripción |
+|---------|-------------|
+| `npm run db:check` | Verifica la conexión con Supabase |
+| `npm run db:migrate` | Crea las tablas y carga los datos iniciales (idempotente) |
 
 | Tabla | Descripción |
 |-------|-------------|
@@ -85,34 +118,31 @@ const contrasenaValida = await bcrypt.compare(password, usuario.password_hash);
 
 ## Puesta en Marcha
 
-1. **Instalar Node.js** (https://nodejs.org) y **PostgreSQL** (https://www.postgresql.org).
+1. **Instalar Node.js** (https://nodejs.org). No hace falta instalar PostgreSQL:
+   la base vive en **Supabase**.
 
-2. Crear la base de datos:
-
-   ```bash
-   createdb -U postgres tami_db
-   ```
-
-3. Ejecutar el esquema:
-
-   ```bash
-   psql -U postgres -d tami_db -f schema.sql
-   ```
-
-4. Configurar credenciales:
+2. Configurar credenciales de Supabase:
 
    ```bash
    cp .env.example .env
-   # Editar .env con usuario/contraseña de PostgreSQL
+   # Editar .env con el host, usuario y password de Supabase
    ```
 
-5. Instalar dependencias y levantar el servidor:
+3. Verificar la conexión y crear las tablas:
+
+   ```bash
+   npm run db:check
+   npm run db:migrate
+   ```
+
+4. Instalar dependencias y levantar el servidor:
 
    ```bash
    npm install
    npm start
    ```
 
-   La API queda en `http://localhost:3000`.
+   La API queda en `http://localhost:3000` y al arrancar imprime
+   `[DB] Conectado a Supabase → ...` si la conexión fue exitosa.
 
 > El frontend (`code/main.js`) intenta consumir la API y, si no está disponible, usa la caché de LocalStorage como fallback offline.

@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 
+const { verificarConexion } = require("./db");
 const usuariosRoutes = require("./routes/usuarios");
 const cursosRoutes = require("./routes/cursos");
 const alertasRoutes = require("./routes/alertas");
@@ -28,4 +29,5 @@ app.use((req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Servidor TAMI escuchando en http://localhost:${PORT}`);
+  verificarConexion();
 });
