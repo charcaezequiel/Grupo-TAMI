@@ -55,7 +55,7 @@ El Módulo 4 es una lección de **5 pasos** con navegación lineal y consejos en
 - **Frontend**: HTML5, CSS3 y JavaScript nativo (sin framework).
 - **Backend**: Node.js + Express + PostgreSQL (**Supabase**).
 - **Arquitectura**: Cliente-Servidor en 3 capas (Presentación, Lógica y Datos).
-- **Seguridad**: contraseñas con hashing irreversible **bcrypt** y consultas SQL parametrizadas.
+- **Seguridad**: contraseñas con hashing irreversible **bcrypt**, consultas SQL parametrizadas, RLS en la base, auditoría de accesos, bloqueo por fuerza bruta, cabeceras HTTP de protección y CORS restringido.
 - **Persistencia**: Supabase/PostgreSQL (principal) y LocalStorage (caché/fallback sin conexión).
 - **Accesibilidad**: WCAG 2.1 AA, ARIA roles, skip link, breadcrumbs, contraste alto, botones mínimos 52px.
 - **Design System**: "Protección Proactiva" (paleta 60-30-10: `#EBF8FA` / `#0A4B5C` / `#007A87`).
@@ -72,8 +72,10 @@ El Módulo 4 es una lección de **5 pasos** con navegación lineal y consejos en
 
 ### 2. Pantalla de Registro y Login
 - Formulario con campos: Nombre, Correo Electrónico, Contraseña.
-- Validación de nombre no vacío, formato de email válido y contraseña mínima de 6 caracteres.
+- Validación de nombre no vacío, formato de email válido y contraseña mínima de 6 caracteres (máximo 72).
 - Hashing de contraseña con **bcrypt** (costo 12) en el servidor, con consultas SQL parametrizadas.
+- Protección contra fuerza bruta: bloqueo temporal tras 5 intentos fallidos por correo (15 minutos).
+- Mensajes de error genéricos en el login (no revelan si el correo existe) y auditoría de cada intento.
 - Persistencia en Supabase/PostgreSQL (principal) y LocalStorage (fallback offline).
 
 ### 3. Test de Nivelación Obligatorio
@@ -118,13 +120,18 @@ Grupo-TAMI/
 │   ├── logo.svg            Logo institucional (encabezado de la pantalla Inicio)
 │   └── icono.svg           Icono/escudo (favicon, header y footer)
 ├── server/                 Backend Node.js + Express + PostgreSQL (Supabase)
-│   ├── index.js            Servidor y rutas API
+│   ├── index.js            Servidor, cabeceras de seguridad y rutas API
 │   ├── db.js               Conexión a Supabase (pg Pool + SSL)
-│   ├── schema.sql          Esquema de 7 tablas + datos iniciales
+│   ├── schema.sql          Esquema (solo tablas/índices/constraints, sin datos)
 │   ├── scripts/
-│   │   └── migrate.js      npm run db:migrate → aplica schema.sql en Supabase
+│   │   ├── migrate.js      npm run db:migrate → crea el esquema (no carga datos)
+│   │   ├── seed.js         npm run db:seed → carga cursos/alertas solo si están vacías
+│   │   ├── seguridad.js    npm run db:seguridad → RLS, auditoría, anti fuerza bruta
+│   │   └── estado.js       npm run db:estado → informe de estado (solo lectura)
+│   ├── middlewares/
+│   │   └── seguridad.js    Cabeceras HTTP, límite por IP y CORS restringido
 │   ├── routes/
-│   │   ├── usuarios.js     Registro/login con bcrypt + progreso
+│   │   ├── usuarios.js     Registro/login con bcrypt + anti fuerza bruta + auditoría
 │   │   ├── cursos.js       Listado de módulos/curso
 │   │   ├── alertas.js      Alertas de fraude
 │   │   └── progreso.js     Test, exámenes y progreso de módulos
@@ -234,13 +241,19 @@ DB_SSL=true
 PORT=3000
 ```
 
-Verificar la conexión y crear las tablas (idempotente):
+Verificar la conexión, crear el esquema y cargar los datos iniciales:
 
 ```bash
 cd server
-npm run db:check     # prueba la conexión con Supabase
-npm run db:migrate   # crea las tablas y carga los datos iniciales
+npm run db:check      # prueba la conexión con Supabase
+npm run db:migrate    # crea el esquema (tablas, índices, constraints) sin datos
+npm run db:seed       # carga cursos y alertas SOLO si las tablas están vacías
+npm run db:seguridad  # endurecimiento: RLS, auditoría, anti fuerza bruta
+npm run db:estado     # informe de estado (solo lectura)
 ```
+
+> ⚠️ `db:migrate` **ya no carga contenido**: solo crea el esquema. Los datos de
+> catálogo se cargan con `db:seed`, que **no duplica** nada si ya existen.
 
 ### 3. Instalar dependencias y arrancar
 
@@ -262,7 +275,10 @@ El servidor queda disponible en `http://localhost:3000` y al arrancar imprime
 | `npm start` | Levanta la API en `http://localhost:3000` |
 | `npm run dev` | Lo mismo, con auto-reload al guardar archivos |
 | `npm run db:check` | Verifica la conexión con Supabase |
-| `npm run db:migrate` | Crea las tablas y carga los datos iniciales (idempotente) |
+| `npm run db:migrate` | Crea el esquema (solo DDL). **No carga contenido** (idempotente) |
+| `npm run db:seed` | Carga cursos y alertas solo si las tablas están vacías |
+| `npm run db:seguridad` | Endurece la base: RLS, políticas, auditoría, anti fuerza bruta |
+| `npm run db:estado` | Informe de estado de la base (rol, tablas, duplicados, RLS) |
 
 ### 4. Abrir el frontend
 

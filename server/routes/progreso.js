@@ -3,6 +3,26 @@ const pool = require("../db");
 
 const router = express.Router();
 
+// Niveles digitales aceptados en la base (evita enviar valores arbitrarios)
+const NIVELES_VALIDOS = ["principiante", "intermedio", "avanzado", "protegido"];
+
+// ============================================
+// VALIDACIONES
+// ============================================
+
+function esEnteroPositivo(valor) {
+  return /^\d+$/.test(String(valor)) && Number(valor) > 0;
+}
+
+function esEnteroNoNegativo(valor) {
+  return Number.isInteger(Number(valor)) && Number(valor) >= 0 && String(valor).trim() !== "";
+}
+
+// Responde 404 cuando el usuario referenciado no existe (error de clave foranea)
+function esUsuarioInexistente(error) {
+  return error.code === "23503";
+}
+
 // ============================================
 // POST /api/progreso/test
 // Guarda el resultado del test de nivelación
@@ -14,6 +34,18 @@ router.post("/test", async (req, res) => {
   if (!usuarioId || !respuestas || !nivel || puntaje === undefined || !totalPreguntas) {
     return res.status(400).json({ error: "Faltan campos obligatorios: usuarioId, respuestas, nivel, puntaje, totalPreguntas" });
   }
+  if (!esEnteroPositivo(usuarioId)) {
+    return res.status(400).json({ error: "usuarioId debe ser un numero entero positivo" });
+  }
+  if (!Array.isArray(respuestas)) {
+    return res.status(400).json({ error: "respuestas debe ser una lista" });
+  }
+  if (typeof nivel !== "string" || !NIVELES_VALIDOS.includes(nivel.trim().toLowerCase())) {
+    return res.status(400).json({ error: "El nivel enviado no es valido" });
+  }
+  if (!esEnteroNoNegativo(puntaje) || !esEnteroPositivo(totalPreguntas)) {
+    return res.status(400).json({ error: "puntaje y totalPreguntas deben ser numeros validos" });
+  }
 
   try {
     // Guarda el test
@@ -21,17 +53,20 @@ router.post("/test", async (req, res) => {
       `INSERT INTO test_nivelacion (usuario_id, respuestas, nivel, puntaje, total_preguntas)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING id, nivel, puntaje, total_preguntas, creado_en`,
-      [usuarioId, JSON.stringify(respuestas), nivel, puntaje, totalPreguntas]
+      [usuarioId, JSON.stringify(respuestas), nivel.trim(), Number(puntaje), Number(totalPreguntas)]
     );
 
     // Actualiza el nivel del usuario
     await pool.query(
       "UPDATE usuarios SET nivel_digital = $1 WHERE id = $2",
-      [nivel.toLowerCase(), usuarioId]
+      [nivel.trim().toLowerCase(), usuarioId]
     );
 
     res.status(201).json(resultado.rows[0]);
   } catch (error) {
+    if (esUsuarioInexistente(error)) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
     console.error("Error al guardar test:", error);
     res.status(500).json({ error: "Error interno del servidor" });
   }
@@ -48,17 +83,32 @@ router.post("/examen", async (req, res) => {
   if (!usuarioId || !respuestas || puntaje === undefined || !totalPreguntas) {
     return res.status(400).json({ error: "Faltan campos obligatorios: usuarioId, respuestas, puntaje, totalPreguntas" });
   }
+  if (!esEnteroPositivo(usuarioId)) {
+    return res.status(400).json({ error: "usuarioId debe ser un numero entero positivo" });
+  }
+  if (moduloId !== undefined && moduloId !== null && !esEnteroPositivo(moduloId)) {
+    return res.status(400).json({ error: "moduloId debe ser un numero entero positivo" });
+  }
+  if (!Array.isArray(respuestas)) {
+    return res.status(400).json({ error: "respuestas debe ser una lista" });
+  }
+  if (!esEnteroNoNegativo(puntaje) || !esEnteroPositivo(totalPreguntas)) {
+    return res.status(400).json({ error: "puntaje y totalPreguntas deben ser numeros validos" });
+  }
 
   try {
     const resultado = await pool.query(
       `INSERT INTO examenes (usuario_id, modulo_id, respuestas, puntaje, total_preguntas)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING id, puntaje, total_preguntas, modulo_id, creado_en`,
-      [usuarioId, moduloId || null, JSON.stringify(respuestas), puntaje, totalPreguntas]
+      [usuarioId, moduloId || null, JSON.stringify(respuestas), Number(puntaje), Number(totalPreguntas)]
     );
 
     res.status(201).json(resultado.rows[0]);
   } catch (error) {
+    if (esUsuarioInexistente(error)) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
     console.error("Error al guardar examen:", error);
     res.status(500).json({ error: "Error interno del servidor" });
   }
@@ -72,8 +122,14 @@ router.post("/examen", async (req, res) => {
 router.post("/modulo", async (req, res) => {
   const { usuarioId, moduloId, pasoActual, completado } = req.body;
 
-  if (!usuarioId || moduloId === undefined) {
+  if (!usuarioId || !moduloId) {
     return res.status(400).json({ error: "Faltan campos obligatorios: usuarioId, moduloId" });
+  }
+  if (!esEnteroPositivo(usuarioId) || !esEnteroPositivo(moduloId)) {
+    return res.status(400).json({ error: "usuarioId y moduloId deben ser numeros enteros positivos" });
+  }
+  if (pasoActual !== undefined && !esEnteroNoNegativo(pasoActual)) {
+    return res.status(400).json({ error: "pasoActual debe ser un numero entero no negativo" });
   }
 
   try {
@@ -86,11 +142,14 @@ router.post("/modulo", async (req, res) => {
          completado = EXCLUDED.completado,
          actualizado_en = NOW()
        RETURNING id, modulo_id, paso_actual, completado, actualizado_en`,
-      [usuarioId, moduloId, pasoActual || 0, completado || false]
+      [usuarioId, moduloId, Number(pasoActual) || 0, Boolean(completado)]
     );
 
     res.status(201).json(resultado.rows[0]);
   } catch (error) {
+    if (esUsuarioInexistente(error)) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
     console.error("Error al guardar progreso del módulo:", error);
     res.status(500).json({ error: "Error interno del servidor" });
   }
@@ -103,6 +162,10 @@ router.post("/modulo", async (req, res) => {
 
 router.get("/:usuarioId", async (req, res) => {
   const usuarioId = req.params.usuarioId;
+
+  if (!esEnteroPositivo(usuarioId)) {
+    return res.status(400).json({ error: "El id debe ser un numero entero positivo" });
+  }
 
   try {
     // Test de nivelación más reciente
