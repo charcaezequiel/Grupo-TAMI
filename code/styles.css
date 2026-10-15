@@ -700,6 +700,174 @@ body {
 }
 
 /* ============================================
+   SEÑALIZACIÓN DE FORMULARIOS (guías para completar)
+   ============================================ */
+/* --- Guía de pasos --- */
+.guia {
+  background-color: var(--color-fondo);
+  border: 2px dashed var(--color-acento);
+  border-radius: var(--radio-borde-grande);
+  padding: var(--espaciado);
+  margin-bottom: var(--espaciado-lg);
+}
+
+.guia__titulo {
+  margin: 0 0 var(--espaciado);
+  font-size: var(--tam-fuente-base);
+  font-weight: 700;
+  color: var(--color-primario);
+}
+
+.guia__pasos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--espaciado-sm);
+}
+
+.guia__paso {
+  display: flex;
+  align-items: center;
+  gap: var(--espaciado);
+  min-height: 52px;
+  padding: 8px var(--espaciado);
+  background-color: var(--color-blanco);
+  border: 2px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+  font-size: 1rem;
+  color: var(--color-texto);
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.guia__num {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background-color: var(--color-bloqueado);
+  color: var(--color-blanco);
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+/* Señal de "estás en este paso" */
+.guia__paso--activo {
+  border-color: var(--color-acento);
+  background-color: #E8F6F8;
+}
+
+.guia__paso--activo .guia__num {
+  background-color: var(--color-acento);
+}
+
+.guia__paso--activo::after {
+  content: "Estás aquí ▶";
+  margin-left: auto;
+  color: var(--color-acento);
+  font-weight: 700;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+/* Señal de "paso completado" */
+.guia__paso--ok {
+  border-color: var(--color-exito);
+  background-color: rgba(46, 125, 50, 0.08);
+}
+
+.guia__paso--ok .guia__num {
+  background-color: var(--color-exito);
+}
+
+.guia__paso--ok::after {
+  content: "✔ Listo";
+  margin-left: auto;
+  color: var(--color-exito);
+  font-weight: 700;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+/* Señal de "hay que corregir este paso" */
+.guia__paso--error {
+  border-color: var(--color-error);
+  background-color: rgba(176, 0, 32, 0.06);
+}
+
+.guia__paso--error .guia__num {
+  background-color: var(--color-error);
+}
+
+.guia__paso--error::after {
+  content: "Revisá este paso";
+  margin-left: auto;
+  color: var(--color-error);
+  font-weight: 700;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+/* --- Pistas y numeración dentro de cada campo --- */
+.campo__paso {
+  display: inline-block;
+  margin-right: var(--espaciado-sm);
+  padding: 3px 10px;
+  border-radius: 999px;
+  background-color: var(--color-primario);
+  color: var(--color-blanco);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  vertical-align: middle;
+}
+
+.campo__pista {
+  margin: var(--espaciado-xs) 0 var(--espaciado-sm);
+  font-size: 0.98rem;
+  line-height: 1.5;
+  color: var(--color-texto-claro);
+}
+
+.campo:focus-within .campo__etiqueta {
+  color: var(--color-acento);
+}
+
+.campo__nota {
+  margin: var(--espaciado) 0 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--color-texto-claro);
+}
+
+.campo--ok .campo__input {
+  border-color: var(--color-exito);
+  background-color: rgba(46, 125, 50, 0.05);
+}
+
+.campo--ok .campo__etiqueta::after {
+  content: " ✔ Listo";
+  color: var(--color-exito);
+  font-weight: 700;
+}
+
+.btn--alternativa {
+  margin-top: var(--espaciado-sm);
+}
+
+/* El paso de la acción final se distingue del resto */
+.guia__paso--final {
+  border-style: dashed;
+  border-color: var(--color-acento);
+  background-color: rgba(0, 122, 135, 0.08);
+}
+
+/* ============================================
    TEST DE NIVELACIÓN / EXAMEN
    ============================================ */
 .test {
@@ -1309,5 +1477,15 @@ body {
 
   .modulos-detalle__titulo {
     font-size: 1.1rem;
+  }
+
+  /* En pantallas chicas, la señal de estado pasa a su propia línea */
+  .guia__paso {
+    flex-wrap: wrap;
+  }
+
+  .guia__paso::after {
+    flex-basis: 100%;
+    text-align: right;
   }
 }

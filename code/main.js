@@ -311,6 +311,111 @@ function ocultarTodosLosErrores() {
 }
 
 // ============================================
+// SEÑALIZACIÓN VISUAL DE FORMULARIOS
+// Marca en la guía de pasos dónde está el usuario,
+// qué campos ya completó y cuáles faltan corregir.
+// ============================================
+
+const validadoresPorCampo = {
+  "campo-nombre": validarNombre,
+  "campo-email-registro": validarEmail,
+  "campo-email-login": validarEmail,
+  "campo-password-registro": validarPassword,
+  "campo-password-login": validarPassword
+};
+
+function configurarSenalizacion(idFormulario, idGuia) {
+  const formulario = document.getElementById(idFormulario);
+  const guia = document.getElementById(idGuia);
+  if (!formulario || !guia) return null;
+
+  const pasos = Array.prototype.slice.call(
+    guia.querySelectorAll(".guia__paso[data-campo]")
+  );
+  const pasoFinal = guia.querySelector(".guia__paso[data-final]");
+  const todosLosPasos = pasoFinal ? pasos.concat([pasoFinal]) : pasos.slice();
+
+  function pasoDeCampo(idCampo) {
+    return pasos.find(function (paso) {
+      return paso.dataset.campo === idCampo;
+    });
+  }
+
+  function estadoDeCampo(campo) {
+    const validador = validadoresPorCampo[campo.id];
+    if (!validador) return "neutro";
+    if (campo.value.length === 0) return "neutro";
+    return validador(campo.value) ? "error" : "ok";
+  }
+
+  function actualizarPasoFinal() {
+    if (!pasoFinal) return;
+    const todosListos = pasos.every(function (paso) {
+      return paso.classList.contains("guia__paso--ok");
+    });
+    pasoFinal.classList.toggle("guia__paso--ok", todosListos);
+  }
+
+  function evaluarCampo(campo) {
+    const estado = estadoDeCampo(campo);
+    const paso = pasoDeCampo(campo.id);
+    const contenedor = campo.closest(".campo");
+
+    if (paso) {
+      paso.classList.toggle("guia__paso--ok", estado === "ok");
+      paso.classList.toggle("guia__paso--error", estado === "error");
+    }
+    if (contenedor) {
+      contenedor.classList.toggle("campo--ok", estado === "ok");
+    }
+    actualizarPasoFinal();
+  }
+
+  function evaluarTodos() {
+    formulario.querySelectorAll("input").forEach(function (campo) {
+      evaluarCampo(campo);
+    });
+  }
+
+  function limpiarActivos() {
+    todosLosPasos.forEach(function (paso) {
+      paso.classList.remove("guia__paso--activo");
+    });
+  }
+
+  // Resalta en la guía el paso del campo con el que se está interactuando.
+  function marcarActivo(idCampo) {
+    limpiarActivos();
+    const paso = pasoDeCampo(idCampo);
+    if (paso) paso.classList.add("guia__paso--activo");
+  }
+
+  formulario.addEventListener("focusin", function (evento) {
+    marcarActivo(evento.target.id);
+  });
+
+  formulario.addEventListener("pointerdown", function (evento) {
+    marcarActivo(evento.target.id);
+  });
+
+  formulario.addEventListener("click", function (evento) {
+    if (evento.target.tagName === "INPUT") marcarActivo(evento.target.id);
+  });
+
+  formulario.addEventListener("focusout", function (evento) {
+    if (evento.target.tagName === "INPUT") evaluarCampo(evento.target);
+  });
+
+  formulario.addEventListener("input", function (evento) {
+    if (evento.target.tagName === "INPUT") evaluarCampo(evento.target);
+  });
+
+  formulario.addEventListener("submit", evaluarTodos);
+
+  return { actualizar: evaluarTodos };
+}
+
+// ============================================
 // GESTIÓN DE SESIÓN
 // ============================================
 
@@ -1031,23 +1136,29 @@ function mostrarDashboard(sesion) {
 // ============================================
 
 function inicializar() {
+  // --- Señalización de los formularios (guías de pasos) ---
+  const senalizacionRegistro = configurarSenalizacion("formulario-registro", "guia-registro");
+  const senalizacionLogin = configurarSenalizacion("formulario-login", "guia-login");
+
   // --- Botones de bienvenida (hero y CTA final) ---
   function irARegistro() {
     ocultarTodosLosErrores();
     mostrarPantalla("pantalla-registro");
+    if (senalizacionRegistro) senalizacionRegistro.actualizar();
   }
 
   function irALogin() {
     ocultarTodosLosErrores();
     mostrarPantalla("pantalla-login");
+    if (senalizacionLogin) senalizacionLogin.actualizar();
   }
 
-  ["btn-registrarse", "btn-registrarse-final"].forEach(function (id) {
+  ["btn-registrarse", "btn-registrarse-final", "btn-registrarse-desde-login"].forEach(function (id) {
     const boton = document.getElementById(id);
     if (boton) boton.addEventListener("click", irARegistro);
   });
 
-  ["btn-ir-login", "btn-ir-login-final"].forEach(function (id) {
+  ["btn-ir-login", "btn-ir-login-final", "btn-ir-login-desde-registro"].forEach(function (id) {
     const boton = document.getElementById(id);
     if (boton) boton.addEventListener("click", irALogin);
   });

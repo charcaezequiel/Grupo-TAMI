@@ -521,19 +521,48 @@
           Crear mi cuenta
         </h2>
         <p class="contenedor-formulario__subtitulo">
-          Tus datos quedan guardados solo en este dispositivo. Estas en un entorno seguro.
+          Tus datos quedan guardados solo en este dispositivo. Estás en un entorno seguro.
         </p>
+
+        <!-- Señalización paso a paso para completar el registro -->
+        <div class="guia" id="guia-registro" role="group" aria-labelledby="guia-registro-titulo">
+          <p class="guia__titulo" id="guia-registro-titulo">
+            <span aria-hidden="true">📋</span> Cómo crear tu cuenta: 4 pasos sencillos
+          </p>
+          <ol class="guia__pasos">
+            <li class="guia__paso" data-campo="campo-nombre">
+              <span class="guia__num" aria-hidden="true">1</span>
+              <span class="guia__texto">Escribí tu <strong>nombre y apellido</strong>.</span>
+            </li>
+            <li class="guia__paso" data-campo="campo-email-registro">
+              <span class="guia__num" aria-hidden="true">2</span>
+              <span class="guia__texto">Escribí tu <strong>correo electrónico</strong>.</span>
+            </li>
+            <li class="guia__paso" data-campo="campo-password-registro">
+              <span class="guia__num" aria-hidden="true">3</span>
+              <span class="guia__texto">Creá una <strong>contraseña</strong> de 6 caracteres o más.</span>
+            </li>
+            <li class="guia__paso guia__paso--final" data-final>
+              <span class="guia__num" aria-hidden="true">4</span>
+              <span class="guia__texto">Tocá el botón <strong>Registrar mi cuenta</strong>.</span>
+            </li>
+          </ol>
+        </div>
+
         <form id="formulario-registro" novalidate aria-describedby="registro-ayuda">
           <p id="registro-ayuda" class="campo__ayuda-sr visually-hidden">
-            Todos los campos son obligatorios. La contrasena debe tener al menos 6 caracteres.
+            Todos los campos son obligatorios. La contraseña debe tener al menos 6 caracteres.
           </p>
           <div class="campo">
-            <label for="campo-nombre" class="campo__etiqueta">Nombre completo</label>
+            <label for="campo-nombre" class="campo__etiqueta">
+              <span class="campo__paso">Paso 1</span> Nombre completo
+            </label>
+            <p class="campo__pista"><span aria-hidden="true">👉</span> Escribí tu nombre y apellido, como te decís en el día a día.</p>
             <input
               type="text"
               id="campo-nombre"
               class="campo__input"
-              placeholder="Ej: Maria Lopez"
+              placeholder="Ej: María López"
               autocomplete="name"
               required
               aria-required="true"
@@ -542,7 +571,10 @@
             <span id="error-nombre" class="campo__error" role="alert" hidden></span>
           </div>
           <div class="campo">
-            <label for="campo-email-registro" class="campo__etiqueta">Correo electronico</label>
+            <label for="campo-email-registro" class="campo__etiqueta">
+              <span class="campo__paso">Paso 2</span> Correo electrónico
+            </label>
+            <p class="campo__pista"><span aria-hidden="true">👉</span> Escribí tu correo usando el símbolo <strong>@</strong> (arroba).</p>
             <input
               type="email"
               id="campo-email-registro"
@@ -556,12 +588,15 @@
             <span id="error-email-registro" class="campo__error" role="alert" hidden></span>
           </div>
           <div class="campo">
-            <label for="campo-password-registro" class="campo__etiqueta">Contrasena</label>
+            <label for="campo-password-registro" class="campo__etiqueta">
+              <span class="campo__paso">Paso 3</span> Contraseña
+            </label>
+            <p class="campo__pista"><span aria-hidden="true">👉</span> Inventá una clave de 6 caracteres o más, sin espacios. La vas a usar para entrar después.</p>
             <input
               type="password"
               id="campo-password-registro"
               class="campo__input"
-              placeholder="Minimo 6 caracteres"
+              placeholder="Mínimo 6 caracteres"
               autocomplete="new-password"
               required
               aria-required="true"
@@ -571,10 +606,16 @@
             <span id="error-password-registro" class="campo__error" role="alert" hidden></span>
           </div>
           <button type="submit" class="btn btn--primario btn--masivo">
-            Registrar mi cuenta
+            <span aria-hidden="true">✅</span> Paso 4: Registrar mi cuenta
+          </button>
+          <p class="campo__nota">
+            <span aria-hidden="true">🔒</span> Al tocar el botón, tu cuenta queda creada al instante y tus datos se guardan solo en este dispositivo.
+          </p>
+          <button type="button" class="btn btn--secundario btn--alternativa" id="btn-ir-login-desde-registro">
+            ¿Ya tenés cuenta? Ingresar con la mía
           </button>
           <button type="button" class="btn btn--fantasma btn--volver" id="btn-volver-registro">
-            &#x2190; Volver
+            &#x2190; Volver al inicio
           </button>
         </form>
       </div>
@@ -594,11 +635,36 @@
           Ingresar a mi cuenta
         </h2>
         <p class="contenedor-formulario__subtitulo">
-          Ingresa con el correo y la contrasena que usaste al registrarte.
+          Ingresa con el correo y la contraseña que usaste al registrarte.
         </p>
+
+        <!-- Señalización paso a paso para iniciar sesión -->
+        <div class="guia" id="guia-login" role="group" aria-labelledby="guia-login-titulo">
+          <p class="guia__titulo" id="guia-login-titulo">
+            <span aria-hidden="true">📋</span> Cómo ingresar: 3 pasos sencillos
+          </p>
+          <ol class="guia__pasos">
+            <li class="guia__paso" data-campo="campo-email-login">
+              <span class="guia__num" aria-hidden="true">1</span>
+              <span class="guia__texto">Escribí tu <strong>correo electrónico</strong>.</span>
+            </li>
+            <li class="guia__paso" data-campo="campo-password-login">
+              <span class="guia__num" aria-hidden="true">2</span>
+              <span class="guia__texto">Escribí tu <strong>contraseña</strong>.</span>
+            </li>
+            <li class="guia__paso guia__paso--final" data-final>
+              <span class="guia__num" aria-hidden="true">3</span>
+              <span class="guia__texto">Tocá el botón <strong>Ingresar</strong>.</span>
+            </li>
+          </ol>
+        </div>
+
         <form id="formulario-login" novalidate>
           <div class="campo">
-            <label for="campo-email-login" class="campo__etiqueta">Correo electronico</label>
+            <label for="campo-email-login" class="campo__etiqueta">
+              <span class="campo__paso">Paso 1</span> Correo electrónico
+            </label>
+            <p class="campo__pista"><span aria-hidden="true">👉</span> Escribí el mismo correo con el que te registraste.</p>
             <input
               type="email"
               id="campo-email-login"
@@ -612,12 +678,15 @@
             <span id="error-email-login" class="campo__error" role="alert" hidden></span>
           </div>
           <div class="campo">
-            <label for="campo-password-login" class="campo__etiqueta">Contrasena</label>
+            <label for="campo-password-login" class="campo__etiqueta">
+              <span class="campo__paso">Paso 2</span> Contraseña
+            </label>
+            <p class="campo__pista"><span aria-hidden="true">👉</span> Escribí la misma contraseña que creaste al registrarte.</p>
             <input
               type="password"
               id="campo-password-login"
               class="campo__input"
-              placeholder="Tu contrasena"
+              placeholder="Tu contraseña"
               autocomplete="current-password"
               required
               aria-required="true"
@@ -626,10 +695,16 @@
             <span id="error-password-login" class="campo__error" role="alert" hidden></span>
           </div>
           <button type="submit" class="btn btn--primario btn--masivo">
-            Ingresar
+            <span aria-hidden="true">🔓</span> Paso 3: Ingresar
+          </button>
+          <p class="campo__nota">
+            <span aria-hidden="true">🔒</span> Al tocar el botón entrás a tu cuenta. Tus datos quedan solo en este dispositivo.
+          </p>
+          <button type="button" class="btn btn--secundario btn--alternativa" id="btn-registrarse-desde-login">
+            ¿No tenés cuenta? Crear mi cuenta
           </button>
           <button type="button" class="btn btn--fantasma btn--volver" id="btn-volver-login">
-            &#x2190; Volver
+            &#x2190; Volver al inicio
           </button>
         </form>
       </div>
