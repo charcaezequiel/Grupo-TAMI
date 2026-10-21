@@ -36,7 +36,7 @@ app.use(encabezadosSeguridad);
 app.use(
   cors({
     origin: origenPermitido,
-    methods: ["GET", "POST", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "OPTIONS"],
     allowedHeaders: ["Content-Type"]
   })
 );

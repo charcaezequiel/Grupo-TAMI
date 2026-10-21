@@ -6,7 +6,7 @@ const router = express.Router();
 router.get("/", async (req, res) => {
   try {
     const resultado = await pool.query(
-      "SELECT id, titulo, descripcion, nivel, duracion_min, activo FROM cursos WHERE activo = TRUE ORDER BY id"
+      "SELECT id, titulo, descripcion, nivel, duracion_min, tema, activo FROM cursos WHERE activo = TRUE ORDER BY id"
     );
     res.json(resultado.rows);
   } catch (error) {
@@ -18,7 +18,7 @@ router.get("/", async (req, res) => {
 router.get("/:id", async (req, res) => {
   try {
     const resultado = await pool.query(
-      "SELECT id, titulo, descripcion, nivel, duracion_min, activo FROM cursos WHERE id = $1",
+      "SELECT id, titulo, descripcion, nivel, duracion_min, tema, activo FROM cursos WHERE id = $1",
       [req.params.id]
     );
     if (resultado.rows.length === 0) {

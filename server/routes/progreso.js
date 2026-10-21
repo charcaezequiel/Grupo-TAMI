@@ -6,6 +6,9 @@ const router = express.Router();
 // Niveles digitales aceptados en la base (evita enviar valores arbitrarios)
 const NIVELES_VALIDOS = ["principiante", "intermedio", "avanzado", "protegido"];
 
+// Niveles admitidos en los mini trabajos practicos
+const NIVELES_MINI_TRABAJO = ["principiante", "intermedio", "avanzado"];
+
 // ============================================
 // VALIDACIONES
 // ============================================
@@ -21,6 +24,24 @@ function esEnteroNoNegativo(valor) {
 // Responde 404 cuando el usuario referenciado no existe (error de clave foranea)
 function esUsuarioInexistente(error) {
   return error.code === "23503";
+}
+
+// Obtiene los mini trabajos del usuario. Si la tabla todavia no existe
+// (base sin migrar) devuelve una lista vacia en lugar de romper la pantalla.
+async function obtenerMiniTrabajos(usuarioId) {
+  try {
+    const resultado = await pool.query(
+      `SELECT modulo_id, nivel, completado, actualizado_en
+         FROM mini_trabajos
+        WHERE usuario_id = $1
+        ORDER BY modulo_id, nivel`,
+      [usuarioId]
+    );
+    return resultado.rows;
+  } catch (error) {
+    console.warn("[Progreso] No se pudieron leer los mini trabajos:", error.message);
+    return [];
+  }
 }
 
 // ============================================
@@ -156,6 +177,47 @@ router.post("/modulo", async (req, res) => {
 });
 
 // ============================================
+// POST /api/progreso/mini-trabajo
+// Guarda (o actualiza) el estado de un mini trabajo practico
+// de un modulo segun el nivel del usuario.
+// ============================================
+
+router.post("/mini-trabajo", async (req, res) => {
+  const { usuarioId, moduloId, nivel, completado } = req.body;
+
+  if (!usuarioId || !moduloId || !nivel) {
+    return res.status(400).json({ error: "Faltan campos obligatorios: usuarioId, moduloId, nivel" });
+  }
+  if (!esEnteroPositivo(usuarioId) || !esEnteroPositivo(moduloId)) {
+    return res.status(400).json({ error: "usuarioId y moduloId deben ser numeros enteros positivos" });
+  }
+  if (typeof nivel !== "string" || !NIVELES_MINI_TRABAJO.includes(nivel.trim().toLowerCase())) {
+    return res.status(400).json({ error: "El nivel enviado no es valido" });
+  }
+
+  try {
+    const resultado = await pool.query(
+      `INSERT INTO mini_trabajos (usuario_id, modulo_id, nivel, completado, actualizado_en)
+       VALUES ($1, $2, $3, $4, NOW())
+       ON CONFLICT (usuario_id, modulo_id, nivel)
+       DO UPDATE SET
+         completado = EXCLUDED.completado,
+         actualizado_en = NOW()
+       RETURNING id, modulo_id, nivel, completado, actualizado_en`,
+      [usuarioId, moduloId, nivel.trim().toLowerCase(), Boolean(completado)]
+    );
+
+    res.status(201).json(resultado.rows[0]);
+  } catch (error) {
+    if (esUsuarioInexistente(error)) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+    console.error("Error al guardar el mini trabajo:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
+// ============================================
 // GET /api/progreso/:usuarioId
 // Obtiene todo el progreso de un usuario
 // ============================================
@@ -198,7 +260,8 @@ router.get("/:usuarioId", async (req, res) => {
     res.json({
       testInicial: testResult.rows[0] || null,
       examen: examenResult.rows[0] || null,
-      modulos: modulosResult.rows
+      modulos: modulosResult.rows,
+      miniTrabajos: await obtenerMiniTrabajos(usuarioId)
     });
   } catch (error) {
     console.error("Error al obtener progreso:", error);

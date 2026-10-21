@@ -2,6 +2,7 @@ const express = require("express");
 const crypto = require("crypto");
 const bcrypt = require("bcrypt");
 const pool = require("../db");
+const { crearLimitador } = require("../middlewares/seguridad");
 
 const router = express.Router();
 
@@ -18,6 +19,19 @@ const LONGITUD_MINIMA_PASSWORD = 6;
 const LONGITUD_MAXIMA_PASSWORD = 72; // bcrypt solo usa los primeros 72 bytes
 const LONGITUD_MAXIMA_NOMBRE = 100;
 const LONGITUD_MAXIMA_EMAIL = 254;
+
+// Valores admitidos para las preferencias de lectura y color
+const TAMANOS_FUENTE = ["normal", "grande", "xl"];
+const TEMAS = ["proteccion", "bosque", "calido"];
+const NIVELES_PERFIL = ["principiante", "intermedio", "avanzado", "protegido"];
+
+// Limite especifico de la pantalla de Configuracion: frena los intentos de
+// adivinar la contrasena actual desde los formularios de la cuenta.
+const limiteCambiosCuenta = crearLimitador({
+  etiqueta: "cambios-cuenta",
+  maximo: Number(process.env.LIMITE_CAMBIOS_CUENTA) || 20,
+  ventanaMs: 60 * 1000
+});
 
 // Proteccion contra fuerza bruta (por correo)
 const MAX_INTENTOS_FALLIDOS = Number(process.env.MAX_INTENTOS_LOGIN) || 5;
@@ -133,8 +147,8 @@ router.get("/", async (req, res) => {
   try {
     const admin = esAdministrador(req);
     const campos = admin
-      ? "id, nombre, email, nivel_digital, creado_en"
-      : "id, nombre, nivel_digital, creado_en";
+      ? "id, nombre, email, nivel_digital, tamano_fuente, tema_preferido, creado_en"
+      : "id, nombre, nivel_digital, tamano_fuente, tema_preferido, creado_en";
 
     const resultado = await pool.query(`SELECT ${campos} FROM usuarios ORDER BY id`);
     res.json(resultado.rows);
@@ -157,8 +171,8 @@ router.get("/:id", async (req, res) => {
   try {
     const admin = esAdministrador(req);
     const campos = admin
-      ? "id, nombre, email, nivel_digital, creado_en"
-      : "id, nombre, nivel_digital, creado_en";
+      ? "id, nombre, email, nivel_digital, tamano_fuente, tema_preferido, creado_en"
+      : "id, nombre, nivel_digital, tamano_fuente, tema_preferido, creado_en";
 
     const resultado = await pool.query(
       `SELECT ${campos} FROM usuarios WHERE id = $1`,
@@ -366,13 +380,293 @@ router.get("/:id/progreso", async (req, res) => {
       [usuarioId]
     );
 
+    // Mini trabajos practicos (si la tabla todavia no existe, se omiten)
+    let miniTrabajos = [];
+    try {
+      const miniTrabajosResult = await pool.query(
+        `SELECT modulo_id, nivel, completado, actualizado_en
+         FROM mini_trabajos
+         WHERE usuario_id = $1
+         ORDER BY modulo_id, nivel`,
+        [usuarioId]
+      );
+      miniTrabajos = miniTrabajosResult.rows;
+    } catch (errorMini) {
+      console.warn("[Progreso] No se pudieron leer los mini trabajos:", errorMini.message);
+    }
+
     res.json({
       testInicial: testResult.rows[0] || null,
       examen: examenResult.rows[0] || null,
-      modulos: modulosResult.rows
+      modulos: modulosResult.rows,
+      miniTrabajos: miniTrabajos
     });
   } catch (error) {
     console.error("Error al obtener progreso:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
+// ============================================
+// CONFIGURACION DEL USUARIO
+// La pantalla de Configuracion permite cambiar el nombre de usuario,
+// el correo electronico y la contrasena.
+//
+// Regla de seguridad: los cambios que identifican a la persona (nombre,
+// correo y contrasena) exigen confirmar la contrasena actual. Asi, que
+// alguien conozca el id de un usuario no alcanza para modificar su cuenta.
+// ============================================
+
+// Verifica la contrasena actual de un usuario.
+// Devuelve { existe, valida } para poder distinguir errores sin filtrar datos.
+async function verificarContrasenaActual(usuarioId, password) {
+  if (typeof password !== "string" || password.length === 0) {
+    return { existe: true, valida: false };
+  }
+
+  const resultado = await pool.query(
+    "SELECT password_hash FROM usuarios WHERE id = $1",
+    [usuarioId]
+  );
+  if (resultado.rows.length === 0) {
+    return { existe: false, valida: false };
+  }
+
+  try {
+    const valida = await bcrypt.compare(password, resultado.rows[0].password_hash);
+    return { existe: true, valida: valida };
+  } catch (error) {
+    return { existe: true, valida: false };
+  }
+}
+
+// Proyecta la fila de un usuario sin exponer el hash de la contrasena.
+function usuarioPublico(fila) {
+  return {
+    id: fila.id,
+    nombre: fila.nombre,
+    email: fila.email,
+    nivel_digital: fila.nivel_digital,
+    tamano_fuente: fila.tamano_fuente,
+    tema_preferido: fila.tema_preferido,
+    creado_en: fila.creado_en
+  };
+}
+
+// ============================================
+// PUT /api/usuarios/:id/perfil
+// Actualiza el nombre de usuario, el nivel de aprendizaje y las
+// preferencias de lectura (tamaño de letra y tema de color).
+// ============================================
+
+router.put("/:id/perfil", limiteCambiosCuenta, async (req, res) => {
+  const usuarioId = req.params.id;
+
+  if (!esEnteroPositivo(usuarioId)) {
+    return res.status(400).json({ error: "El id debe ser un numero entero positivo" });
+  }
+
+  const { nombre, nivel, tamanoFuente, tema, passwordActual } = req.body || {};
+
+  if (nombre === undefined && nivel === undefined && tamanoFuente === undefined && tema === undefined) {
+    return res.status(400).json({ error: "No se envio ningun dato para actualizar" });
+  }
+
+  // --- Validacion del nombre de usuario ---
+  let nombreLimpio = null;
+  if (nombre !== undefined) {
+    if (typeof nombre !== "string") {
+      return res.status(400).json({ error: "El nombre debe ser texto" });
+    }
+    nombreLimpio = nombre.trim();
+    if (nombreLimpio.length < 2) {
+      return res.status(400).json({ error: "El nombre debe tener al menos 2 caracteres" });
+    }
+    if (nombreLimpio.length > LONGITUD_MAXIMA_NOMBRE) {
+      return res.status(400).json({ error: "El nombre no puede superar los 100 caracteres" });
+    }
+  }
+
+  // --- Validacion del nivel de aprendizaje ---
+  let nivelLimpio = null;
+  if (nivel !== undefined && nivel !== null && nivel !== "") {
+    if (typeof nivel !== "string" || !NIVELES_PERFIL.includes(nivel.trim().toLowerCase())) {
+      return res.status(400).json({ error: "El nivel no es valido" });
+    }
+    nivelLimpio = nivel.trim().toLowerCase();
+  }
+
+  // --- Validacion de las preferencias de lectura ---
+  let tamanoLimpio = null;
+  if (tamanoFuente !== undefined && tamanoFuente !== null && tamanoFuente !== "") {
+    if (typeof tamanoFuente !== "string" || !TAMANOS_FUENTE.includes(tamanoFuente.trim().toLowerCase())) {
+      return res.status(400).json({ error: "El tamaño de letra no es valido" });
+    }
+    tamanoLimpio = tamanoFuente.trim().toLowerCase();
+  }
+
+  let temaLimpio = null;
+  if (tema !== undefined && tema !== null && tema !== "") {
+    if (typeof tema !== "string" || !TEMAS.includes(tema.trim().toLowerCase())) {
+      return res.status(400).json({ error: "El tema no es valido" });
+    }
+    temaLimpio = tema.trim().toLowerCase();
+  }
+
+  try {
+    const actual = await pool.query(
+      "SELECT id, nombre, email, nivel_digital, tamano_fuente, tema_preferido, creado_en FROM usuarios WHERE id = $1",
+      [usuarioId]
+    );
+    if (actual.rows.length === 0) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    const usuario = actual.rows[0];
+
+    // Cambiar el nombre identifica a la persona: se confirma la contrasena.
+    if (nombreLimpio !== null && nombreLimpio !== usuario.nombre) {
+      const verificacion = await verificarContrasenaActual(usuarioId, passwordActual);
+      if (!verificacion.existe) {
+        return res.status(404).json({ error: "Usuario no encontrado" });
+      }
+      if (!verificacion.valida) {
+        await auditar("perfil_denegado", usuarioId, "Contrasena actual incorrecta", req);
+        return res.status(401).json({ error: "La contrasena actual no es correcta" });
+      }
+    }
+
+    const resultado = await pool.query(
+      `UPDATE usuarios
+          SET nombre = COALESCE($1, nombre),
+              nivel_digital = COALESCE($2, nivel_digital),
+              tamano_fuente = COALESCE($3, tamano_fuente),
+              tema_preferido = COALESCE($4, tema_preferido)
+        WHERE id = $5
+        RETURNING id, nombre, email, nivel_digital, tamano_fuente, tema_preferido, creado_en`,
+      [nombreLimpio, nivelLimpio, tamanoLimpio, temaLimpio, usuarioId]
+    );
+
+    await auditar("perfil_actualizado", usuarioId, "Datos y preferencias actualizados", req);
+    res.json(usuarioPublico(resultado.rows[0]));
+  } catch (error) {
+    console.error("Error al actualizar el perfil:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
+// ============================================
+// PUT /api/usuarios/:id/email
+// Cambia el correo electronico de la cuenta.
+// ============================================
+
+router.put("/:id/email", limiteCambiosCuenta, async (req, res) => {
+  const usuarioId = req.params.id;
+  const { email, passwordActual } = req.body || {};
+
+  if (!esEnteroPositivo(usuarioId)) {
+    return res.status(400).json({ error: "El id debe ser un numero entero positivo" });
+  }
+  if (!email || typeof email !== "string") {
+    return res.status(400).json({ error: "El correo electronico es obligatorio" });
+  }
+  if (typeof passwordActual !== "string" || passwordActual.length === 0) {
+    return res.status(400).json({ error: "Debes confirmar tu contrasena actual" });
+  }
+
+  const emailLimpio = email.trim().toLowerCase();
+  if (emailLimpio.length > LONGITUD_MAXIMA_EMAIL) {
+    return res.status(400).json({ error: "El correo electronico es demasiado largo" });
+  }
+  if (!EXPRESION_EMAIL.test(emailLimpio)) {
+    return res.status(400).json({ error: "El correo electronico no es valido" });
+  }
+
+  try {
+    const actual = await pool.query(
+      "SELECT email FROM usuarios WHERE id = $1",
+      [usuarioId]
+    );
+    if (actual.rows.length === 0) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    if (actual.rows[0].email === emailLimpio) {
+      return res.status(400).json({ error: "El correo electronico es el mismo que ya usas" });
+    }
+
+    const verificacion = await verificarContrasenaActual(usuarioId, passwordActual);
+    if (!verificacion.existe) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+    if (!verificacion.valida) {
+      await auditar("email_denegado", usuarioId, "Contrasena actual incorrecta", req);
+      return res.status(401).json({ error: "La contrasena actual no es correcta" });
+    }
+
+    const resultado = await pool.query(
+      `UPDATE usuarios SET email = $1 WHERE id = $2
+       RETURNING id, nombre, email, nivel_digital, tamano_fuente, tema_preferido, creado_en`,
+      [emailLimpio, usuarioId]
+    );
+
+    await auditar("email_actualizado", usuarioId, "Correo electronico actualizado", req);
+    res.json(usuarioPublico(resultado.rows[0]));
+  } catch (error) {
+    if (error.code === "23505") {
+      return res.status(409).json({ error: "Ese correo electronico ya esta registrado" });
+    }
+    console.error("Error al actualizar el correo:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
+// ============================================
+// PUT /api/usuarios/:id/password
+// Cambia la contrasena de la cuenta.
+// ============================================
+
+router.put("/:id/password", limiteCambiosCuenta, async (req, res) => {
+  const usuarioId = req.params.id;
+  const { passwordActual, passwordNueva } = req.body || {};
+
+  if (!esEnteroPositivo(usuarioId)) {
+    return res.status(400).json({ error: "El id debe ser un numero entero positivo" });
+  }
+  if (typeof passwordActual !== "string" || passwordActual.length === 0) {
+    return res.status(400).json({ error: "Debes confirmar tu contrasena actual" });
+  }
+  if (!passwordNueva || typeof passwordNueva !== "string") {
+    return res.status(400).json({ error: "La nueva contrasena es obligatoria" });
+  }
+  if (passwordNueva.length < LONGITUD_MINIMA_PASSWORD) {
+    return res.status(400).json({ error: "La contrasena debe tener al menos 6 caracteres" });
+  }
+  if (passwordNueva.length > LONGITUD_MAXIMA_PASSWORD) {
+    return res.status(400).json({ error: "La contrasena no puede superar los 72 caracteres" });
+  }
+
+  try {
+    const verificacion = await verificarContrasenaActual(usuarioId, passwordActual);
+    if (!verificacion.existe) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+    if (!verificacion.valida) {
+      await auditar("password_denegado", usuarioId, "Contrasena actual incorrecta", req);
+      return res.status(401).json({ error: "La contrasena actual no es correcta" });
+    }
+
+    const nuevoHash = await bcrypt.hash(passwordNueva, COSTO_BCRYPT);
+    const resultado = await pool.query(
+      `UPDATE usuarios SET password_hash = $1 WHERE id = $2
+       RETURNING id, nombre, email, nivel_digital, tamano_fuente, tema_preferido, creado_en`,
+      [nuevoHash, usuarioId]
+    );
+
+    await auditar("password_actualizado", usuarioId, "Contrasena actualizada", req);
+    res.json(usuarioPublico(resultado.rows[0]));
+  } catch (error) {
+    console.error("Error al actualizar la contrasena:", error);
     res.status(500).json({ error: "Error interno del servidor" });
   }
 });

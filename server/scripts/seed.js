@@ -26,15 +26,24 @@ async function main() {
   } else {
     console.log("[Seed] Insertando cursos iniciales...");
     await pool.query(`
-      INSERT INTO cursos (titulo, descripcion, nivel, duracion_min) VALUES
-        ('Uso de Smartphones', 'Aprendé a usar tu celular de forma segura.', 'principiante', 30),
-        ('Redes e Internet', 'Navegá por internet con confianza.', 'principiante', 40),
-        ('Trámites en Línea', 'Hacé trámites desde tu casa de forma segura.', 'intermedio', 45),
-        ('Fraudes Digitales (Phishing)', 'Identificá y evitá estafas en línea.', 'principiante', 35),
-        ('Comunicación Digital', 'Mantené el contacto con tu familia de forma segura.', 'principiante', 25)
+      INSERT INTO cursos (titulo, descripcion, nivel, duracion_min, tema) VALUES
+        ('Uso de Smartphones', 'Aprendé a usar tu celular de forma segura.', 'principiante', 30, 'movil'),
+        ('Redes e Internet', 'Navegá por internet con confianza.', 'principiante', 40, 'redes'),
+        ('Trámites en Línea', 'Hacé trámites desde tu casa de forma segura.', 'intermedio', 45, 'tramites'),
+        ('Fraudes Digitales (Phishing)', 'Identificá y evitá estafas en línea.', 'principiante', 35, 'fraudes'),
+        ('Comunicación Digital', 'Mantené el contacto con tu familia de forma segura.', 'principiante', 25, 'comunicacion')
       ON CONFLICT DO NOTHING
     `);
     console.log("[Seed] Cursos cargados correctamente.");
+
+    // Si los cursos ya existian, se les completa el tema que falta.
+    await pool.query(`
+      UPDATE cursos SET tema = 'movil'        WHERE titulo = 'Uso de Smartphones' AND tema IS NULL;
+      UPDATE cursos SET tema = 'redes'        WHERE titulo = 'Redes e Internet' AND tema IS NULL;
+      UPDATE cursos SET tema = 'tramites'     WHERE titulo = 'Trámites en Línea' AND tema IS NULL;
+      UPDATE cursos SET tema = 'fraudes'      WHERE titulo = 'Fraudes Digitales (Phishing)' AND tema IS NULL;
+      UPDATE cursos SET tema = 'comunicacion' WHERE titulo = 'Comunicación Digital' AND tema IS NULL;
+    `);
   }
 
   // Alertas de fraude. Solo insertar si está vacío.

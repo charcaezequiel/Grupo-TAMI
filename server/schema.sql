@@ -17,6 +17,10 @@ CREATE TABLE IF NOT EXISTS usuarios (
   password_hash TEXT NOT NULL,
   nivel_digital TEXT NOT NULL DEFAULT 'principiante',
   creado_en TIMESTAMP NOT NULL DEFAULT NOW(),
+  -- Preferencias de lectura y color (pantalla de Configuración del usuario).
+  -- Son opcionales: siempre tienen un valor por defecto válido.
+  tamano_fuente TEXT NOT NULL DEFAULT 'normal',
+  tema_preferido TEXT NOT NULL DEFAULT 'proteccion',
   CONSTRAINT usuarios_nivel_ck CHECK (
     lower(nivel_digital) IN ('principiante','intermedio','avanzado','protegido')
   ),
@@ -25,6 +29,25 @@ CREATE TABLE IF NOT EXISTS usuarios (
     btrim(email) ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'
   )
 );
+
+-- Preferencias agregadas después del primer despliegue (migración idempotente).
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS tamano_fuente TEXT NOT NULL DEFAULT 'normal';
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS tema_preferido TEXT NOT NULL DEFAULT 'proteccion';
+
+-- Las restricciones de las preferencias se crean solo si no existen
+-- (PostgreSQL no admite "ADD CONSTRAINT IF NOT EXISTS").
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'usuarios_tamano_fuente_ck') THEN
+    ALTER TABLE usuarios ADD CONSTRAINT usuarios_tamano_fuente_ck
+      CHECK (lower(tamano_fuente) IN ('normal','grande','xl'));
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'usuarios_tema_preferido_ck') THEN
+    ALTER TABLE usuarios ADD CONSTRAINT usuarios_tema_preferido_ck
+      CHECK (lower(tema_preferido) IN ('proteccion','bosque','calido'));
+  END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_usuarios_email_lower ON usuarios (lower(btrim(email)));
 CREATE INDEX IF NOT EXISTS idx_usuarios_creado_en ON usuarios (creado_en);
@@ -40,11 +63,13 @@ CREATE TABLE IF NOT EXISTS cursos (
   descripcion TEXT,
   nivel TEXT NOT NULL,
   duracion_min INTEGER,
+  tema TEXT,
   activo BOOLEAN NOT NULL DEFAULT TRUE,
   CONSTRAINT cursos_nivel_ck CHECK (lower(nivel) IN ('principiante','intermedio','avanzado')),
   CONSTRAINT cursos_duracion_pos_ck CHECK (duracion_min IS NULL OR duracion_min >= 0)
 );
 CREATE INDEX IF NOT EXISTS idx_cursos_activo ON cursos (activo);
+ALTER TABLE cursos ADD COLUMN IF NOT EXISTS tema TEXT;
 
 -- Tabla de alertas de fraude
 CREATE TABLE IF NOT EXISTS alertas_fraude (
@@ -120,6 +145,23 @@ CREATE TABLE IF NOT EXISTS progreso_modulos (
 CREATE INDEX IF NOT EXISTS idx_progreso_usuario ON progreso_modulos (usuario_id);
 CREATE INDEX IF NOT EXISTS idx_progreso_modulo ON progreso_modulos (modulo_id);
 CREATE INDEX IF NOT EXISTS idx_progreso_completado ON progreso_modulos (completado);
+
+-- Mini trabajos prácticos (tareas) de cada módulo, según el nivel del usuario.
+-- Un registro por combinación usuario + módulo + nivel: permite retomar la
+-- tarea y guardar si ya fue completada.
+CREATE TABLE IF NOT EXISTS mini_trabajos (
+  id SERIAL PRIMARY KEY,
+  usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  modulo_id INTEGER NOT NULL,
+  nivel TEXT NOT NULL,
+  completado BOOLEAN NOT NULL DEFAULT FALSE,
+  creado_en TIMESTAMP NOT NULL DEFAULT NOW(),
+  actualizado_en TIMESTAMP NOT NULL DEFAULT NOW(),
+  UNIQUE (usuario_id, modulo_id, nivel),
+  CONSTRAINT mini_trabajo_nivel_ck CHECK (lower(nivel) IN ('principiante','intermedio','avanzado'))
+);
+CREATE INDEX IF NOT EXISTS idx_mini_trabajos_usuario ON mini_trabajos (usuario_id);
+CREATE INDEX IF NOT EXISTS idx_mini_trabajos_modulo ON mini_trabajos (modulo_id);
 
 -- ============================================
 -- Tablas de seguridad
