@@ -76,7 +76,7 @@ El Módulo 4 es una lección de **5 pasos** con navegación lineal y consejos en
 - Hashing de contraseña con **bcrypt** (costo 12) en el servidor, con consultas SQL parametrizadas.
 - Protección contra fuerza bruta: bloqueo temporal tras 5 intentos fallidos por correo (15 minutos).
 - Mensajes de error genéricos en el login (no revelan si el correo existe) y auditoría de cada intento.
-- Recuperación de contraseña con **token de un solo uso enviado por correo** (SMTP/nodemailer). En la base solo se guarda el hash del token; vence a los 30 minutos y se invalida al usarse.
+- Recuperación de contraseña con **token de un solo uso enviado por correo** (SMTP/nodemailer). En la base solo se guarda el hash del token; vence a los 30 minutos y se invalida al usarse. Al completar el cambio, el hash bcrypt anterior se reemplaza en `usuarios.password_hash` y la contraseña anterior deja de funcionar; no se guarda texto plano ni historial de contraseñas.
 - Persistencia en Supabase/PostgreSQL (principal) y LocalStorage (fallback offline).
 
 ### 3. Test de Nivelación Obligatorio
@@ -217,6 +217,45 @@ gestionado en la nube, pooler de Supabase con SSL). Las credenciales viven en
 | POST | `/api/progreso/examen` | Guardar resultado de examen post-lección |
 | POST | `/api/progreso/modulo` | Guardar/actualizar progreso en un módulo |
 | GET | `/api/progreso/:usuarioId` | Obtener progreso de un usuario |
+
+---
+
+## Recuperación de contraseña
+
+El cambio de contraseña es **por token**, nunca por recuperación de la contraseña
+anterior: la base solo guarda hashes bcrypt y no es posible mostrar la contraseña
+que la persona tenía.
+
+### Flujo y mensajes que ve la persona
+
+1. En el login, toca **“¿Olvidaste tu contraseña?”**.
+2. Se abre **“Recuperar mi contraseña”**, donde ingresa el correo de su cuenta.
+3. La API responde siempre con el mismo mensaje, exista o no el correo:
+   **“Revisá tu correo”** y **“Si el correo está registrado, te enviamos un enlace
+   para crear una contraseña nueva.”**
+4. Si la cuenta existe, recibe un correo con asunto
+   **“Recuperá tu contraseña de TAMI”**. El mensaje explica que, al guardar la
+   nueva contraseña, la anterior será reemplazada y dejará de funcionar. El botón
+   **“Elegir una contraseña nueva”** abre la pantalla de cambio; el enlace vence
+   a los 30 minutos y sirve una sola vez.
+5. En **“Crear una contraseña nueva”** ingresa y repite la nueva contraseña
+   (mínimo 6 caracteres). Al guardar, ve **“¡Contraseña actualizada!”** y el
+   mensaje **“Tu contraseña se actualizó correctamente. La contraseña anterior ya
+   no funciona. Ya podés iniciar sesión.”**
+
+### Qué ocurre en la base de datos
+
+- La API guarda en `usuarios.password_hash` el **nuevo hash bcrypt**; el `UPDATE`
+  reemplaza el hash anterior. No se conserva la contraseña anterior ni un
+  historial de contraseñas, y nunca se guarda texto plano.
+- El token usado se marca como usado y se eliminan todos los enlaces pendientes
+  de esa cuenta en `recuperacion_password` (solo se almacena el hash SHA-256 del
+  token, no el token original).
+- Se limpian los intentos fallidos de login de esa cuenta.
+- El frontend borra la sesión local y el token de la URL al completar el cambio.
+- Si la persona no completa el cambio, la contraseña anterior sigue funcionando
+  hasta que el enlace venza o se solicite uno nuevo. Esto evita dejar cuentas
+  bloqueadas por un pedido que no se llegó a completar.
 
 ---
 

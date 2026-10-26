@@ -588,7 +588,8 @@ router.post("/restablecer-password", limiteRestablecerPassword, async (req, res)
     );
 
     res.json({
-      mensaje: "Tu contraseña se actualizó correctamente. Ya podés iniciar sesión."
+      mensaje:
+        "Tu contraseña se actualizó correctamente. La contraseña anterior ya no funciona. Ya podés iniciar sesión."
     });
   } catch (error) {
     if (cliente) {

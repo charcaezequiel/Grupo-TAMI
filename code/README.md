@@ -38,7 +38,7 @@ Capa de **Presentación** y **Lógica** del proyecto. Interfaz de usuario accesi
 - **Capa API**: Funciones `apiGet()` y `apiPost()` para comunicarse con el backend.
 - **Fallback automático**: si el servidor no responde, usa LocalStorage como caché.
 - **Autenticación**: registro y login conectados a la API (bcrypt del lado del servidor).
-- **Recuperación de contraseña**: lee el token de `?reset=...`, valida la contraseña nueva y lo envía a la API. El token no se guarda en LocalStorage y se borra de la URL al completar el cambio.
+- **Recuperación de contraseña**: lee el token de `?reset=...`, valida la contraseña nueva y lo envía a la API. Al completar el cambio, el backend reemplaza el hash anterior, el frontend borra la sesión local y el token se elimina de la URL. El token no se guarda en LocalStorage.
 - **Breadcrumbs**: `actualizarBreadcrumb()` pinta la ruta según la pantalla; los niveles previos son clicables y el actual es texto plano.
 - **Manejo de foco**: al cambiar de pantalla, el foco se mueve al título (`tabindex="-1"`).
 - **Test de nivelación**: 3 preguntas, cálculo "Principiante" o "Protegido".
@@ -55,7 +55,7 @@ Capa de **Presentación** y **Lógica** del proyecto. Interfaz de usuario accesi
 | 2 | Registro | Formulario accesible con validación client-side |
 | 3 | Login | Inicio de sesión verificando credenciales |
 | 4 | Recuperar contraseña | Pide el correo y envía un enlace de un solo uso |
-| 5 | Nueva contraseña | Lee el token del enlace y guarda la contraseña nueva |
+| 5 | Nueva contraseña | Lee el token del enlace, guarda la contraseña nueva y reemplaza la anterior en el backend |
 | 6 | Test | 3 preguntas de nivelación digital |
 | 7 | Dashboard | Menú principal con accesos masivos y resumen |
 | 8 | Campus | Lista de 5 módulos (solo Módulo 4 activo) |

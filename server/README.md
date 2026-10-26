@@ -78,6 +78,8 @@ Capa implementada en `middlewares/seguridad.js`, `index.js` y `routes/usuarios.j
   SHA-256 en `recuperacion_password`, con vencimiento (30 minutos por defecto) y un
   solo uso. Un pedido nuevo invalida los enlaces anteriores. Los endpoints tienen
   límites propios por IP (5 solicitudes y 10 restablecimientos cada 15 minutos).
+  Al completar el cambio, el `UPDATE` reemplaza el hash bcrypt anterior; no se
+  conserva la contraseña anterior ni un historial.
 - **Auditoría**: eventos de login/registro/bloqueo y de recuperación de contraseña
   en `auditoria_seguridad`. Nunca se registra el token.
 
@@ -197,8 +199,14 @@ El flujo es:
    `?reset=...`. Por correo viaja el token original; en la base solo queda su
    hash SHA-256.
 4. El enlace abre la pantalla **“Crear una contraseña nueva”**. Al guardar, la
-   API valida el token, actualiza el hash bcrypt, invalida el token y limpia los
-   bloqueos por intentos fallidos.
+   API valida el token, reemplaza el hash bcrypt anterior en
+   `usuarios.password_hash`, invalida el token y limpia los bloqueos por intentos
+   fallidos. La contraseña anterior deja de funcionar.
+
+> El cambio se aplica recién al guardar la contraseña nueva. Si la persona no
+> completa el flujo, la contraseña anterior sigue funcionando hasta que el enlace
+> venza o se solicite uno nuevo. Así se evita bloquear la cuenta por un pedido que
+> no se llegó a completar.
 
 ### Configurar el envío por correo
 

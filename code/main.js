@@ -2583,7 +2583,7 @@ function inicializar() {
       if (textoResultado) {
         textoResultado.textContent =
           (resultado.datos && resultado.datos.mensaje) ||
-          "Tu contraseña se actualizó correctamente. Ya podés iniciar sesión.";
+          "Tu contraseña se actualizó correctamente. La contraseña anterior ya no funciona. Ya podés iniciar sesión.";
       }
       if (cajaResultado) cajaResultado.hidden = false;
     });

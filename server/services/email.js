@@ -97,10 +97,13 @@ function plantillaHtml({ nombre, enlace, minutos }) {
                   </a>
                 </p>
                 <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#4B6266;">
+                  Al guardar la contraseña nueva, la anterior será reemplazada y dejará de funcionar.
+                </p>
+                <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#4B6266;">
                   Este enlace vence en ${Number(minutos) || 30} minutos y se puede usar una sola vez.
                 </p>
                 <p style="margin:0;font-size:14px;line-height:1.6;color:#4B6266;">
-                  Si no pediste este cambio, ignorá este correo: tu contraseña actual sigue funcionando.
+                  Si no pediste este cambio, ignorá este correo: tu contraseña actual sigue funcionando y no se modificó.
                 </p>
               </td>
             </tr>
@@ -133,9 +136,11 @@ function plantillaTexto({ nombre, enlace, minutos }) {
     "Abrí este enlace para elegir una contraseña nueva:",
     enlace,
     "",
+    "Al guardar la contraseña nueva, la anterior será reemplazada y dejará de funcionar.",
+    "",
     "El enlace vence en " + (Number(minutos) || 30) + " minutos y se puede usar una sola vez.",
     "",
-    "Si no pediste este cambio, ignorá este correo: tu contraseña actual sigue funcionando."
+    "Si no pediste este cambio, ignorá este correo: tu contraseña actual sigue funcionando y no se modificó."
   ].join("\n");
 }
 
