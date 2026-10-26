@@ -17,7 +17,7 @@ Capa de **Presentación** y **Lógica** del proyecto. Interfaz de usuario accesi
 ## Archivos
 
 ### `index.html` (Presentación)
-- HTML5 semántico con 10 pantallas: Inicio, Registro, Login, Test, Dashboard, Campus, Lección, Escudo de Seguridad, Progreso, Examen.
+- HTML5 semántico con 14 pantallas: Inicio, Registro, Login, Recuperar contraseña, Nueva contraseña, Test, Dashboard, Campus, Lección, Escudo de Seguridad, Progreso, Trabajos, Configuración y Examen.
 - Atributos ARIA: `aria-live`, `aria-pressed`, `aria-required`, `aria-label`, `role`, `aria-describedby`, `aria-current`.
 - **Skip link** "Saltar al contenido principal" para usuarios de teclado (WCAG 2.4.1).
 - **Breadcrumbs** dinámicos con `<nav aria-label="Migas de pan">` y microdatos Schema.org.
@@ -38,6 +38,7 @@ Capa de **Presentación** y **Lógica** del proyecto. Interfaz de usuario accesi
 - **Capa API**: Funciones `apiGet()` y `apiPost()` para comunicarse con el backend.
 - **Fallback automático**: si el servidor no responde, usa LocalStorage como caché.
 - **Autenticación**: registro y login conectados a la API (bcrypt del lado del servidor).
+- **Recuperación de contraseña**: lee el token de `?reset=...`, valida la contraseña nueva y lo envía a la API. El token no se guarda en LocalStorage y se borra de la URL al completar el cambio.
 - **Breadcrumbs**: `actualizarBreadcrumb()` pinta la ruta según la pantalla; los niveles previos son clicables y el actual es texto plano.
 - **Manejo de foco**: al cambiar de pantalla, el foco se mueve al título (`tabindex="-1"`).
 - **Test de nivelación**: 3 preguntas, cálculo "Principiante" o "Protegido".
@@ -53,13 +54,17 @@ Capa de **Presentación** y **Lógica** del proyecto. Interfaz de usuario accesi
 | 1 | Inicio | Presentación detallada: propósito y pilares del proyecto, el problema que resuelve, detalle de las 5 lecciones, recorrido de aprendizaje, impacto buscado y CTA de registro/ingreso |
 | 2 | Registro | Formulario accesible con validación client-side |
 | 3 | Login | Inicio de sesión verificando credenciales |
-| 4 | Test | 3 preguntas de nivelación digital |
-| 5 | Dashboard | Menú principal con 3 accesos masivos |
-| 6 | Campus | Lista de 5 módulos (solo Módulo 4 activo) |
-| 7 | Lección | 5 pasos interactivos de Fraudes Digitales |
-| 8 | Escudo | 6 alertas de seguridad con consejos |
-| 9 | Progreso | Barras comparativas inicial vs. examen |
-| 10 | Examen | 3 preguntas post-lección |
+| 4 | Recuperar contraseña | Pide el correo y envía un enlace de un solo uso |
+| 5 | Nueva contraseña | Lee el token del enlace y guarda la contraseña nueva |
+| 6 | Test | 3 preguntas de nivelación digital |
+| 7 | Dashboard | Menú principal con accesos masivos y resumen |
+| 8 | Campus | Lista de 5 módulos (solo Módulo 4 activo) |
+| 9 | Lección | 5 pasos interactivos de Fraudes Digitales |
+| 10 | Escudo | 6 alertas de seguridad con consejos |
+| 11 | Progreso | Barras comparativas inicial vs. examen |
+| 12 | Trabajos | Mini trabajos prácticos por nivel |
+| 13 | Configuración | Perfil, foto, preferencias de lectura y contraseña |
+| 14 | Examen | 3 preguntas post-lección |
 
 ## Conexión con la API
 
@@ -67,6 +72,7 @@ El frontend se comunica con el backend en `http://localhost:3000/api`:
 
 - **Registro**: `POST /api/usuarios/registrar`
 - **Login**: `POST /api/usuarios/login`
+- **Recuperación**: `POST /api/usuarios/recuperar-password` y `POST /api/usuarios/restablecer-password`
 - **Test**: `POST /api/progreso/test`
 - **Examen**: `POST /api/progreso/examen`
 - **Progreso módulo**: `POST /api/progreso/modulo`
@@ -83,3 +89,6 @@ El frontend se comunica con el backend en `http://localhost:3000/api`:
 4. Entrá al Campus Educativo → Módulo 4 (Fraudes).
 5. Completá la lección y rendí el examen.
 6. Mirá el breadcrumb en cada pantalla y tu progreso en "Mi Progreso".
+7. Para probar la recuperación, configurá SMTP en `server/.env` o usá
+   `RESET_DEBUG_LINK=true` en desarrollo. Luego tocá
+   **“¿Olvidaste tu contraseña?”** en el login.

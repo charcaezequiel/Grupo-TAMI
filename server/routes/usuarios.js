@@ -3,6 +3,10 @@ const crypto = require("crypto");
 const bcrypt = require("bcrypt");
 const pool = require("../db");
 const { crearLimitador } = require("../middlewares/seguridad");
+const {
+  smtpConfigurado,
+  enviarCorreoRecuperacion
+} = require("../services/email");
 
 const router = express.Router();
 
@@ -33,6 +37,31 @@ const limiteCambiosCuenta = crearLimitador({
   ventanaMs: 60 * 1000
 });
 
+// La recuperación de contraseña se limita con más fuerza que el resto de la
+// API: un atacante no debe poder generar enlaces masivamente ni probar tokens.
+const limiteSolicitudRecuperacion = crearLimitador({
+  etiqueta: "solicitud-recuperacion",
+  maximo: Number(process.env.LIMITE_RECUPERACION) || 5,
+  ventanaMs: 15 * 60 * 1000
+});
+
+const limiteRestablecerPassword = crearLimitador({
+  etiqueta: "restablecer-password",
+  maximo: Number(process.env.LIMITE_RESTABLECER) || 10,
+  ventanaMs: 15 * 60 * 1000
+});
+
+// Minutos de vigencia del enlace. Se acota entre 5 y 120 minutos.
+const MINUTOS_RECUPERACION = Math.min(
+  120,
+  Math.max(5, Number(process.env.RESET_TOKEN_MINUTOS) || 30)
+);
+
+const MENSAJE_RECUPERACION =
+  "Si el correo está registrado, te enviamos un enlace para restablecer tu contraseña. Revisá también la carpeta de spam.";
+const MENSAJE_TOKEN_INVALIDO =
+  "El enlace no es válido o venció. Pedí uno nuevo desde '¿Olvidaste tu contraseña?'.";
+
 // Proteccion contra fuerza bruta (por correo)
 const MAX_INTENTOS_FALLIDOS = Number(process.env.MAX_INTENTOS_LOGIN) || 5;
 const VENTANA_BLOQUEO_MINUTOS = Number(process.env.VENTANA_BLOQUEO_LOGIN) || 15;
@@ -58,6 +87,42 @@ function clavesIguales(a, b) {
   const hashA = crypto.createHash("sha256").update(String(a)).digest();
   const hashB = crypto.createHash("sha256").update(String(b)).digest();
   return crypto.timingSafeEqual(hashA, hashB);
+}
+
+// El token que recibe la persona por correo nunca se guarda en la base:
+// solo se almacena su hash SHA-256. Así, una lectura de la tabla no permite
+// usar los enlaces de recuperación.
+function hashTokenRecuperacion(token) {
+  return crypto.createHash("sha256").update(String(token)).digest("hex");
+}
+
+function construirEnlaceRecuperacion(token) {
+  const porDefecto = "http://localhost:5500/code/index.html";
+  const configurada = String(process.env.FRONTEND_URL || "").trim();
+  let base;
+
+  try {
+    base = new URL(configurada || porDefecto);
+    if (base.protocol !== "http:" && base.protocol !== "https:") {
+      throw new Error("Protocolo no permitido");
+    }
+  } catch (error) {
+    console.warn("[Recuperacion] FRONTEND_URL inválida; se usa el valor local por defecto.");
+    base = new URL(porDefecto);
+  }
+
+  base.searchParams.set("reset", token);
+  return base.toString();
+}
+
+// En desarrollo se puede mostrar el enlace en la respuesta para probar el
+// circuito sin configurar un servidor de correo. Nunca se habilita en
+// producción, aunque la variable esté puesta en true por error.
+function enlaceDebugHabilitado() {
+  return (
+    String(process.env.RESET_DEBUG_LINK || "").toLowerCase() === "true" &&
+    String(process.env.NODE_ENV || "").toLowerCase() !== "production"
+  );
 }
 
 // Indica si la solicitud trae la clave de administracion valida.
@@ -339,6 +404,204 @@ router.post("/login", async (req, res) => {
   } catch (error) {
     console.error("Error al iniciar sesion:", error);
     res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
+// ============================================
+// POST /api/usuarios/recuperar-password
+// Genera un enlace de recuperación de un solo uso.
+//
+// Seguridad:
+// - Responde siempre lo mismo exista o no el correo (evita enumeración).
+// - El token es aleatorio (32 bytes) y se guarda únicamente su hash.
+// - Vence en MINUTOS_RECUPERACION y se invalida al usarse.
+// - El envío por correo es opcional en desarrollo: si no hay SMTP, el enlace
+//   solo se expone con RESET_DEBUG_LINK=true (nunca en producción).
+// ============================================
+
+router.post("/recuperar-password", limiteSolicitudRecuperacion, async (req, res) => {
+  const { email } = req.body || {};
+
+  if (!email || typeof email !== "string") {
+    return res.status(400).json({ error: "El correo electrónico es obligatorio" });
+  }
+
+  const emailLimpio = email.trim().toLowerCase();
+  if (emailLimpio.length > LONGITUD_MAXIMA_EMAIL) {
+    return res.status(400).json({ error: "El correo electrónico es demasiado largo" });
+  }
+  if (!EXPRESION_EMAIL.test(emailLimpio)) {
+    return res.status(400).json({ error: "El correo electrónico no es válido" });
+  }
+
+  try {
+    const resultado = await pool.query(
+      `SELECT id, nombre, email
+         FROM usuarios
+        WHERE lower(btrim(email)) = lower(btrim($1))
+        LIMIT 1`,
+      [emailLimpio]
+    );
+
+    const usuario = resultado.rows[0];
+
+    // Misma respuesta para un correo inexistente: no se revela si la cuenta
+    // existe. La auditoría interna sí deja constancia del intento.
+    if (!usuario) {
+      await auditar("recuperacion_solicitada", null, "Correo no registrado", req);
+      return res.status(202).json({ mensaje: MENSAJE_RECUPERACION });
+    }
+
+    const token = crypto.randomBytes(32).toString("base64url");
+    const tokenHash = hashTokenRecuperacion(token);
+    const enlace = construirEnlaceRecuperacion(token);
+
+    // Un pedido nuevo invalida los enlaces anteriores de esa cuenta.
+    await pool.query("DELETE FROM recuperacion_password WHERE expira_en < NOW()");
+    await pool.query("DELETE FROM recuperacion_password WHERE usuario_id = $1", [usuario.id]);
+    await pool.query(
+      `INSERT INTO recuperacion_password (usuario_id, token_hash, expira_en, ip)
+       VALUES ($1, $2, NOW() + ($3 || ' minutes')::interval, $4)`,
+      [usuario.id, tokenHash, String(MINUTOS_RECUPERACION), ipDe(req)]
+    );
+
+    let enviado = false;
+    if (smtpConfigurado()) {
+      try {
+        await enviarCorreoRecuperacion({
+          destinatario: usuario.email,
+          nombre: usuario.nombre,
+          enlace: enlace,
+          minutos: MINUTOS_RECUPERACION
+        });
+        enviado = true;
+      } catch (errorEnvio) {
+        console.error("[Recuperacion] No se pudo enviar el correo:", errorEnvio.message);
+      }
+    } else {
+      console.warn(
+        "[Recuperacion] SMTP no configurado. Configurá SMTP_* en .env o usá RESET_DEBUG_LINK=true en desarrollo."
+      );
+    }
+
+    await auditar(
+      "recuperacion_solicitada",
+      usuario.id,
+      enviado ? "Enlace enviado por correo" : "Enlace generado sin envío de correo",
+      req
+    );
+
+    const respuesta = { mensaje: MENSAJE_RECUPERACION };
+    if (enlaceDebugHabilitado()) {
+      respuesta.resetUrl = enlace;
+      respuesta.debug =
+        "Enlace visible porque RESET_DEBUG_LINK=true. No usar esta opción en producción.";
+    }
+    res.status(202).json(respuesta);
+  } catch (error) {
+    console.error("Error al solicitar la recuperación de contraseña:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
+// ============================================
+// POST /api/usuarios/restablecer-password
+// Cambia la contraseña usando un token válido de un solo uso.
+// No pide la contraseña anterior porque el enlace ya demuestra el acceso
+// al correo de la cuenta.
+// ============================================
+
+router.post("/restablecer-password", limiteRestablecerPassword, async (req, res) => {
+  const { token, passwordNueva } = req.body || {};
+
+  if (typeof token !== "string" || !/^[A-Za-z0-9_-]{40,100}$/.test(token)) {
+    await auditar("recuperacion_fallida", null, "Token con formato inválido", req);
+    return res.status(400).json({ error: MENSAJE_TOKEN_INVALIDO });
+  }
+  if (!passwordNueva || typeof passwordNueva !== "string") {
+    return res.status(400).json({ error: "La nueva contraseña es obligatoria" });
+  }
+  if (passwordNueva.length < LONGITUD_MINIMA_PASSWORD) {
+    return res.status(400).json({ error: "La contraseña debe tener al menos 6 caracteres" });
+  }
+  if (passwordNueva.length > LONGITUD_MAXIMA_PASSWORD) {
+    return res.status(400).json({ error: "La contraseña no puede superar los 72 caracteres" });
+  }
+
+  const tokenHash = hashTokenRecuperacion(token);
+  let cliente = null;
+
+  try {
+    cliente = await pool.connect();
+    await cliente.query("BEGIN");
+
+    // UPDATE atómico: solo el primero que use el token puede cambiarlo.
+    const encontrado = await cliente.query(
+      `UPDATE recuperacion_password
+          SET usado_en = NOW()
+        WHERE token_hash = $1
+          AND usado_en IS NULL
+          AND expira_en > NOW()
+        RETURNING usuario_id`,
+      [tokenHash]
+    );
+
+    if (encontrado.rows.length === 0) {
+      await cliente.query("ROLLBACK");
+      await auditar("recuperacion_fallida", null, "Token inválido, usado o vencido", req);
+      return res.status(400).json({ error: MENSAJE_TOKEN_INVALIDO });
+    }
+
+    const usuarioId = encontrado.rows[0].usuario_id;
+    const usuario = await cliente.query(
+      "SELECT email FROM usuarios WHERE id = $1",
+      [usuarioId]
+    );
+
+    if (usuario.rows.length === 0) {
+      await cliente.query("ROLLBACK");
+      return res.status(400).json({ error: MENSAJE_TOKEN_INVALIDO });
+    }
+
+    const nuevoHash = await bcrypt.hash(passwordNueva, COSTO_BCRYPT);
+    await cliente.query(
+      "UPDATE usuarios SET password_hash = $1 WHERE id = $2",
+      [nuevoHash, usuarioId]
+    );
+
+    // El token ya se usó: se eliminan todos los enlaces pendientes de la cuenta.
+    await cliente.query("DELETE FROM recuperacion_password WHERE usuario_id = $1", [
+      usuarioId
+    ]);
+    // Un cambio de contraseña exitoso también limpia bloqueos por intentos fallidos.
+    await cliente.query(
+      "DELETE FROM intentos_login WHERE lower(btrim(email)) = lower(btrim($1))",
+      [usuario.rows[0].email]
+    );
+
+    await cliente.query("COMMIT");
+    await auditar(
+      "recuperacion_completada",
+      usuarioId,
+      "Contraseña restablecida con token de un solo uso",
+      req
+    );
+
+    res.json({
+      mensaje: "Tu contraseña se actualizó correctamente. Ya podés iniciar sesión."
+    });
+  } catch (error) {
+    if (cliente) {
+      try {
+        await cliente.query("ROLLBACK");
+      } catch (errorRollback) {
+        console.error("[Recuperacion] No se pudo revertir la transacción:", errorRollback.message);
+      }
+    }
+    console.error("Error al restablecer la contraseña:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  } finally {
+    if (cliente) cliente.release();
   }
 });
 

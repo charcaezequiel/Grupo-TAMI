@@ -17,6 +17,25 @@ const CLAVE_USUARIOS_CACHE = "tami:usuariosCache";
 const CLAVE_TEST_CACHE = "tami:testCache";
 const CLAVE_EXAMEN_CACHE = "tami:examenCache";
 const CLAVE_ALERTAS_CACHE = "tami:alertasCache";
+const CLAVE_AVATAR = "tami:avatar";
+
+// Token del enlace de recuperación que llega en la URL (?reset=...).
+// Se mantiene en memoria para no dejarlo guardado en LocalStorage.
+let tokenRecuperacion = "";
+
+// Los resultados de test y examen se guardan por usuario para que dos
+// cuentas usadas en el mismo dispositivo no compartan datos.
+function claveTestCache(usuarioId) {
+  return usuarioId ? CLAVE_TEST_CACHE + ":" + usuarioId : CLAVE_TEST_CACHE;
+}
+
+function claveExamenCache(usuarioId) {
+  return usuarioId ? CLAVE_EXAMEN_CACHE + ":" + usuarioId : CLAVE_EXAMEN_CACHE;
+}
+
+function claveAvatar(usuarioId) {
+  return usuarioId ? CLAVE_AVATAR + ":" + usuarioId : CLAVE_AVATAR;
+}
 
 // Mapa de navegacion: pantalla -> breadcrumb
 // Cada entrada define la ruta completa desde Inicio hasta la pantalla actual.
@@ -30,6 +49,16 @@ const MAPA_NAVEGACION = {
   "pantalla-login": [
     { etiqueta: "Inicio", pantalla: "pantalla-inicio" },
     { etiqueta: "Ingresar", pantalla: null }
+  ],
+  "pantalla-recuperar": [
+    { etiqueta: "Inicio", pantalla: "pantalla-inicio" },
+    { etiqueta: "Ingresar", pantalla: "pantalla-login" },
+    { etiqueta: "Recuperar contraseña", pantalla: null }
+  ],
+  "pantalla-restablecer": [
+    { etiqueta: "Inicio", pantalla: "pantalla-inicio" },
+    { etiqueta: "Ingresar", pantalla: "pantalla-login" },
+    { etiqueta: "Nueva contraseña", pantalla: null }
   ],
   "pantalla-test": [
     { etiqueta: "Inicio", pantalla: "pantalla-inicio" },
@@ -59,6 +88,16 @@ const MAPA_NAVEGACION = {
     { etiqueta: "Inicio", pantalla: "pantalla-inicio" },
     { etiqueta: "Mi entorno seguro", pantalla: "pantalla-dashboard" },
     { etiqueta: "Mi Progreso", pantalla: null }
+  ],
+  "pantalla-trabajos": [
+    { etiqueta: "Inicio", pantalla: "pantalla-inicio" },
+    { etiqueta: "Mi entorno seguro", pantalla: "pantalla-dashboard" },
+    { etiqueta: "Trabajos Prácticos", pantalla: null }
+  ],
+  "pantalla-configuracion": [
+    { etiqueta: "Inicio", pantalla: "pantalla-inicio" },
+    { etiqueta: "Mi entorno seguro", pantalla: "pantalla-dashboard" },
+    { etiqueta: "Mi Perfil", pantalla: null }
   ],
   "pantalla-examen": [
     { etiqueta: "Inicio", pantalla: "pantalla-inicio" },
@@ -130,11 +169,31 @@ async function apiPost(recurso, cuerpo) {
   }
 }
 
+async function apiPut(recurso, cuerpo) {
+  try {
+    const respuesta = await fetch(API_URL + "/" + recurso, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(cuerpo)
+    });
+    const datos = await respuesta.json();
+    if (!respuesta.ok) {
+      return { exito: false, datos: datos, error: datos.error || "Error HTTP " + respuesta.status };
+    }
+    return { exito: true, datos: datos };
+  } catch (error) {
+    console.error("API PUT falló (" + recurso + "):", error.message);
+    return { exito: false, datos: null, error: error.message };
+  }
+}
+
 // ============================================
 // NAVEGACIÓN ENTRE PANTALLAS (SPA)
 // ============================================
 
-function mostrarPantalla(idPantalla) {
+function mostrarPantalla(idPantalla, opciones) {
+  const evitarScroll = Boolean(opciones && opciones.evitarScroll);
+
   const todasLasPantallas = document.querySelectorAll(".pantalla");
   todasLasPantallas.forEach(function (pantalla) {
     pantalla.hidden = true;
@@ -143,11 +202,18 @@ function mostrarPantalla(idPantalla) {
   const pantallaObjetivo = document.getElementById(idPantalla);
   if (pantallaObjetivo) {
     pantallaObjetivo.hidden = false;
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    // Al saltar a una seccion del inicio, irASeccion controla el scroll.
+    if (!evitarScroll) window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   // Actualiza las migas de pan segun la pantalla visible
   actualizarBreadcrumb(idPantalla);
+
+  // Marca en la barra de navegacion la seccion en la que está parado
+  marcarNavegacionActiva(idPantalla);
+
+  // En pantallas chicas, al cambiar de vista se cierra el menu
+  cerrarMenuMovil();
 
   // Avisa a los lectores de pantalla que cambio la vista
   const tituloPantalla = pantallaObjetivo
@@ -424,14 +490,41 @@ function guardarSesion(usuario) {
     id: usuario.id,
     nombre: usuario.nombre,
     email: usuario.email,
-    nivelDigital: usuario.nivel_digital
+    nivelDigital: usuario.nivel_digital,
+    tamanoFuente: usuario.tamano_fuente || "normal",
+    temaPreferido: usuario.tema_preferido || "proteccion"
   });
+}
+
+// Une los datos nuevos que devuelve la API con la sesión guardada.
+function actualizarSesionDesdeUsuario(usuario) {
+  if (!usuario) return null;
+  const actual = obtenerSesion() || {};
+  const fusionada = {
+    id: usuario.id !== undefined ? usuario.id : actual.id,
+    nombre: usuario.nombre !== undefined ? usuario.nombre : actual.nombre,
+    email: usuario.email !== undefined ? usuario.email : actual.email,
+    nivelDigital: usuario.nivel_digital !== undefined ? usuario.nivel_digital : actual.nivelDigital,
+    tamanoFuente: usuario.tamano_fuente !== undefined ? usuario.tamano_fuente : actual.tamanoFuente,
+    temaPreferido: usuario.tema_preferido !== undefined ? usuario.tema_preferido : actual.temaPreferido
+  };
+  guardarSesion({
+    id: fusionada.id,
+    nombre: fusionada.nombre,
+    email: fusionada.email,
+    nivel_digital: fusionada.nivelDigital,
+    tamano_fuente: fusionada.tamanoFuente,
+    tema_preferido: fusionada.temaPreferido
+  });
+  return fusionada;
 }
 
 function cerrarSesion() {
   localStorage.removeItem(CLAVE_SESION);
+  reiniciarDatosDeSesion();
   ocultarMensaje();
-  document.getElementById("btn-cerrar-sesion").hidden = true;
+  aplicarPreferencias("normal", "proteccion");
+  refrescarInterfazSesion(null);
   mostrarPantalla("pantalla-inicio");
 }
 
@@ -523,6 +616,45 @@ function iniciarSesionFallback(email, password) {
 
   guardarSesion(usuario);
   return { exito: true, usuario: usuario };
+}
+
+// ============================================
+// RECUPERACIÓN DE CONTRASEÑA
+// El enlace que llega por correo tiene un token de un solo uso. El frontend
+// no guarda el token: lo envía al servidor y lo borra de la URL al terminar.
+// ============================================
+
+function obtenerTokenRecuperacionDeUrl() {
+  try {
+    const parametros = new URLSearchParams(window.location.search);
+    return String(parametros.get("reset") || parametros.get("token") || "").trim();
+  } catch (error) {
+    console.warn("No se pudo leer el enlace de recuperación:", error.message);
+    return "";
+  }
+}
+
+function limpiarTokenRecuperacionDeUrl() {
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("reset");
+    url.searchParams.delete("token");
+    const ruta = url.pathname + (url.search ? url.search : "") + url.hash;
+    window.history.replaceState({}, document.title, ruta);
+  } catch (error) {
+    console.warn("No se pudo limpiar el token de la URL:", error.message);
+  }
+}
+
+async function solicitarRecuperacionPassword(email) {
+  return apiPost("usuarios/recuperar-password", { email: email });
+}
+
+async function restablecerPasswordConToken(token, passwordNueva) {
+  return apiPost("usuarios/restablecer-password", {
+    token: token,
+    passwordNueva: passwordNueva
+  });
 }
 
 // ============================================
@@ -660,13 +792,19 @@ async function enviarTest(usuarioId, respuestas, preguntas) {
     totalPreguntas: preguntas.length
   });
 
+  // Guarda una copia local con el mismo formato que devuelve la API.
+  const datos = {
+    nivel: nivel,
+    puntaje: puntaje,
+    total_preguntas: preguntas.length,
+    creado_en: new Date().toISOString()
+  };
+  guardarLocal(claveTestCache(usuarioId), datos);
+
   if (resultado.exito) {
     return { exito: true, nivel: nivel, puntaje: puntaje, total: preguntas.length, desdeApi: true };
   }
 
-  // Fallback: guarda en localStorage
-  const datos = { nivel: nivel, puntaje: puntaje, total: preguntas.length, fecha: new Date().toISOString() };
-  guardarLocal(CLAVE_TEST_CACHE, datos);
   return { exito: true, nivel: nivel, puntaje: puntaje, total: preguntas.length, desdeApi: false };
 }
 
@@ -772,9 +910,11 @@ function renderizarAlertasEscudo() {
   const contenedor = document.getElementById("lista-alertas-escudo");
   if (!contenedor) return;
 
-  contenedor.innerHTML = "";
+  // Muestra las alertas guardadas (o el respaldo local) sin esperar la red.
+  const alertasIniciales = leerLocal(CLAVE_ALERTAS_CACHE, null) || obtenerAlertasFallback();
+  renderizarListaAlertas(contenedor, alertasIniciales);
 
-  // Intenta cargar desde la API
+  // Luego intenta actualizar desde la API.
   apiGet("alertas").then(function (resultado) {
     let alertas;
 
@@ -926,13 +1066,18 @@ async function enviarExamen(usuarioId, respuestas) {
     totalPreguntas: preguntasExamen.length
   });
 
-  const datos = { puntaje: puntaje, total: preguntasExamen.length, fecha: new Date().toISOString() };
+  const datos = {
+    puntaje: puntaje,
+    total_preguntas: preguntasExamen.length,
+    modulo_id: 4,
+    creado_en: new Date().toISOString()
+  };
+  guardarLocal(claveExamenCache(usuarioId), datos);
 
   if (resultado.exito) {
     return { exito: true, puntaje: puntaje, total: preguntasExamen.length, desdeApi: true };
   }
 
-  guardarLocal(CLAVE_EXAMEN_CACHE, datos);
   return { exito: true, puntaje: puntaje, total: preguntasExamen.length, desdeApi: false };
 }
 
@@ -944,11 +1089,11 @@ async function renderizarProgreso() {
   const contenedor = document.getElementById("contenido-progreso");
   if (!contenedor) return;
 
-  contenedor.innerHTML = "";
+  contenedor.innerHTML = "<p class=\"progreso__mensaje\">Cargando tu progreso…</p>";
 
   const sesion = obtenerSesion();
   if (!sesion) {
-    contenedor.innerHTML = "<p>No se encontró información de tu perfil.</p>";
+    contenedor.innerHTML = "<p class=\"progreso__mensaje\">No se encontró información de tu perfil.</p>";
     return;
   }
 
@@ -962,9 +1107,11 @@ async function renderizarProgreso() {
     examen = resultadoProgreso.datos.examen;
   } else {
     // Fallback: usa caché local
-    testInicial = leerLocal(CLAVE_TEST_CACHE, null);
-    examen = leerLocal(CLAVE_EXAMEN_CACHE, null);
+    testInicial = leerLocal(claveTestCache(sesion.id), null);
+    examen = leerLocal(claveExamenCache(sesion.id), null);
   }
+
+  contenedor.innerHTML = "";
 
   // Sección: Nivel inicial
   const seccionInicial = document.createElement("div");
@@ -983,7 +1130,7 @@ async function renderizarProgreso() {
 
     const barraInicial = crearBarraDeProgreso(
       testInicial.puntaje,
-      testInicial.total_preguntas * 2,
+      testInicial.total_preguntas,
       "progreso__barra--test-inicial",
       testInicial.nivel
     );
@@ -1020,13 +1167,13 @@ async function renderizarProgreso() {
     if (testInicial) {
       const comparacion = document.createElement("div");
       comparacion.className = "progreso__nivel";
-      const porcentajeInicial = Math.round((testInicial.puntaje / (testInicial.total_preguntas * 2)) * 100);
+      const porcentajeInicial = Math.round((testInicial.puntaje / testInicial.total_preguntas) * 100);
       const diferencia = porcentajeExamen - porcentajeInicial;
       let textoComparacion = "";
       if (diferencia > 0) {
         textoComparacion = "¡Mejoraste " + diferencia + "% respecto a tu nivel inicial! 🎉";
       } else if (diferencia === 0) {
-        textoComparacion = "Mantuveniste tu nivel. ¡Seguí aprendiendo!";
+        textoComparacion = "Mantuviste tu nivel. ¡Seguí aprendiendo!";
       } else {
         textoComparacion = "Repasá el módulo para reforzar tus conocimientos. 💪";
       }
@@ -1044,6 +1191,7 @@ async function renderizarProgreso() {
     botonCampus.type = "button";
     botonCampus.textContent = "Ir al Campus Educativo";
     botonCampus.addEventListener("click", function () {
+      renderizarCampus();
       mostrarPantalla("pantalla-campus");
     });
     seccionExamen.appendChild(botonCampus);
@@ -1084,18 +1232,903 @@ function crearBarraDeProgreso(valor, total, claseColor, textoSuperior) {
 }
 
 // ============================================
+// CAMPUS EDUCATIVO
+// Catálogo de módulos. Solo el Módulo 4 tiene la lección completa;
+// el resto se muestra como "Próximamente" para no romper la navegación.
+// ============================================
+
+const MODULOS_CAMPUS = [
+  { id: 1, titulo: "Uso de Smartphones", tema: "movil", icono: "📱", nivel: "principiante", duracion: 30, disponible: false },
+  { id: 2, titulo: "Redes e Internet", tema: "redes", icono: "🌐", nivel: "principiante", duracion: 40, disponible: false },
+  { id: 3, titulo: "Trámites en Línea", tema: "tramites", icono: "🧾", nivel: "intermedio", duracion: 45, disponible: false },
+  { id: 4, titulo: "Fraudes Digitales (Phishing)", tema: "fraudes", icono: "🛡️", nivel: "principiante", duracion: 35, disponible: true },
+  { id: 5, titulo: "Comunicación Digital", tema: "comunicacion", icono: "💬", nivel: "principiante", duracion: 25, disponible: false }
+];
+
+const ETIQUETAS_TEMA = {
+  movil: "Celular y aplicaciones",
+  redes: "Internet y privacidad",
+  tramites: "Trámites y organismos oficiales",
+  fraudes: "Prevención de estafas",
+  comunicacion: "Mensajes y videollamadas"
+};
+
+const ICONOS_TRABAJO = { 1: "📱", 2: "🌐", 3: "🧾", 4: "🛡️", 5: "💬" };
+
+// Un mini trabajo por módulo y por nivel. El texto es simple y accionable.
+const TRABAJOS_PRACTICOS = {
+  1: {
+    principiante: "Encendé tu celular y bajá el brillo desde los ajustes. Contale a alguien de confianza qué pasos hiciste.",
+    intermedio: "Agregá un contacto nuevo y mandale un mensaje de saludo. Revisá que el número esté bien escrito.",
+    avanzado: "Configurá el bloqueo de pantalla con PIN y activá el ahorro de batería."
+  },
+  2: {
+    principiante: "Abrí el navegador y buscá el clima de tu barrio. Fijate en la dirección del sitio antes de leer.",
+    intermedio: "Entrá al sitio oficial de tu banco y verificá que la dirección empiece con https y tenga el candado.",
+    avanzado: "Revisá los permisos de dos aplicaciones y quitá los que no uses."
+  },
+  3: {
+    principiante: "Buscá la página oficial de ANSES y guardala en favoritos para encontrarla fácil la próxima vez.",
+    intermedio: "Ingresá a Mi Argentina y revisá tus datos personales sin modificar nada.",
+    avanzado: "Descargá una constancia oficial y comprobá que el sitio sea el correcto antes de completar datos."
+  },
+  4: {
+    principiante: "Revisá un correo reciente y marcá tres señales de alerta: urgencia, errores o un enlace raro.",
+    intermedio: "Mostrale a un familiar una captura de un mensaje sospechoso y explicá por qué no hay que hacer clic.",
+    avanzado: "Configurá el filtro de correo no deseado y reportá un mensaje como phishing."
+  },
+  5: {
+    principiante: "Mandale un mensaje de voz a un familiar y pedile que te responda con otro.",
+    intermedio: "Creá un grupo de WhatsApp con dos familiares y compartí una foto.",
+    avanzado: "Hacé una videollamada y activá la verificación en dos pasos en tu cuenta de mensajería."
+  }
+};
+
+const NIVELES_TRABAJO = [
+  { valor: "principiante", etiqueta: "Principiante" },
+  { valor: "intermedio", etiqueta: "Intermedio" },
+  { valor: "avanzado", etiqueta: "Avanzado" }
+];
+
+const COLORES_AVATAR = ["#0A4B5C", "#007A87", "#2E7D32", "#B45309", "#6D4C41", "#7B1FA2"];
+
+let filtroCampusNivel = false;
+let modulosCampusCache = MODULOS_CAMPUS.slice();
+let moduloActual = MODULOS_CAMPUS[3];
+let nivelTrabajos = null;
+let miniTrabajosCache = [];
+
+// Evita que los datos de una cuenta queden visibles al entrar con otra.
+function reiniciarDatosDeSesion() {
+  modulosCampusCache = MODULOS_CAMPUS.slice();
+  miniTrabajosCache = [];
+  nivelTrabajos = null;
+  filtroCampusNivel = false;
+}
+
+function normalizarNivel(nivel) {
+  const valor = String(nivel || "").trim().toLowerCase();
+  if (valor === "protegido" || valor === "avanzado") return "avanzado";
+  if (valor === "intermedio") return "intermedio";
+  return "principiante";
+}
+
+function formatearNivel(nivel) {
+  const etiquetas = {
+    principiante: "Principiante",
+    intermedio: "Intermedio",
+    avanzado: "Avanzado",
+    protegido: "Protegido"
+  };
+  return etiquetas[String(nivel || "").toLowerCase()] || "Principiante";
+}
+
+function inicialDe(nombre) {
+  const limpio = String(nombre || "").trim();
+  return limpio ? limpio.charAt(0).toUpperCase() : "T";
+}
+
+async function renderizarCampus() {
+  const lista = document.getElementById("lista-modulos");
+  if (!lista) return;
+
+  // Muestra el catálogo local al instante y luego lo completa con la API.
+  renderizarListaCampus(modulosCampusCache);
+
+  const cargar = [apiGet("cursos")];
+  const sesion = obtenerSesion();
+  if (sesion) cargar.push(apiGet("usuarios/" + sesion.id + "/progreso"));
+
+  const respuestas = await Promise.all(cargar);
+  const resultadoCursos = respuestas[0];
+  const resultadoProgreso = respuestas[1];
+
+  const modulosApi = resultadoCursos.exito && Array.isArray(resultadoCursos.datos)
+    ? resultadoCursos.datos
+    : [];
+
+  modulosCampusCache = MODULOS_CAMPUS.map(function (base) {
+    const api = modulosApi.find(function (m) { return Number(m.id) === base.id; });
+    return {
+      id: base.id,
+      titulo: api && api.titulo ? api.titulo : base.titulo,
+      tema: api && api.tema ? api.tema : base.tema,
+      icono: base.icono,
+      nivel: api && api.nivel ? api.nivel : base.nivel,
+      duracion: api && api.duracion_min ? api.duracion_min : base.duracion,
+      disponible: base.disponible
+    };
+  });
+
+  if (resultadoProgreso && resultadoProgreso.exito && resultadoProgreso.datos) {
+    const completados = resultadoProgreso.datos.modulos || [];
+    modulosCampusCache.forEach(function (modulo) {
+      const avance = completados.find(function (m) { return Number(m.modulo_id) === modulo.id; });
+      modulo.completado = Boolean(avance && avance.completado);
+    });
+  }
+
+  renderizarListaCampus(modulosCampusCache);
+}
+
+function renderizarListaCampus(modulos) {
+  const lista = document.getElementById("lista-modulos");
+  if (!lista) return;
+
+  const sesion = obtenerSesion();
+  const nivelCrudo = sesion ? String(sesion.nivelDigital || "").toLowerCase() : "";
+  const nivelUsuario = sesion ? normalizarNivel(sesion.nivelDigital) : null;
+  const visibles = filtroCampusNivel && nivelUsuario
+    ? (nivelCrudo === "protegido"
+        ? modulos
+        : modulos.filter(function (m) { return normalizarNivel(m.nivel) === nivelUsuario; }))
+    : modulos;
+
+  lista.innerHTML = "";
+
+  if (visibles.length === 0) {
+    const vacio = document.createElement("li");
+    vacio.className = "lista-modulos__vacio";
+    vacio.textContent = "Todavía no hay módulos para tu nivel. Probá con «Todos».";
+    lista.appendChild(vacio);
+    return;
+  }
+
+  visibles.forEach(function (modulo) {
+    const item = document.createElement("li");
+    const esBoton = modulo.disponible;
+    const elemento = document.createElement(esBoton ? "button" : "div");
+    elemento.className = "modulo " + (esBoton ? "modulo--disponible" : "modulo--bloqueado");
+    elemento.setAttribute("type", esBoton ? "button" : "div");
+
+    if (!esBoton) {
+      elemento.setAttribute("aria-disabled", "true");
+    }
+
+    const icono = document.createElement("span");
+    icono.className = "modulo__icono";
+    icono.setAttribute("aria-hidden", "true");
+    icono.textContent = modulo.icono;
+    elemento.appendChild(icono);
+
+    const info = document.createElement("span");
+    info.className = "modulo__info";
+
+    const nombre = document.createElement("span");
+    nombre.className = "modulo__nombre";
+    nombre.textContent = "Módulo " + modulo.id + ": " + modulo.titulo;
+    info.appendChild(nombre);
+
+    const estado = document.createElement("span");
+    estado.className = "modulo__estado" + (modulo.completado || modulo.disponible ? " modulo__estado--disponible" : "");
+    if (modulo.completado) {
+      estado.textContent = "✓ Completado";
+    } else if (modulo.disponible) {
+      estado.textContent = "Disponible · " + (modulo.duracion || 35) + " min · Nivel " + formatearNivel(modulo.nivel);
+    } else {
+      estado.textContent = "Próximamente";
+    }
+    info.appendChild(estado);
+    elemento.appendChild(info);
+
+    if (esBoton) {
+      elemento.addEventListener("click", function () {
+        abrirModulo(modulo);
+      });
+    }
+
+    item.appendChild(elemento);
+    lista.appendChild(item);
+  });
+}
+
+function abrirModulo(modulo) {
+  if (!modulo || !modulo.disponible) {
+    mostrarMensaje("Este módulo estará disponible próximamente.", 3000);
+    return;
+  }
+
+  moduloActual = modulo;
+  indicePasoActual = 0;
+
+  const etiquetaTema = document.getElementById("leccion-tema-etiqueta");
+  if (etiquetaTema) {
+    etiquetaTema.textContent = "Tema: " + (ETIQUETAS_TEMA[modulo.tema] || "Aprendizaje digital");
+  }
+
+  const tituloLeccion = document.getElementById("leccion-titulo");
+  if (tituloLeccion) {
+    tituloLeccion.textContent = "Módulo " + modulo.id + ": " + modulo.titulo;
+  }
+
+  const rutaLeccion = MAPA_NAVEGACION["pantalla-leccion"];
+  if (rutaLeccion && rutaLeccion[3]) {
+    rutaLeccion[3].etiqueta = "Módulo " + modulo.id + ": " + modulo.titulo;
+  }
+
+  renderizarPasoLeccion(0);
+  mostrarPantalla("pantalla-leccion");
+}
+
+// ============================================
+// TRABAJOS PRACTICOS (mini tareas por nivel)
+// ============================================
+
+function renderizarSelectorNivel() {
+  const selector = document.getElementById("selector-nivel");
+  if (!selector) return;
+
+  selector.innerHTML = "";
+
+  NIVELES_TRABAJO.forEach(function (nivel) {
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.className = "chip-filtro" + (nivelTrabajos === nivel.valor ? " chip-filtro--activo" : "");
+    boton.textContent = nivel.etiqueta;
+    boton.setAttribute("aria-pressed", nivelTrabajos === nivel.valor ? "true" : "false");
+    boton.addEventListener("click", function () {
+      nivelTrabajos = nivel.valor;
+      renderizarSelectorNivel();
+      renderizarListaTrabajos();
+    });
+    selector.appendChild(boton);
+  });
+}
+
+async function renderizarTrabajos() {
+  const sesion = obtenerSesion();
+  if (!sesion) return;
+
+  nivelTrabajos = normalizarNivel(nivelTrabajos || sesion.nivelDigital);
+  renderizarSelectorNivel();
+
+  // Muestra las tareas al instante y luego sincroniza las que ya estan hechas.
+  renderizarListaTrabajos();
+
+  const resultado = await apiGet("usuarios/" + sesion.id + "/progreso");
+  miniTrabajosCache = resultado.exito && resultado.datos && Array.isArray(resultado.datos.miniTrabajos)
+    ? resultado.datos.miniTrabajos
+    : [];
+
+  renderizarListaTrabajos();
+}
+
+function trabajoEstaHecho(moduloId, nivel) {
+  return miniTrabajosCache.some(function (trabajo) {
+    return Number(trabajo.modulo_id) === Number(moduloId) &&
+      String(trabajo.nivel) === nivel &&
+      Boolean(trabajo.completado);
+  });
+}
+
+function renderizarListaTrabajos() {
+  const lista = document.getElementById("lista-trabajos");
+  if (!lista) return;
+
+  lista.innerHTML = "";
+
+  MODULOS_CAMPUS.forEach(function (modulo) {
+    const tarea = (TRABAJOS_PRACTICOS[modulo.id] || {})[nivelTrabajos] || "";
+    const hecho = trabajoEstaHecho(modulo.id, nivelTrabajos);
+
+    const tarjeta = document.createElement("article");
+    tarjeta.className = "trabajo" + (hecho ? " trabajo--hecho" : "");
+
+    const icono = document.createElement("span");
+    icono.className = "trabajo__icono";
+    icono.setAttribute("aria-hidden", "true");
+    icono.textContent = ICONOS_TRABAJO[modulo.id] || "🛠️";
+    tarjeta.appendChild(icono);
+
+    const cuerpo = document.createElement("div");
+    cuerpo.className = "trabajo__cuerpo";
+
+    const titulo = document.createElement("h3");
+    titulo.className = "trabajo__titulo";
+    titulo.textContent = "Módulo " + modulo.id + ": " + modulo.titulo;
+    cuerpo.appendChild(titulo);
+
+    const texto = document.createElement("p");
+    texto.className = "trabajo__texto";
+    texto.textContent = tarea;
+    cuerpo.appendChild(texto);
+
+    tarjeta.appendChild(cuerpo);
+
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.className = "btn " + (hecho ? "btn--secundario" : "btn--primario") + " trabajo__boton";
+    boton.textContent = hecho ? "✓ Hecho" : "Marcar como hecho";
+    boton.setAttribute("aria-pressed", hecho ? "true" : "false");
+    boton.addEventListener("click", function () {
+      guardarMiniTrabajo(modulo.id, nivelTrabajos, !hecho);
+    });
+    tarjeta.appendChild(boton);
+
+    lista.appendChild(tarjeta);
+  });
+}
+
+async function guardarMiniTrabajo(moduloId, nivel, completado) {
+  const sesion = obtenerSesion();
+  if (!sesion) return;
+
+  const resultado = await apiPost("progreso/mini-trabajo", {
+    usuarioId: sesion.id,
+    moduloId: moduloId,
+    nivel: nivel,
+    completado: completado
+  });
+
+  if (!resultado.exito) {
+    mostrarMensaje("No pudimos guardar el trabajo. Revisá tu conexión e intentá otra vez.", 4000);
+    return;
+  }
+
+  const indice = miniTrabajosCache.findIndex(function (trabajo) {
+    return Number(trabajo.modulo_id) === Number(moduloId) && String(trabajo.nivel) === nivel;
+  });
+  const registro = { modulo_id: moduloId, nivel: nivel, completado: completado };
+  if (indice >= 0) {
+    miniTrabajosCache[indice] = registro;
+  } else {
+    miniTrabajosCache.push(registro);
+  }
+
+  mostrarMensaje(completado ? "¡Trabajo guardado como hecho! 🎉" : "Trabajo marcado como pendiente.", 3000);
+  renderizarListaTrabajos();
+}
+
+// ============================================
+// PERFIL Y CONFIGURACION
+// ============================================
+
+function aplicarPreferencias(tamano, tema) {
+  const tamanos = ["normal", "grande", "xl"];
+  const temas = ["proteccion", "bosque", "calido"];
+  const tamanoValido = tamanos.indexOf(tamano) >= 0 ? tamano : "normal";
+  const temaValido = temas.indexOf(tema) >= 0 ? tema : "proteccion";
+  document.documentElement.setAttribute("data-tamano", tamanoValido);
+  document.documentElement.setAttribute("data-tema", temaValido);
+}
+
+function marcarPreferenciasEnFormulario(tamano, tema) {
+  const radioTamano = document.querySelector("input[name='tamano-fuente'][value='" + tamano + "']");
+  const radioTema = document.querySelector("input[name='tema'][value='" + tema + "']");
+  if (radioTamano) radioTamano.checked = true;
+  if (radioTema) radioTema.checked = true;
+}
+
+function aplicarAvatar() {
+  const sesion = obtenerSesion();
+  const guardado = sesion ? leerLocal(claveAvatar(sesion.id), null) : null;
+  const elementos = [
+    document.getElementById("cabecera-inicial"),
+    document.getElementById("dashboard-inicial"),
+    document.getElementById("config-inicial")
+  ];
+
+  elementos.forEach(function (elemento) {
+    if (!elemento) return;
+    elemento.style.backgroundImage = "";
+    elemento.style.backgroundColor = "";
+    elemento.style.color = "";
+
+    if (!sesion) {
+      elemento.textContent = "T";
+      return;
+    }
+
+    elemento.textContent = inicialDe(sesion.nombre);
+
+    if (guardado && guardado.tipo === "foto" && typeof guardado.valor === "string" && guardado.valor.indexOf("data:image/") === 0) {
+      elemento.textContent = "";
+      elemento.style.backgroundImage = "url('" + guardado.valor + "')";
+      elemento.style.backgroundSize = "cover";
+      elemento.style.backgroundPosition = "center";
+      return;
+    }
+
+    if (guardado && guardado.tipo === "color" && COLORES_AVATAR.indexOf(guardado.valor) >= 0) {
+      elemento.style.backgroundColor = guardado.valor;
+      elemento.style.color = "#FFFFFF";
+    }
+  });
+}
+
+function renderizarOpcionesAvatar() {
+  const contenedor = document.getElementById("opciones-avatar");
+  if (!contenedor) return;
+
+  const sesion = obtenerSesion();
+  const guardado = sesion ? leerLocal(claveAvatar(sesion.id), null) : null;
+  const colorActual = guardado && guardado.tipo === "color" ? guardado.valor : null;
+  contenedor.innerHTML = "";
+
+  COLORES_AVATAR.forEach(function (color, indice) {
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.className = "config__avatar-opcion" + (colorActual === color ? " config__avatar-opcion--activo" : "");
+    boton.style.backgroundColor = color;
+    boton.setAttribute("aria-label", "Elegir el color " + (indice + 1) + " para mi foto");
+    boton.setAttribute("aria-pressed", colorActual === color ? "true" : "false");
+    boton.addEventListener("click", function () {
+      const sesionActual = obtenerSesion();
+      if (!sesionActual) return;
+      guardarLocal(claveAvatar(sesionActual.id), { tipo: "color", valor: color });
+      aplicarAvatar();
+      renderizarOpcionesAvatar();
+      mostrarMensaje("Color de la foto guardado en este dispositivo.", 2500);
+    });
+    contenedor.appendChild(boton);
+  });
+}
+
+function pintarIdentidad(usuario) {
+  if (!usuario) return;
+
+  const nombre = usuario.nombre || "Tu nombre";
+  const nivel = formatearNivel(usuario.nivelDigital || usuario.nivel_digital);
+
+  const cabeceraNombre = document.getElementById("cabecera-nombre");
+  if (cabeceraNombre) cabeceraNombre.textContent = nombre;
+  const cabeceraNivel = document.getElementById("cabecera-nivel");
+  if (cabeceraNivel) cabeceraNivel.textContent = "Nivel " + nivel;
+
+  const dashboardNombre = document.getElementById("dashboard-nombre");
+  if (dashboardNombre) dashboardNombre.textContent = nombre;
+  const dashboardNivel = document.getElementById("dashboard-nivel");
+  if (dashboardNivel) dashboardNivel.textContent = "Nivel " + nivel;
+
+  const configNombre = document.getElementById("config-nombre-actual");
+  if (configNombre) configNombre.textContent = nombre;
+  const configEmail = document.getElementById("config-email-actual");
+  if (configEmail) configEmail.textContent = usuario.email || "Correo no disponible";
+  const configNivel = document.getElementById("config-nivel-actual");
+  if (configNivel) configNivel.textContent = "Nivel: " + nivel;
+
+  aplicarAvatar();
+}
+
+async function mostrarConfiguracion() {
+  const sesion = obtenerSesion();
+  if (!sesion) return;
+
+  pintarIdentidad(sesion);
+  renderizarOpcionesAvatar();
+
+  const campoNombre = document.getElementById("campo-config-nombre");
+  if (campoNombre) campoNombre.value = sesion.nombre || "";
+  const campoNivel = document.getElementById("campo-config-nivel");
+  if (campoNivel) campoNivel.value = sesion.nivelDigital || "principiante";
+  const campoEmail = document.getElementById("campo-config-email");
+  if (campoEmail) campoEmail.value = sesion.email || "";
+
+  let tamano = sesion.tamanoFuente || "normal";
+  let tema = sesion.temaPreferido || "proteccion";
+
+  const resultado = await apiGet("usuarios/" + sesion.id);
+  if (resultado.exito && resultado.datos) {
+    tamano = resultado.datos.tamano_fuente || tamano;
+    tema = resultado.datos.tema_preferido || tema;
+    actualizarSesionDesdeUsuario(resultado.datos);
+    pintarIdentidad(obtenerSesion());
+  }
+
+  aplicarPreferencias(tamano, tema);
+  marcarPreferenciasEnFormulario(tamano, tema);
+}
+
+async function guardarDatosPerfil(evento) {
+  evento.preventDefault();
+  ocultarTodosLosErrores();
+
+  const sesion = obtenerSesion();
+  if (!sesion) return;
+
+  const nombre = (document.getElementById("campo-config-nombre") || {}).value || "";
+  const nivel = (document.getElementById("campo-config-nivel") || {}).value || "";
+  const passwordActual = (document.getElementById("campo-config-password-actual") || {}).value || "";
+
+  if (nombre.trim().length < 2) {
+    mostrarError("error-config-nombre", "El nombre debe tener al menos 2 caracteres.");
+    return;
+  }
+
+  if (nombre.trim() !== sesion.nombre && passwordActual.length === 0) {
+    mostrarError("error-config-password-actual", "Para cambiar tu nombre, confirmá tu contraseña actual.");
+    return;
+  }
+
+  const cuerpo = { nombre: nombre.trim(), nivel: nivel };
+  if (passwordActual) cuerpo.passwordActual = passwordActual;
+
+  const resultado = await apiPut("usuarios/" + sesion.id + "/perfil", cuerpo);
+  if (!resultado.exito) {
+    const mensaje = resultado.datos && resultado.datos.error ? resultado.datos.error : "No pudimos guardar tus datos.";
+    mostrarError("error-config-password-actual", mensaje);
+    return;
+  }
+
+  actualizarSesionDesdeUsuario(resultado.datos);
+  refrescarInterfazSesion(obtenerSesion());
+  pintarIdentidad(obtenerSesion());
+  const campoPassword = document.getElementById("campo-config-password-actual");
+  if (campoPassword) campoPassword.value = "";
+  mostrarMensaje("Tus datos se guardaron correctamente. ✅", 3000);
+}
+
+async function guardarEmail(evento) {
+  evento.preventDefault();
+  ocultarTodosLosErrores();
+
+  const sesion = obtenerSesion();
+  if (!sesion) return;
+
+  const email = ((document.getElementById("campo-config-email") || {}).value || "").trim();
+  const passwordActual = (document.getElementById("campo-config-email-password") || {}).value || "";
+
+  const errorEmail = validarEmail(email);
+  if (errorEmail) {
+    mostrarError("error-config-email", errorEmail);
+    return;
+  }
+  if (passwordActual.length === 0) {
+    mostrarError("error-config-email-password", "Ingresá tu contraseña actual para cambiar el correo.");
+    return;
+  }
+
+  const resultado = await apiPut("usuarios/" + sesion.id + "/email", {
+    email: email,
+    passwordActual: passwordActual
+  });
+
+  if (!resultado.exito) {
+    const mensaje = resultado.datos && resultado.datos.error ? resultado.datos.error : "No pudimos cambiar el correo.";
+    mostrarError("error-config-email-password", mensaje);
+    return;
+  }
+
+  actualizarSesionDesdeUsuario(resultado.datos);
+  refrescarInterfazSesion(obtenerSesion());
+  pintarIdentidad(obtenerSesion());
+  const campoPassword = document.getElementById("campo-config-email-password");
+  if (campoPassword) campoPassword.value = "";
+  mostrarMensaje("Tu correo electrónico se actualizó. ✅", 3000);
+}
+
+async function guardarPassword(evento) {
+  evento.preventDefault();
+  ocultarTodosLosErrores();
+
+  const sesion = obtenerSesion();
+  if (!sesion) return;
+
+  const passwordActual = (document.getElementById("campo-config-password-old") || {}).value || "";
+  const passwordNueva = (document.getElementById("campo-config-password-nueva") || {}).value || "";
+  const passwordRepetir = (document.getElementById("campo-config-password-repetir") || {}).value || "";
+
+  if (passwordActual.length === 0) {
+    mostrarError("error-config-password-old", "Ingresá tu contraseña actual.");
+    return;
+  }
+  if (passwordNueva.length < 6) {
+    mostrarError("error-config-password-nueva", "La contraseña nueva debe tener al menos 6 caracteres.");
+    return;
+  }
+  if (passwordNueva !== passwordRepetir) {
+    mostrarError("error-config-password-repetir", "Las contraseñas nuevas no coinciden.");
+    return;
+  }
+
+  const resultado = await apiPut("usuarios/" + sesion.id + "/password", {
+    passwordActual: passwordActual,
+    passwordNueva: passwordNueva
+  });
+
+  if (!resultado.exito) {
+    const mensaje = resultado.datos && resultado.datos.error ? resultado.datos.error : "No pudimos cambiar la contraseña.";
+    mostrarError("error-config-password-old", mensaje);
+    return;
+  }
+
+  const formulario = document.getElementById("formulario-password");
+  if (formulario) formulario.reset();
+  mostrarMensaje("Tu contraseña se actualizó correctamente. ✅", 3000);
+}
+
+async function guardarPreferencias(evento) {
+  evento.preventDefault();
+  const sesion = obtenerSesion();
+  if (!sesion) return;
+
+  const radioTamano = document.querySelector("input[name='tamano-fuente']:checked");
+  const radioTema = document.querySelector("input[name='tema']:checked");
+  const tamano = radioTamano ? radioTamano.value : "normal";
+  const tema = radioTema ? radioTema.value : "proteccion";
+
+  aplicarPreferencias(tamano, tema);
+
+  const resultado = await apiPut("usuarios/" + sesion.id + "/perfil", {
+    tamanoFuente: tamano,
+    tema: tema
+  });
+
+  if (!resultado.exito) {
+    // Mantiene la eleccion en este dispositivo aunque la API no responda.
+    const sesionLocal = actualizarSesionDesdeUsuario({
+      id: sesion.id,
+      tamano_fuente: tamano,
+      tema_preferido: tema
+    });
+    refrescarInterfazSesion(sesionLocal);
+    mostrarMensaje("Las preferencias se aplicaron en este dispositivo, pero no se pudieron guardar en tu cuenta.", 4500);
+    return;
+  }
+
+  actualizarSesionDesdeUsuario(resultado.datos);
+  refrescarInterfazSesion(obtenerSesion());
+  mostrarMensaje("Preferencias de lectura guardadas. ✅", 3000);
+}
+
+function guardarFoto(evento) {
+  evento.preventDefault();
+  const input = document.getElementById("campo-foto");
+  const archivo = input && input.files ? input.files[0] : null;
+
+  if (!archivo) {
+    mostrarMensaje("Primero elegí una foto de tu dispositivo.", 3000);
+    return;
+  }
+  if (archivo.type.indexOf("image/") !== 0) {
+    mostrarMensaje("El archivo tiene que ser una imagen.", 3000);
+    return;
+  }
+  if (archivo.size > 2 * 1024 * 1024) {
+    mostrarMensaje("La foto es muy grande. Elegí una de menos de 2 MB.", 4000);
+    return;
+  }
+
+  const sesion = obtenerSesion();
+  if (!sesion) return;
+
+  const lector = new FileReader();
+  lector.onload = function () {
+    if (typeof lector.result === "string" && lector.result.indexOf("data:image/") === 0) {
+      guardarLocal(claveAvatar(sesion.id), { tipo: "foto", valor: lector.result });
+      aplicarAvatar();
+      renderizarOpcionesAvatar();
+      mostrarMensaje("Foto guardada en este dispositivo. 📷", 3000);
+    }
+  };
+  lector.readAsDataURL(archivo);
+}
+
+// ============================================
+// RESUMEN DEL DASHBOARD
+// ============================================
+
+async function renderizarResumenDashboard(sesion) {
+  const contenedor = document.getElementById("dashboard-resumen");
+  if (!contenedor || !sesion) return;
+
+  contenedor.innerHTML = "<p class=\"dashboard__resumen-cargando\">Cargando tu resumen…</p>";
+
+  const resultado = await apiGet("usuarios/" + sesion.id + "/progreso");
+  let modulosCompletados = 0;
+  let trabajosHechos = 0;
+  let examen = null;
+
+  if (resultado.exito && resultado.datos) {
+    const modulos = resultado.datos.modulos || [];
+    modulosCompletados = modulos.filter(function (m) { return Boolean(m.completado); }).length;
+    const trabajos = resultado.datos.miniTrabajos || [];
+    trabajosHechos = trabajos.filter(function (t) { return Boolean(t.completado); }).length;
+    examen = resultado.datos.examen;
+  }
+
+  contenedor.innerHTML = "";
+
+  const datos = [
+    { etiqueta: "Tu nivel", valor: formatearNivel(sesion.nivelDigital), icono: "🎯" },
+    { etiqueta: "Módulos completados", valor: modulosCompletados + " de " + MODULOS_CAMPUS.length, icono: "📚" },
+    { etiqueta: "Trabajos hechos", valor: String(trabajosHechos), icono: "🛠️" }
+  ];
+
+  if (examen && examen.total_preguntas) {
+    datos.push({
+      etiqueta: "Último examen",
+      valor: examen.puntaje + " de " + examen.total_preguntas,
+      icono: "🏅"
+    });
+  }
+
+  datos.forEach(function (dato) {
+    const item = document.createElement("div");
+    item.className = "dashboard__dato";
+
+    const icono = document.createElement("span");
+    icono.className = "dashboard__dato-icono";
+    icono.setAttribute("aria-hidden", "true");
+    icono.textContent = dato.icono;
+    item.appendChild(icono);
+
+    const valor = document.createElement("span");
+    valor.className = "dashboard__dato-valor";
+    valor.textContent = dato.valor;
+    item.appendChild(valor);
+
+    const etiqueta = document.createElement("span");
+    etiqueta.className = "dashboard__dato-etiqueta";
+    etiqueta.textContent = dato.etiqueta;
+    item.appendChild(etiqueta);
+
+    contenedor.appendChild(item);
+  });
+}
+
+// ============================================
+// BARRA DE NAVEGACION (publica y con sesion)
+// ============================================
+
+const MAPA_NAV_ACTIVA = {
+  "pantalla-campus": "btn-nav-campus",
+  "pantalla-leccion": "btn-nav-campus",
+  "pantalla-trabajos": "btn-nav-trabajos",
+  "pantalla-progreso": "btn-nav-progreso",
+  "pantalla-examen": "btn-nav-progreso",
+  "pantalla-escudo": "btn-nav-escudo",
+  "pantalla-configuracion": "btn-nav-perfil"
+};
+
+function marcarNavegacionActiva(idPantalla) {
+  document.querySelectorAll(".header__nav-item").forEach(function (boton) {
+    boton.classList.remove("header__nav-item--activo");
+    boton.removeAttribute("aria-current");
+  });
+
+  const idActivo = MAPA_NAV_ACTIVA[idPantalla];
+  if (idActivo) {
+    const boton = document.getElementById(idActivo);
+    if (boton) {
+      boton.classList.add("header__nav-item--activo");
+      boton.setAttribute("aria-current", "page");
+    }
+    return;
+  }
+
+  if (idPantalla === "pantalla-inicio" && !obtenerSesion()) {
+    const botonInicio = document.querySelector("#nav-invitado [data-seccion='inicio']");
+    if (botonInicio) {
+      botonInicio.classList.add("header__nav-item--activo");
+      botonInicio.setAttribute("aria-current", "page");
+    }
+  }
+}
+
+function refrescarInterfazSesion(sesion) {
+  const haySesion = Boolean(sesion);
+
+  document.querySelectorAll("[data-solo-invitado]").forEach(function (elemento) {
+    elemento.hidden = haySesion;
+  });
+  document.querySelectorAll("[data-solo-sesion]").forEach(function (elemento) {
+    elemento.hidden = !haySesion;
+  });
+
+  if (haySesion) {
+    pintarIdentidad(sesion);
+    aplicarPreferencias(sesion.tamanoFuente || "normal", sesion.temaPreferido || "proteccion");
+  } else {
+    aplicarPreferencias("normal", "proteccion");
+    aplicarAvatar();
+  }
+
+  cerrarMenuMovil();
+}
+
+function cerrarMenuMovil() {
+  const header = document.querySelector(".header");
+  const boton = document.getElementById("btn-menu-movil");
+  if (header) header.classList.remove("header--menu-abierto");
+  if (boton) {
+    boton.setAttribute("aria-expanded", "false");
+    boton.setAttribute("aria-label", "Abrir menú de navegación");
+  }
+}
+
+function alternarMenuMovil() {
+  const header = document.querySelector(".header");
+  const boton = document.getElementById("btn-menu-movil");
+  if (!header || !boton) return;
+
+  const abierto = header.classList.toggle("header--menu-abierto");
+  boton.setAttribute("aria-expanded", abierto ? "true" : "false");
+  boton.setAttribute("aria-label", abierto ? "Cerrar menú de navegación" : "Abrir menú de navegación");
+}
+
+function irASeccion(idSeccion) {
+  const sesion = obtenerSesion();
+  if (sesion) {
+    mostrarDashboard(sesion);
+    return;
+  }
+
+  ocultarTodosLosErrores();
+  // Evita que el scroll al inicio compita con el scroll a la seccion elegida.
+  mostrarPantalla("pantalla-inicio", { evitarScroll: true });
+
+  // Marca como activa la seccion publica que se esta visitando.
+  document.querySelectorAll("#nav-invitado [data-seccion]").forEach(function (boton) {
+    boton.classList.remove("header__nav-item--activo");
+    boton.removeAttribute("aria-current");
+  });
+  const botonSeccion = document.querySelector("#nav-invitado [data-seccion='" + idSeccion + "']");
+  if (botonSeccion) {
+    botonSeccion.classList.add("header__nav-item--activo");
+    botonSeccion.setAttribute("aria-current", "page");
+  }
+
+  if (idSeccion === "inicio") {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    return;
+  }
+
+  const seccion = document.getElementById(idSeccion);
+  if (seccion) {
+    seccion.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
+async function continuarDespuesDeAcceso(usuario) {
+  reiniciarDatosDeSesion();
+  refrescarInterfazSesion(obtenerSesion());
+
+  let testInicial = leerLocal(claveTestCache(usuario && usuario.id), null);
+
+  if (!testInicial && usuario && usuario.id) {
+    const resultado = await apiGet("usuarios/" + usuario.id + "/progreso");
+    if (resultado.exito && resultado.datos && resultado.datos.testInicial) {
+      testInicial = resultado.datos.testInicial;
+      guardarLocal(claveTestCache(usuario.id), testInicial);
+    }
+  }
+
+  if (!testInicial) {
+    mostrarPantalla("pantalla-test");
+    renderizarPreguntasTest("contenedor-preguntas", preguntasTestInicial);
+    return;
+  }
+
+  mostrarDashboard(obtenerSesion() || usuario);
+}
+
+// ============================================
 // ACTUALIZACIÓN DE HEADER
 // ============================================
 
 function actualizarHeaderParaSesion(haIniciadoSesion) {
-  const botonCerrar = document.getElementById("btn-cerrar-sesion");
-  const botonNavInicio = document.getElementById("btn-nav-inicio");
-  if (botonCerrar) {
-    botonCerrar.hidden = !haIniciadoSesion;
-  }
-  if (botonNavInicio) {
-    botonNavInicio.hidden = haIniciadoSesion;
-  }
+  refrescarInterfazSesion(haIniciadoSesion ? obtenerSesion() : null);
 }
 
 // ============================================
@@ -1106,28 +2139,25 @@ function evaluarEstadoYRedirigir() {
   const sesion = obtenerSesion();
 
   if (!sesion) {
-    actualizarHeaderParaSesion(false);
+    refrescarInterfazSesion(null);
     mostrarPantalla("pantalla-inicio");
     return;
   }
 
-  actualizarHeaderParaSesion(true);
-
-  const testInicial = leerLocal(CLAVE_TEST_CACHE, null);
-  if (!testInicial) {
-    mostrarPantalla("pantalla-test");
-    renderizarPreguntasTest("contenedor-preguntas", preguntasTestInicial);
-    return;
-  }
-
-  mostrarDashboard(sesion);
+  refrescarInterfazSesion(sesion);
+  continuarDespuesDeAcceso(sesion);
 }
 
 function mostrarDashboard(sesion) {
+  if (!sesion) return;
+
   const saludoEl = document.getElementById("dashboard-titulo");
   if (saludoEl) {
-    saludoEl.textContent = "¡Hola, " + sesion.nombre + "! Estás en un entorno totalmente seguro 🔒";
+    saludoEl.textContent = "¡Hola, " + sesion.nombre + "! 👋";
   }
+
+  pintarIdentidad(sesion);
+  renderizarResumenDashboard(sesion);
   mostrarPantalla("pantalla-dashboard");
 }
 
@@ -1153,6 +2183,80 @@ function inicializar() {
     if (senalizacionLogin) senalizacionLogin.actualizar();
   }
 
+  function irARecuperar() {
+    ocultarTodosLosErrores();
+
+    const formulario = document.getElementById("formulario-recuperar");
+    if (formulario) {
+      formulario.hidden = false;
+      formulario.reset();
+    }
+
+    const resultado = document.getElementById("recuperar-resultado");
+    if (resultado) resultado.hidden = true;
+
+    const enlaceDev = document.getElementById("recuperar-enlace-dev");
+    if (enlaceDev) {
+      enlaceDev.hidden = true;
+      enlaceDev.removeAttribute("href");
+    }
+
+    const avisoDev = document.getElementById("recuperar-aviso-dev");
+    if (avisoDev) avisoDev.hidden = true;
+
+    const email = document.getElementById("campo-email-recuperar");
+    const emailLogin = document.getElementById("campo-email-login");
+    if (email && emailLogin) email.value = emailLogin.value;
+    if (email) {
+      setTimeout(function () {
+        email.focus();
+      }, 50);
+    }
+
+    mostrarPantalla("pantalla-recuperar");
+  }
+
+  function irARestablecer(token) {
+    ocultarTodosLosErrores();
+    tokenRecuperacion = String(token || "");
+
+    const formulario = document.getElementById("formulario-restablecer");
+    if (formulario) {
+      formulario.hidden = false;
+      formulario.reset();
+    }
+
+    const campoToken = document.getElementById("campo-reset-token");
+    if (campoToken) campoToken.value = tokenRecuperacion;
+
+    const resultado = document.getElementById("restablecer-resultado");
+    if (resultado) resultado.hidden = true;
+
+    mostrarPantalla("pantalla-restablecer");
+
+    const primeraPassword = document.getElementById("campo-password-restablecer");
+    if (primeraPassword) {
+      setTimeout(function () {
+        primeraPassword.focus();
+      }, 50);
+    }
+  }
+
+  function volverDesdeRecuperacion() {
+    tokenRecuperacion = "";
+    limpiarTokenRecuperacionDeUrl();
+
+    const sesion = obtenerSesion();
+    if (sesion) {
+      refrescarInterfazSesion(sesion);
+      mostrarDashboard(sesion);
+      return;
+    }
+
+    refrescarInterfazSesion(null);
+    irALogin();
+  }
+
   ["btn-registrarse", "btn-registrarse-final", "btn-registrarse-desde-login"].forEach(function (id) {
     const boton = document.getElementById(id);
     if (boton) boton.addEventListener("click", irARegistro);
@@ -1163,15 +2267,95 @@ function inicializar() {
     if (boton) boton.addEventListener("click", irALogin);
   });
 
-  // --- Boton de navegacion "Inicio" en el header ---
-  document.getElementById("btn-nav-inicio").addEventListener("click", function () {
-    const sesion = obtenerSesion();
-    if (sesion) {
-      mostrarDashboard(sesion);
-    } else {
-      ocultarTodosLosErrores();
-      mostrarPantalla("pantalla-inicio");
-    }
+  // --- Barra de navegacion publica: lleva a cada seccion del inicio ---
+  document.querySelectorAll("[data-seccion]").forEach(function (boton) {
+    boton.addEventListener("click", function () {
+      irASeccion(boton.getAttribute("data-seccion"));
+    });
+  });
+
+  // --- Menu movil ---
+  const botonMenu = document.getElementById("btn-menu-movil");
+  if (botonMenu) {
+    botonMenu.addEventListener("click", alternarMenuMovil);
+  }
+  document.addEventListener("keydown", function (evento) {
+    if (evento.key === "Escape") cerrarMenuMovil();
+  });
+
+  // --- Marca TAMI: vuelve al inicio o al panel ---
+  const botonMarca = document.getElementById("btn-marca");
+  if (botonMarca) {
+    botonMarca.addEventListener("click", function () {
+      const sesion = obtenerSesion();
+      if (sesion) {
+        mostrarDashboard(sesion);
+      } else {
+        irASeccion("inicio");
+      }
+    });
+  }
+
+  // --- Acciones para quienes todavia no tienen cuenta ---
+  const btnNavLogin = document.getElementById("btn-nav-login");
+  if (btnNavLogin) btnNavLogin.addEventListener("click", irALogin);
+  const btnNavRegistro = document.getElementById("btn-nav-registro");
+  if (btnNavRegistro) btnNavRegistro.addEventListener("click", irARegistro);
+
+  // --- Recuperación de contraseña ---
+  const btnOlvidePassword = document.getElementById("btn-olvide-password");
+  if (btnOlvidePassword) btnOlvidePassword.addEventListener("click", irARecuperar);
+
+  ["btn-volver-recuperar", "btn-volver-restablecer"].forEach(function (id) {
+    const boton = document.getElementById(id);
+    if (boton) boton.addEventListener("click", volverDesdeRecuperacion);
+  });
+
+  const btnIrLoginDesdeRestablecer = document.getElementById("btn-ir-login-desde-restablecer");
+  if (btnIrLoginDesdeRestablecer) {
+    btnIrLoginDesdeRestablecer.addEventListener("click", function () {
+      refrescarInterfazSesion(null);
+      irALogin();
+    });
+  }
+
+  // --- Navegacion con sesion ---
+  function abrirCampus() {
+    renderizarCampus();
+    mostrarPantalla("pantalla-campus");
+  }
+
+  function abrirTrabajos() {
+    renderizarTrabajos();
+    mostrarPantalla("pantalla-trabajos");
+  }
+
+  function abrirEscudo() {
+    renderizarAlertasEscudo();
+    mostrarPantalla("pantalla-escudo");
+  }
+
+  function abrirProgreso() {
+    renderizarProgreso();
+    mostrarPantalla("pantalla-progreso");
+  }
+
+  async function abrirPerfil() {
+    mostrarPantalla("pantalla-configuracion");
+    await mostrarConfiguracion();
+  }
+
+  const accionesSesion = {
+    "btn-nav-campus": abrirCampus,
+    "btn-nav-trabajos": abrirTrabajos,
+    "btn-nav-progreso": abrirProgreso,
+    "btn-nav-escudo": abrirEscudo,
+    "btn-nav-perfil": abrirPerfil,
+    "btn-usuario-cabecera": abrirPerfil
+  };
+  Object.keys(accionesSesion).forEach(function (id) {
+    const boton = document.getElementById(id);
+    if (boton) boton.addEventListener("click", accionesSesion[id]);
   });
 
   // --- Botones de volver ---
@@ -1221,8 +2405,7 @@ function inicializar() {
     }
 
     mostrarMensaje("¡Cuenta creada con éxito! 🔒", 3000);
-    mostrarPantalla("pantalla-test");
-    renderizarPreguntasTest("contenedor-preguntas", preguntasTestInicial);
+    await continuarDespuesDeAcceso(resultado.usuario);
   });
 
   // --- Formulario de Login ---
@@ -1256,15 +2439,155 @@ function inicializar() {
     }
 
     mostrarMensaje("¡Bienvenido/a de vuelta, " + resultado.usuario.nombre + "! 🔒", 3000);
-
-    const testInicial = leerLocal(CLAVE_TEST_CACHE, null);
-    if (!testInicial) {
-      mostrarPantalla("pantalla-test");
-      renderizarPreguntasTest("contenedor-preguntas", preguntasTestInicial);
-    } else {
-      mostrarDashboard(resultado.usuario);
-    }
+    await continuarDespuesDeAcceso(resultado.usuario);
   });
+
+  // --- Recuperación: pedir el enlace por correo ---
+  const formularioRecuperar = document.getElementById("formulario-recuperar");
+  if (formularioRecuperar) {
+    formularioRecuperar.addEventListener("submit", async function (evento) {
+      evento.preventDefault();
+      ocultarTodosLosErrores();
+
+      const email = (document.getElementById("campo-email-recuperar") || {}).value || "";
+      const errorEmail = validarEmail(email);
+      if (errorEmail) {
+        mostrarError("error-email-recuperar", errorEmail);
+        return;
+      }
+
+      const boton = document.getElementById("btn-enviar-recuperacion");
+      const textoBoton = boton ? boton.textContent : "";
+      if (boton) {
+        boton.disabled = true;
+        boton.textContent = "Enviando…";
+      }
+
+      const resultado = await solicitarRecuperacionPassword(email.trim());
+
+      if (boton) {
+        boton.disabled = false;
+        boton.textContent = textoBoton;
+      }
+
+      if (!resultado.exito) {
+        const mensaje =
+          resultado.datos && resultado.datos.error
+            ? resultado.datos.error
+            : "No pudimos enviar el enlace. Revisá tu conexión e intentá de nuevo.";
+        mostrarError("error-email-recuperar", mensaje);
+        return;
+      }
+
+      formularioRecuperar.hidden = true;
+
+      const cajaResultado = document.getElementById("recuperar-resultado");
+      const textoResultado = document.getElementById("recuperar-resultado-texto");
+      if (textoResultado) {
+        textoResultado.textContent =
+          (resultado.datos && resultado.datos.mensaje) ||
+          "Si el correo está registrado, te enviamos un enlace para crear una contraseña nueva.";
+      }
+      if (cajaResultado) cajaResultado.hidden = false;
+
+      const enlaceDev = document.getElementById("recuperar-enlace-dev");
+      const avisoDev = document.getElementById("recuperar-aviso-dev");
+      if (enlaceDev && resultado.datos && resultado.datos.resetUrl) {
+        enlaceDev.href = resultado.datos.resetUrl;
+        enlaceDev.hidden = false;
+        if (avisoDev) avisoDev.hidden = false;
+      }
+    });
+  }
+
+  // --- Recuperación: guardar la contraseña nueva con el token del enlace ---
+  const formularioRestablecer = document.getElementById("formulario-restablecer");
+  if (formularioRestablecer) {
+    formularioRestablecer.addEventListener("submit", async function (evento) {
+      evento.preventDefault();
+      ocultarTodosLosErrores();
+
+      const campoToken = document.getElementById("campo-reset-token");
+      const token = tokenRecuperacion || (campoToken ? campoToken.value : "");
+
+      const passwordNueva =
+        (document.getElementById("campo-password-restablecer") || {}).value || "";
+      const passwordRepetir =
+        (document.getElementById("campo-password-restablecer-repetir") || {}).value || "";
+
+      if (!token) {
+        mostrarError(
+          "error-restablecer",
+          "El enlace no es válido o venció. Pedí uno nuevo desde '¿Olvidaste tu contraseña?'."
+        );
+        return;
+      }
+
+      if (passwordNueva.length < 6) {
+        mostrarError(
+          "error-password-restablecer",
+          "La contraseña nueva debe tener al menos 6 caracteres."
+        );
+        return;
+      }
+      if (passwordNueva.length > 72) {
+        mostrarError(
+          "error-password-restablecer",
+          "La contraseña no puede superar los 72 caracteres."
+        );
+        return;
+      }
+      if (passwordNueva !== passwordRepetir) {
+        mostrarError(
+          "error-password-restablecer-repetir",
+          "Las contraseñas nuevas no coinciden."
+        );
+        return;
+      }
+
+      const boton = document.getElementById("btn-guardar-password-restablecer");
+      const textoBoton = boton ? boton.textContent : "";
+      if (boton) {
+        boton.disabled = true;
+        boton.textContent = "Guardando…";
+      }
+
+      const resultado = await restablecerPasswordConToken(token, passwordNueva);
+
+      if (boton) {
+        boton.disabled = false;
+        boton.textContent = textoBoton;
+      }
+
+      if (!resultado.exito) {
+        const mensaje =
+          resultado.datos && resultado.datos.error
+            ? resultado.datos.error
+            : "No pudimos cambiar la contraseña. Intentá de nuevo.";
+        mostrarError("error-restablecer", mensaje);
+        return;
+      }
+
+      // El token ya se usó: se limpia de la URL y se cierra cualquier sesión
+      // local para que la próxima entrada use la contraseña nueva.
+      tokenRecuperacion = "";
+      limpiarTokenRecuperacionDeUrl();
+      if (campoToken) campoToken.value = "";
+      localStorage.removeItem(CLAVE_SESION);
+      reiniciarDatosDeSesion();
+      refrescarInterfazSesion(null);
+
+      formularioRestablecer.hidden = true;
+      const cajaResultado = document.getElementById("restablecer-resultado");
+      const textoResultado = document.getElementById("restablecer-resultado-texto");
+      if (textoResultado) {
+        textoResultado.textContent =
+          (resultado.datos && resultado.datos.mensaje) ||
+          "Tu contraseña se actualizó correctamente. Ya podés iniciar sesión.";
+      }
+      if (cajaResultado) cajaResultado.hidden = false;
+    });
+  }
 
   // --- Test: botón continuar después de ver resultado ---
   document.getElementById("btn-continuar-desde-test").addEventListener("click", function () {
@@ -1272,20 +2595,50 @@ function inicializar() {
     if (sesion) mostrarDashboard(sesion);
   });
 
-  // --- Dashboard: Navegación ---
-  document.getElementById("btn-campus").addEventListener("click", function () {
-    mostrarPantalla("pantalla-campus");
-  });
+  // --- Dashboard: accesos rapidos ---
+  const btnCampus = document.getElementById("btn-campus");
+  if (btnCampus) btnCampus.addEventListener("click", abrirCampus);
 
-  document.getElementById("btn-escudo").addEventListener("click", function () {
-    renderizarAlertasEscudo();
-    mostrarPantalla("pantalla-escudo");
-  });
+  const btnTrabajos = document.getElementById("btn-trabajos");
+  if (btnTrabajos) btnTrabajos.addEventListener("click", abrirTrabajos);
 
-  document.getElementById("btn-progreso").addEventListener("click", function () {
-    renderizarProgreso();
-    mostrarPantalla("pantalla-progreso");
-  });
+  const btnEscudo = document.getElementById("btn-escudo");
+  if (btnEscudo) btnEscudo.addEventListener("click", abrirEscudo);
+
+  const btnProgreso = document.getElementById("btn-progreso");
+  if (btnProgreso) btnProgreso.addEventListener("click", abrirProgreso);
+
+  const btnPerfilDashboard = document.getElementById("btn-perfil-dashboard");
+  if (btnPerfilDashboard) btnPerfilDashboard.addEventListener("click", abrirPerfil);
+
+  // --- Campus: filtros por nivel ---
+  const filtroTodos = document.getElementById("btn-filtro-todos");
+  const filtroNivel = document.getElementById("btn-filtro-nivel");
+
+  function actualizarFiltrosCampus() {
+    if (filtroTodos) {
+      filtroTodos.classList.toggle("chip-filtro--activo", !filtroCampusNivel);
+      filtroTodos.setAttribute("aria-pressed", filtroCampusNivel ? "false" : "true");
+    }
+    if (filtroNivel) {
+      filtroNivel.classList.toggle("chip-filtro--activo", filtroCampusNivel);
+      filtroNivel.setAttribute("aria-pressed", filtroCampusNivel ? "true" : "false");
+    }
+    renderizarListaCampus(modulosCampusCache);
+  }
+
+  if (filtroTodos) {
+    filtroTodos.addEventListener("click", function () {
+      filtroCampusNivel = false;
+      actualizarFiltrosCampus();
+    });
+  }
+  if (filtroNivel) {
+    filtroNivel.addEventListener("click", function () {
+      filtroCampusNivel = true;
+      actualizarFiltrosCampus();
+    });
+  }
 
   // --- Campus: Volver ---
   document.getElementById("btn-volver-campus").addEventListener("click", function () {
@@ -1293,12 +2646,14 @@ function inicializar() {
     if (sesion) mostrarDashboard(sesion);
   });
 
-  // --- Campus: Abrir Módulo 4 ---
-  document.getElementById("btn-modulo-fraudes").addEventListener("click", function () {
-    indicePasoActual = 0;
-    renderizarPasoLeccion(0);
-    mostrarPantalla("pantalla-leccion");
-  });
+  // --- Trabajos: Volver ---
+  const btnVolverTrabajos = document.getElementById("btn-volver-trabajos");
+  if (btnVolverTrabajos) {
+    btnVolverTrabajos.addEventListener("click", function () {
+      const sesion = obtenerSesion();
+      if (sesion) mostrarDashboard(sesion);
+    });
+  }
 
   // --- Lección: Navegación ---
   document.getElementById("btn-leccion-anterior").addEventListener("click", function () {
@@ -1306,7 +2661,7 @@ function inicializar() {
       indicePasoActual--;
       renderizarPasoLeccion(indicePasoActual);
       const sesion = obtenerSesion();
-      if (sesion) guardarProgresoModulo(sesion.id, 4, indicePasoActual, false);
+      if (sesion) guardarProgresoModulo(sesion.id, moduloActual.id, indicePasoActual, false);
     }
   });
 
@@ -1315,10 +2670,10 @@ function inicializar() {
       indicePasoActual++;
       renderizarPasoLeccion(indicePasoActual);
       const sesion = obtenerSesion();
-      if (sesion) guardarProgresoModulo(sesion.id, 4, indicePasoActual, false);
+      if (sesion) guardarProgresoModulo(sesion.id, moduloActual.id, indicePasoActual, false);
     } else {
       const sesion = obtenerSesion();
-      if (sesion) await guardarProgresoModulo(sesion.id, 4, pasosLeccion.length, true);
+      if (sesion) await guardarProgresoModulo(sesion.id, moduloActual.id, pasosLeccion.length, true);
       mostrarMensaje("¡Módulo completado! Ahora rendí un examen rápido.", 3000);
       mostrarPantalla("pantalla-examen");
       renderizarPreguntasTest("contenedor-examen", preguntasExamen);
@@ -1343,14 +2698,41 @@ function inicializar() {
     if (sesion) mostrarDashboard(sesion);
   });
 
-  // --- Cerrar sesión ---
-  document.getElementById("btn-cerrar-sesion").addEventListener("click", function () {
+  // --- Configuracion: formularios ---
+  const formularioPerfil = document.getElementById("formulario-perfil");
+  if (formularioPerfil) formularioPerfil.addEventListener("submit", guardarDatosPerfil);
+
+  const formularioEmail = document.getElementById("formulario-email");
+  if (formularioEmail) formularioEmail.addEventListener("submit", guardarEmail);
+
+  const formularioPassword = document.getElementById("formulario-password");
+  if (formularioPassword) formularioPassword.addEventListener("submit", guardarPassword);
+
+  const formularioPreferencias = document.getElementById("formulario-preferencias");
+  if (formularioPreferencias) formularioPreferencias.addEventListener("submit", guardarPreferencias);
+
+  const formularioFoto = document.getElementById("formulario-foto");
+  if (formularioFoto) formularioFoto.addEventListener("submit", guardarFoto);
+
+  // --- Cerrar sesion (cabecera y configuracion) ---
+  function salirDeLaCuenta() {
     cerrarSesion();
     mostrarMensaje("Sesión cerrada correctamente. Tus datos están guardados.", 3000);
-  });
+  }
 
-  // --- Evalúa el estado al cargar ---
-  evaluarEstadoYRedirigir();
+  const btnCerrarSesion = document.getElementById("btn-cerrar-sesion");
+  if (btnCerrarSesion) btnCerrarSesion.addEventListener("click", salirDeLaCuenta);
+
+  const btnCerrarSesionConfig = document.getElementById("btn-cerrar-sesion-config");
+  if (btnCerrarSesionConfig) btnCerrarSesionConfig.addEventListener("click", salirDeLaCuenta);
+
+  // --- Enlace de recuperación: tiene prioridad sobre la sesión guardada ---
+  const tokenEnlace = obtenerTokenRecuperacionDeUrl();
+  if (tokenEnlace) {
+    irARestablecer(tokenEnlace);
+  } else {
+    evaluarEstadoYRedirigir();
+  }
 }
 
 // ============================================

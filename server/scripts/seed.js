@@ -35,15 +35,27 @@ async function main() {
       ON CONFLICT DO NOTHING
     `);
     console.log("[Seed] Cursos cargados correctamente.");
+  }
 
-    // Si los cursos ya existian, se les completa el tema que falta.
-    await pool.query(`
-      UPDATE cursos SET tema = 'movil'        WHERE titulo = 'Uso de Smartphones' AND tema IS NULL;
-      UPDATE cursos SET tema = 'redes'        WHERE titulo = 'Redes e Internet' AND tema IS NULL;
-      UPDATE cursos SET tema = 'tramites'     WHERE titulo = 'Trámites en Línea' AND tema IS NULL;
-      UPDATE cursos SET tema = 'fraudes'      WHERE titulo = 'Fraudes Digitales (Phishing)' AND tema IS NULL;
-      UPDATE cursos SET tema = 'comunicacion' WHERE titulo = 'Comunicación Digital' AND tema IS NULL;
-    `);
+  // Si los cursos ya existian (o se insertaron sin tema en versiones previas),
+  // se les completa el tema que falte. Es idempotente y no pisa valores ya cargados.
+  const temas = [
+    ["movil", "Uso de Smartphones"],
+    ["redes", "Redes e Internet"],
+    ["tramites", "Trámites en Línea"],
+    ["fraudes", "Fraudes Digitales (Phishing)"],
+    ["comunicacion", "Comunicación Digital"],
+  ];
+  let temasActualizados = 0;
+  for (const [tema, titulo] of temas) {
+    const resultado = await pool.query(
+      "UPDATE cursos SET tema = $1 WHERE titulo = $2 AND tema IS NULL",
+      [tema, titulo]
+    );
+    temasActualizados += resultado.rowCount;
+  }
+  if (temasActualizados > 0) {
+    console.log(`[Seed] Tema completado en ${temasActualizados} curso(s).`);
   }
 
   // Alertas de fraude. Solo insertar si está vacío.

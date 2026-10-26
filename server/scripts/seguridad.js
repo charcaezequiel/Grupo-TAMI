@@ -14,7 +14,9 @@
  *  4. Agrega CHECK constraints de integridad (validando antes los datos
  *     existentes para no romper filas antiguas).
  *  5. Crea las tablas de seguridad `intentos_login` (fuerza bruta) y
- *     `auditoria_seguridad` (registro de eventos).
+ *     `auditoria_seguridad` (registro de eventos). La tabla
+ *     `recuperacion_password` se crea con `db:migrate` y también queda
+ *     protegida por RLS.
  *  6. Crea el trigger que mantiene `progreso_modulos.actualizado_en`.
  *
  * Uso:  npm run db:seguridad
@@ -228,6 +230,7 @@ async function main() {
   await agregarCheck("examenes", "ck_examenes_puntaje_max", "puntaje <= total_preguntas");
   await agregarCheck("progreso_modulos", "ck_progreso_paso", "paso_actual >= 0");
   await agregarCheck("intentos_login", "ck_intentos_email_len", "char_length(btrim(email)) BETWEEN 1 AND 254");
+  await agregarCheck("recuperacion_password", "ck_recuperacion_token_len", "char_length(token_hash) = 64");
 
   // ---------------------------------------------------------------
   // 6) Trigger para actualizado_en

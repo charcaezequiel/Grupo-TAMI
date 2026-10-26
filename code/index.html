@@ -28,7 +28,11 @@
           height="44"
           aria-hidden="true"
         >
-        <h1 class="header__titulo">TAMI</h1>
+        <h1 class="header__titulo">
+          <button class="header__marca-boton" id="btn-marca" type="button" aria-label="Ir al inicio de TAMI">
+            TAMI
+          </button>
+        </h1>
       </div>
 
       <!-- Boton de menu para pantallas chicas -->
@@ -37,72 +41,118 @@
         id="btn-menu-movil"
         type="button"
         aria-expanded="false"
-        aria-controls="nav-principal"
+        aria-controls="nav-invitado nav-sesion"
+        aria-label="Abrir menú de navegación"
       >
         <span class="header__menu-icono" aria-hidden="true">&#9776;</span>
         <span class="header__menu-texto">Men&uacute;</span>
       </button>
 
-      <nav class="header__nav" id="nav-principal" aria-label="Navegacion principal">
+      <!-- ============================================
+           NAVEGACION PUBLICA: contenidos del inicio
+           ============================================ -->
+      <nav class="header__nav" id="nav-invitado" aria-label="Contenidos del inicio" data-solo-invitado>
         <ul class="header__nav-lista">
           <li>
-            <button
-              class="header__nav-item"
-              id="btn-nav-inicio"
-              type="button"
-              aria-current="page"
-            >Inicio</button>
-          </li>
-          <li data-requiere-sesion="true">
-            <button class="header__nav-item" id="btn-nav-campus" type="button">
-              <span class="header__nav-icono" aria-hidden="true">&#x1F4DA;</span>
-              <span>Campus</span>
+            <button class="header__nav-item" type="button" data-seccion="inicio" aria-current="page">
+              Inicio
             </button>
           </li>
-          <li data-requiere-sesion="true">
-            <button class="header__nav-item" id="btn-nav-trabajos" type="button">
-              <span class="header__nav-icono" aria-hidden="true">&#x1F6E0;&#xFE0F;</span>
-              <span>Trabajos</span>
+          <li>
+            <button class="header__nav-item" type="button" data-seccion="seccion-que-es">
+              Qu&eacute; es TAMI
             </button>
           </li>
-          <li data-requiere-sesion="true">
-            <button class="header__nav-item" id="btn-nav-escudo" type="button">
-              <span class="header__nav-icono" aria-hidden="true">&#x1F512;</span>
-              <span>Escudo</span>
+          <li>
+            <button class="header__nav-item" type="button" data-seccion="seccion-lecciones">
+              Lecciones
             </button>
           </li>
-          <li data-requiere-sesion="true">
-            <button class="header__nav-item" id="btn-nav-progreso" type="button">
-              <span class="header__nav-icono" aria-hidden="true">&#x1F4CA;</span>
-              <span>Progreso</span>
+          <li>
+            <button class="header__nav-item" type="button" data-seccion="seccion-como-funciona">
+              C&oacute;mo funciona
+            </button>
+          </li>
+          <li>
+            <button class="header__nav-item" type="button" data-seccion="seccion-impacto">
+              Impacto
             </button>
           </li>
         </ul>
       </nav>
 
-      <!-- Ficha del usuario: al tocarla (foto o nombre) abre su configuracion -->
-      <div class="header__usuario" id="bloque-usuario" hidden>
-        <button
-          class="usuario-chip"
-          id="btn-usuario-cabecera"
-          type="button"
-          aria-label="Abrir la configuracion de mi cuenta"
-        >
-          <span class="usuario-chip__foto" id="cabecera-inicial" aria-hidden="true">T</span>
-          <span class="usuario-chip__datos">
-            <span class="usuario-chip__nombre" id="cabecera-nombre">Tu nombre</span>
-            <span class="usuario-chip__nivel" id="cabecera-nivel">Nivel</span>
-          </span>
+      <!-- ============================================
+           NAVEGACION CON SESION: mi cuenta
+           ============================================ -->
+      <nav class="header__nav" id="nav-sesion" aria-label="Navegacion de mi cuenta" data-solo-sesion hidden>
+        <ul class="header__nav-lista">
+          <li>
+            <button class="header__nav-item" id="btn-nav-campus" type="button">
+              <span class="header__nav-icono" aria-hidden="true">&#x1F4DA;</span>
+              <span>Campus</span>
+            </button>
+          </li>
+          <li>
+            <button class="header__nav-item" id="btn-nav-trabajos" type="button">
+              <span class="header__nav-icono" aria-hidden="true">&#x1F6E0;&#xFE0F;</span>
+              <span>Trabajos</span>
+            </button>
+          </li>
+          <li>
+            <button class="header__nav-item" id="btn-nav-progreso" type="button">
+              <span class="header__nav-icono" aria-hidden="true">&#x1F4CA;</span>
+              <span>Progreso</span>
+            </button>
+          </li>
+          <li>
+            <button class="header__nav-item" id="btn-nav-escudo" type="button">
+              <span class="header__nav-icono" aria-hidden="true">&#x1F512;</span>
+              <span>Escudo</span>
+            </button>
+          </li>
+          <li>
+            <button class="header__nav-item" id="btn-nav-perfil" type="button">
+              <span class="header__nav-icono" aria-hidden="true">&#x1F464;</span>
+              <span>Perfil</span>
+            </button>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Acciones para quien todavia no tiene cuenta -->
+      <div class="header__acciones header__acciones--invitado" data-solo-invitado>
+        <button class="btn header__accion header__accion--ingresar" id="btn-nav-login" type="button">
+          Ingresar
+        </button>
+        <button class="btn header__accion header__accion--registro" id="btn-nav-registro" type="button">
+          Crear cuenta
         </button>
       </div>
 
-      <button
-        class="header__cerrar-sesion btn btn--fantasma"
-        id="btn-cerrar-sesion"
-        type="button"
-        hidden
-        aria-label="Cerrar sesion y volver al inicio"
-      ><span aria-hidden="true">&#x1F6AA;</span> Salir</button>
+      <!-- Ficha del usuario y salida -->
+      <div class="header__acciones header__acciones--sesion" data-solo-sesion hidden>
+        <div class="header__usuario" id="bloque-usuario">
+          <button
+            class="usuario-chip"
+            id="btn-usuario-cabecera"
+            type="button"
+            aria-label="Abrir mi perfil y la configuracion de mi cuenta"
+          >
+            <span class="usuario-chip__foto" id="cabecera-inicial" aria-hidden="true">T</span>
+            <span class="usuario-chip__datos">
+              <span class="usuario-chip__nombre" id="cabecera-nombre">Tu nombre</span>
+              <span class="usuario-chip__nivel" id="cabecera-nivel">Nivel</span>
+            </span>
+          </button>
+        </div>
+
+        <button
+          class="header__cerrar-sesion btn btn--fantasma"
+          id="btn-cerrar-sesion"
+          type="button"
+          aria-label="Cerrar sesion y volver al inicio"
+        ><span aria-hidden="true">&#x1F6AA;</span> Salir</button>
+      </div>
     </div>
   </header>
 
@@ -155,7 +205,7 @@
       </div>
 
       <!-- ---------- QUÉ QUEREMOS TRANSMITIR ---------- -->
-      <section class="panel" aria-labelledby="propo-titulo">
+      <section class="panel" id="seccion-que-es" aria-labelledby="propo-titulo">
         <div class="panel__encabezado">
           <span class="panel__icono" aria-hidden="true">&#x1F3AF;</span>
           <h2 id="propo-titulo" class="panel__titulo">Qué queremos transmitir</h2>
@@ -242,7 +292,7 @@
       </section>
 
       <!-- ---------- LAS LECCIONES ---------- -->
-      <section class="panel" aria-labelledby="lecciones-titulo">
+      <section class="panel" id="seccion-lecciones" aria-labelledby="lecciones-titulo">
         <div class="panel__encabezado">
           <span class="panel__icono" aria-hidden="true">&#x1F4DA;</span>
           <h2 id="lecciones-titulo" class="panel__titulo">Las lecciones: qué vas a aprender</h2>
@@ -439,7 +489,7 @@
       </section>
 
       <!-- ---------- CÓMO FUNCIONA ---------- -->
-      <section class="panel" aria-labelledby="recorrido-titulo">
+      <section class="panel" id="seccion-como-funciona" aria-labelledby="recorrido-titulo">
         <div class="panel__encabezado">
           <span class="panel__icono" aria-hidden="true">&#x1F9ED;</span>
           <h2 id="recorrido-titulo" class="panel__titulo">Cómo funciona el aprendizaje</h2>
@@ -498,7 +548,7 @@
       </section>
 
       <!-- ---------- IMPACTO ---------- -->
-      <section class="panel panel--impacto" aria-labelledby="impacto-titulo">
+      <section class="panel panel--impacto" id="seccion-impacto" aria-labelledby="impacto-titulo">
         <div class="panel__encabezado">
           <span class="panel__icono" aria-hidden="true">&#x1F331;</span>
           <h2 id="impacto-titulo" class="panel__titulo">El impacto que queremos generar</h2>
@@ -754,6 +804,11 @@
             >
             <span id="error-password-login" class="campo__error" role="alert" hidden></span>
           </div>
+          <div class="campo__olvide">
+            <button type="button" class="btn btn--fantasma" id="btn-olvide-password">
+              ¿Olvidaste tu contraseña?
+            </button>
+          </div>
           <button type="submit" class="btn btn--primario btn--masivo">
             <span aria-hidden="true">🔓</span> Paso 3: Ingresar
           </button>
@@ -767,6 +822,146 @@
             &#x2190; Volver al inicio
           </button>
         </form>
+      </div>
+    </section>
+
+    <!-- ============================================
+         PANTALLA: SOLICITAR RECUPERACION DE CONTRASENA
+         ============================================ -->
+    <section
+      id="pantalla-recuperar"
+      class="pantalla"
+      aria-labelledby="recuperar-titulo"
+      hidden
+    >
+      <div class="contenedor-formulario">
+        <h2 id="recuperar-titulo" class="contenedor-formulario__titulo">
+          Recuperar mi contraseña
+        </h2>
+        <p class="contenedor-formulario__subtitulo">
+          Escribí el correo con el que te registraste y te vamos a enviar un enlace
+          para crear una contraseña nueva.
+        </p>
+
+        <form id="formulario-recuperar" novalidate>
+          <div class="campo">
+            <label for="campo-email-recuperar" class="campo__etiqueta">
+              Correo electrónico de tu cuenta
+            </label>
+            <p class="campo__pista">
+              <span aria-hidden="true">👉</span> Revisá también la carpeta de spam o correo no deseado.
+            </p>
+            <input
+              type="email"
+              id="campo-email-recuperar"
+              class="campo__input"
+              placeholder="Ej: maria@correo.com"
+              autocomplete="email"
+              required
+              aria-required="true"
+              aria-describedby="error-email-recuperar"
+            >
+            <span id="error-email-recuperar" class="campo__error" role="alert" hidden></span>
+          </div>
+          <button type="submit" class="btn btn--primario btn--masivo" id="btn-enviar-recuperacion">
+            <span aria-hidden="true">📧</span> Enviar enlace de recuperación
+          </button>
+        </form>
+
+        <div id="recuperar-resultado" class="recuperacion__resultado" role="status" aria-live="polite" hidden>
+          <h3 class="recuperacion__titulo">Revisá tu correo</h3>
+          <p id="recuperar-resultado-texto" class="recuperacion__texto"></p>
+          <a
+            id="recuperar-enlace-dev"
+            class="btn btn--secundario"
+            href="#"
+            hidden
+          >
+            <span aria-hidden="true">🧪</span> Abrir enlace de prueba
+          </a>
+          <p id="recuperar-aviso-dev" class="campo__nota" hidden>
+            Este enlace se muestra solo en desarrollo porque el servidor no tiene
+            SMTP configurado.
+          </p>
+        </div>
+
+        <button type="button" class="btn btn--fantasma btn--volver" id="btn-volver-recuperar">
+          &#x2190; Volver a iniciar sesión
+        </button>
+      </div>
+    </section>
+
+    <!-- ============================================
+         PANTALLA: ELEGIR CONTRASENA NUEVA
+         ============================================ -->
+    <section
+      id="pantalla-restablecer"
+      class="pantalla"
+      aria-labelledby="restablecer-titulo"
+      hidden
+    >
+      <div class="contenedor-formulario">
+        <h2 id="restablecer-titulo" class="contenedor-formulario__titulo">
+          Crear una contraseña nueva
+        </h2>
+        <p class="contenedor-formulario__subtitulo">
+          Elegí una contraseña de al menos 6 caracteres. El enlace sirve una sola vez.
+        </p>
+
+        <form id="formulario-restablecer" novalidate>
+          <input type="hidden" id="campo-reset-token" value="">
+          <div class="campo">
+            <label for="campo-password-restablecer" class="campo__etiqueta">
+              Contraseña nueva
+            </label>
+            <p class="campo__pista">
+              <span aria-hidden="true">🔐</span> No uses tu nombre ni una contraseña que ya uses en otro sitio.
+            </p>
+            <input
+              type="password"
+              id="campo-password-restablecer"
+              class="campo__input"
+              placeholder="Mínimo 6 caracteres"
+              autocomplete="new-password"
+              required
+              aria-required="true"
+              aria-describedby="error-password-restablecer"
+            >
+            <span id="error-password-restablecer" class="campo__error" role="alert" hidden></span>
+          </div>
+          <div class="campo">
+            <label for="campo-password-restablecer-repetir" class="campo__etiqueta">
+              Repetí la contraseña nueva
+            </label>
+            <input
+              type="password"
+              id="campo-password-restablecer-repetir"
+              class="campo__input"
+              placeholder="Escribila otra vez"
+              autocomplete="new-password"
+              required
+              aria-required="true"
+              aria-describedby="error-password-restablecer-repetir"
+            >
+            <span id="error-password-restablecer-repetir" class="campo__error" role="alert" hidden></span>
+          </div>
+          <span id="error-restablecer" class="campo__error" role="alert" hidden></span>
+          <button type="submit" class="btn btn--primario btn--masivo" id="btn-guardar-password-restablecer">
+            <span aria-hidden="true">🔐</span> Guardar mi contraseña nueva
+          </button>
+        </form>
+
+        <div id="restablecer-resultado" class="recuperacion__resultado" role="status" aria-live="polite" hidden>
+          <h3 class="recuperacion__titulo">¡Contraseña actualizada!</h3>
+          <p id="restablecer-resultado-texto" class="recuperacion__texto"></p>
+          <button type="button" class="btn btn--primario btn--masivo" id="btn-ir-login-desde-restablecer">
+            <span aria-hidden="true">🔓</span> Iniciar sesión con mi contraseña nueva
+          </button>
+        </div>
+
+        <button type="button" class="btn btn--fantasma btn--volver" id="btn-volver-restablecer">
+          &#x2190; Volver a iniciar sesión
+        </button>
       </div>
     </section>
 
@@ -1037,7 +1232,7 @@
             <span aria-hidden="true">&#x1F5BC;&#xFE0F;</span> Tu foto
           </h3>
           <p class="config__texto">
-            Eleg&iacute; una foto de tu galleta o un color con tu inicial. Queda guardada solo en este dispositivo.
+            Eleg&iacute; una foto de tu galer&iacute;a o un color con tu inicial. Queda guardada solo en este dispositivo.
           </p>
           <div class="campo">
             <label for="campo-foto" class="campo__etiqueta">Buscar una foto en este dispositivo</label>
@@ -1070,7 +1265,7 @@
           </div>
           <div class="campo">
             <label for="campo-config-nivel" class="campo__etiqueta">Tu nivel de aprendizaje</label>
-            <p class="campo__pista"><span aria-hidden="true">&#x1F449;</span> Decide qu&eacute; mini trabajo teayana.</p>
+            <p class="campo__pista"><span aria-hidden="true">&#x1F449;</span> Decide qu&eacute; mini trabajo te toca.</p>
             <select id="campo-config-nivel" class="campo__input">
               <option value="principiante">Principiante &mdash; todav&iacute;a estoy aprendiendo lo b&aacute;sico</option>
               <option value="intermedio">Intermedio &mdash; ya manejo lo b&aacute;sico, quiero m&aacute;s</option>
@@ -1149,7 +1344,7 @@
           </div>
           <div class="campo">
             <label for="campo-config-password-nueva" class="campo__etiqueta">Contrase&ntilde;a nueva</label>
-            <p class="campo__pista"><span aria-hidden="true">&#x1F449;</span> M&aacute;ximo 6 caracteres. No uses tu nombre.</p>
+            <p class="campo__pista"><span aria-hidden="true">&#x1F449;</span> M&iacute;nimo 6 caracteres. No uses tu nombre.</p>
             <input
               type="password"
               id="campo-config-password-nueva"

@@ -8,6 +8,7 @@ Capa de **Datos** y servicios de la aplicación. Expone una **API REST** que el 
 - **Supabase** (PostgreSQL gestionado en la nube, conexión por pooler con SSL).
 - **pg** (driver de PostgreSQL, consultas parametrizadas).
 - **bcrypt** (hashing irreversible de contraseñas, costo 12).
+- **nodemailer** (envío de correos para la recuperación de contraseña).
 - **dotenv** (variables de entorno) y **cors** (permite que el frontend consuma la API).
 
 ## Estructura
@@ -24,8 +25,10 @@ server/
 │   └── estado.js       Informe de solo lectura: rol, tablas, duplicados, RLS (npm run db:estado)
 ├── middlewares/
 │   └── seguridad.js    Cabeceras HTTP, limitador de solicitudes por IP y CORS restringido
+├── services/
+│   └── email.js        Envío SMTP del enlace de recuperación (nodemailer)
 ├── routes/
-│   ├── usuarios.js     Registro, login (bcrypt + bloqueo por intentos), listado y progreso
+│   ├── usuarios.js     Registro, login, recuperación de contraseña, listado y progreso
 │   ├── cursos.js       Listado de módulos/curso
 │   ├── alertas.js      Alertas de fraude
 │   └── progreso.js     Test, exámenes y progreso de módulos
@@ -71,7 +74,12 @@ Capa implementada en `middlewares/seguridad.js`, `index.js` y `routes/usuarios.j
   (tabla `intentos_login`); después se responde `429`.
 - **Mensajes genéricos de login**: no se revela si el correo existe (evita enumeración de cuentas).
 - **Timing constante**: si el correo no existe se compara igualmente contra un hash de relleno.
-- **Auditoría**: eventos de login/registro/bloqueo en `auditoria_seguridad`.
+- **Recuperación de contraseña**: token aleatorio de 32 bytes, guardado solo como hash
+  SHA-256 en `recuperacion_password`, con vencimiento (30 minutos por defecto) y un
+  solo uso. Un pedido nuevo invalida los enlaces anteriores. Los endpoints tienen
+  límites propios por IP (5 solicitudes y 10 restablecimientos cada 15 minutos).
+- **Auditoría**: eventos de login/registro/bloqueo y de recuperación de contraseña
+  en `auditoria_seguridad`. Nunca se registra el token.
 
 ## Seguridad de la base de datos
 
@@ -83,7 +91,9 @@ Aplicada con `npm run db:seguridad`:
 - **UNIQUE sobre `lower(btrim(email))`**: impide cuentas duplicadas con distintas mayúsculas.
 - **CHECK constraints**: formato y longitud de email/nombre, severidad de alertas,
   niveles válidos, `puntaje >= 0`, `paso_actual >= 0`, hash presente.
-- **Tablas de seguridad**: `intentos_login` y `auditoria_seguridad`.
+- **Tablas de seguridad**: `intentos_login`, `auditoria_seguridad` y
+  `recuperacion_password` (esta última se crea con `db:migrate` y también queda
+  protegida por RLS).
 - **Trigger** que actualiza `actualizado_en` en `progreso_modulos`.
 
 Verificá el estado con `npm run db:estado` (solo lectura).
@@ -148,7 +158,8 @@ DATABASE_URL=postgresql://postgres.XXXXX:<password>@aws-0-us-east-1.pooler.supab
 | `examenes` | Resultados del examen post-lección |
 | `progreso_modulos` | Avance paso a paso en cada módulo |
 | `intentos_login` | Intentos de acceso (email, IP, exito, fecha) para rate limiting |
-| `auditoria_seguridad` | Eventos de seguridad: logins, registros, bloqueos |
+| `auditoria_seguridad` | Eventos de seguridad: logins, registros, bloqueos, recuperación |
+| `recuperacion_password` | Tokens de recuperación (solo hash SHA-256, vencimiento y uso) |
 
 ## Endpoints
 
@@ -159,6 +170,8 @@ DATABASE_URL=postgresql://postgres.XXXXX:<password>@aws-0-us-east-1.pooler.supab
 | GET | `/api/usuarios/:id` | Obtener un usuario (sin correo salvo clave admin) | — |
 | POST | `/api/usuarios/registrar` | Registrar usuario (bcrypt) | `{ nombre, email, password }` |
 | POST | `/api/usuarios/login` | Iniciar sesión (compare bcrypt) | `{ email, password }` |
+| POST | `/api/usuarios/recuperar-password` | Pedir enlace de recuperación (respuesta genérica) | `{ email }` |
+| POST | `/api/usuarios/restablecer-password` | Cambiar la contraseña con un token de un solo uso | `{ token, passwordNueva }` |
 | GET | `/api/usuarios/:id/progreso` | Progreso completo | — |
 | GET | `/api/cursos` | Listar cursos activos | — |
 | GET | `/api/cursos/:id` | Obtener un curso | — |
@@ -172,6 +185,57 @@ DATABASE_URL=postgresql://postgres.XXXXX:<password>@aws-0-us-east-1.pooler.supab
 > `x-api-key` con el valor de `ADMIN_KEY` del `.env`. Si `ADMIN_KEY` está vacía,
 > los listados **nunca** devuelven correos (evita exponer datos personales).
 > El login puede responder `429` cuando se superan los intentos fallidos permitidos.
+
+## Recuperación de contraseña
+
+El flujo es:
+
+1. La persona toca **“¿Olvidaste tu contraseña?”** en la pantalla de login.
+2. Ingresa su correo. La API responde siempre lo mismo, exista o no la cuenta
+   (evita enumeración), y genera un token de un solo uso.
+3. Si el correo existe, recibe un enlace a `FRONTEND_URL` con el token en
+   `?reset=...`. Por correo viaja el token original; en la base solo queda su
+   hash SHA-256.
+4. El enlace abre la pantalla **“Crear una contraseña nueva”**. Al guardar, la
+   API valida el token, actualiza el hash bcrypt, invalida el token y limpia los
+   bloqueos por intentos fallidos.
+
+### Configurar el envío por correo
+
+Agregá estas variables a `server/.env` (los valores reales no se suben al repo):
+
+```env
+FRONTEND_URL=http://localhost:5500/code/index.html
+RESET_TOKEN_MINUTOS=30
+
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=tu-cuenta@gmail.com
+SMTP_PASS=tu-contraseña-de-aplicación
+SMTP_FROM=TAMI <no-reply@tami.local>
+```
+
+- **Gmail**: no uses la contraseña normal de la cuenta; generá una
+  **contraseña de aplicación** en la configuración de seguridad de Google.
+- **Producción**: `FRONTEND_URL` debe ser la URL HTTPS real del frontend y
+  `SMTP_*` debe apuntar a un proveedor transaccional (Brevo, Mailgun, SES, etc.).
+- Si `SMTP_HOST` no está configurado, el servidor no puede enviar correos. El
+  endpoint sigue respondiendo de forma genérica para no romper la seguridad.
+
+### Probar sin SMTP (solo desarrollo local)
+
+Con `RESET_DEBUG_LINK=true` la API devuelve además `resetUrl` y la interfaz
+muestra un botón **“Abrir enlace de prueba”**. El enlace sirve para completar el
+circuito en la máquina local:
+
+```env
+FRONTEND_URL=http://localhost:5500/code/index.html
+RESET_DEBUG_LINK=true
+```
+
+> ⚠️ `RESET_DEBUG_LINK` está pensado únicamente para desarrollo. El servidor lo
+> ignora cuando `NODE_ENV=production`. Nunca lo actives en un sitio publicado.
 
 ## Puesta en Marcha
 

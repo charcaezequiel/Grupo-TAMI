@@ -193,3 +193,23 @@ CREATE TABLE IF NOT EXISTS auditoria_seguridad (
 );
 CREATE INDEX IF NOT EXISTS idx_auditoria_accion ON auditoria_seguridad (accion, creado_en DESC);
 CREATE INDEX IF NOT EXISTS idx_auditoria_usuario ON auditoria_seguridad (usuario_id, creado_en DESC);
+
+-- Enlaces de recuperación de contraseña.
+-- Se guarda SOLO el hash SHA-256 del token, nunca el token en texto plano.
+-- El token original viaja una única vez por correo y deja de servir al usarse
+-- o al vencer (30 minutos por defecto).
+CREATE TABLE IF NOT EXISTS recuperacion_password (
+  id SERIAL PRIMARY KEY,
+  usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  token_hash TEXT NOT NULL UNIQUE,
+  creado_en TIMESTAMP NOT NULL DEFAULT NOW(),
+  expira_en TIMESTAMP NOT NULL,
+  usado_en TIMESTAMP,
+  ip TEXT,
+  CONSTRAINT recuperacion_token_len_ck CHECK (char_length(token_hash) = 64),
+  CONSTRAINT recuperacion_expira_ck CHECK (expira_en > creado_en)
+);
+CREATE INDEX IF NOT EXISTS idx_recuperacion_usuario
+  ON recuperacion_password (usuario_id, creado_en DESC);
+CREATE INDEX IF NOT EXISTS idx_recuperacion_expira
+  ON recuperacion_password (expira_en);

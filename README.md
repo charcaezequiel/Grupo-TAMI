@@ -55,7 +55,7 @@ El Módulo 4 es una lección de **5 pasos** con navegación lineal y consejos en
 - **Frontend**: HTML5, CSS3 y JavaScript nativo (sin framework).
 - **Backend**: Node.js + Express + PostgreSQL (**Supabase**).
 - **Arquitectura**: Cliente-Servidor en 3 capas (Presentación, Lógica y Datos).
-- **Seguridad**: contraseñas con hashing irreversible **bcrypt**, consultas SQL parametrizadas, RLS en la base, auditoría de accesos, bloqueo por fuerza bruta, cabeceras HTTP de protección y CORS restringido.
+- **Seguridad**: contraseñas con hashing irreversible **bcrypt**, recuperación mediante token de un solo uso, consultas SQL parametrizadas, RLS en la base, auditoría de accesos, bloqueo por fuerza bruta, cabeceras HTTP de protección y CORS restringido.
 - **Persistencia**: Supabase/PostgreSQL (principal) y LocalStorage (caché/fallback sin conexión).
 - **Accesibilidad**: WCAG 2.1 AA, ARIA roles, skip link, breadcrumbs, contraste alto, botones mínimos 52px.
 - **Design System**: "Protección Proactiva" (paleta 60-30-10: `#EBF8FA` / `#0A4B5C` / `#007A87`).
@@ -76,6 +76,7 @@ El Módulo 4 es una lección de **5 pasos** con navegación lineal y consejos en
 - Hashing de contraseña con **bcrypt** (costo 12) en el servidor, con consultas SQL parametrizadas.
 - Protección contra fuerza bruta: bloqueo temporal tras 5 intentos fallidos por correo (15 minutos).
 - Mensajes de error genéricos en el login (no revelan si el correo existe) y auditoría de cada intento.
+- Recuperación de contraseña con **token de un solo uso enviado por correo** (SMTP/nodemailer). En la base solo se guarda el hash del token; vence a los 30 minutos y se invalida al usarse.
 - Persistencia en Supabase/PostgreSQL (principal) y LocalStorage (fallback offline).
 
 ### 3. Test de Nivelación Obligatorio
@@ -130,8 +131,10 @@ Grupo-TAMI/
 │   │   └── estado.js       npm run db:estado → informe de estado (solo lectura)
 │   ├── middlewares/
 │   │   └── seguridad.js    Cabeceras HTTP, límite por IP y CORS restringido
+│   ├── services/
+│   │   └── email.js        Envío SMTP del enlace de recuperación (nodemailer)
 │   ├── routes/
-│   │   ├── usuarios.js     Registro/login con bcrypt + anti fuerza bruta + auditoría
+│   │   ├── usuarios.js     Registro/login/recuperación + anti fuerza bruta + auditoría
 │   │   ├── cursos.js       Listado de módulos/curso
 │   │   ├── alertas.js      Alertas de fraude
 │   │   └── progreso.js     Test, exámenes y progreso de módulos
@@ -193,6 +196,7 @@ gestionado en la nube, pooler de Supabase con SSL). Las credenciales viven en
 | `test_nivelacion` | Resultados del test inicial (respuestas JSONB, nivel, puntaje) |
 | `examenes` | Resultados del examen post-lección |
 | `progreso_modulos` | Avance paso a paso en cada módulo |
+| `recuperacion_password` | Tokens de recuperación (solo hash SHA-256, vencimiento y uso) |
 
 ### API REST - Endpoints
 
@@ -203,6 +207,8 @@ gestionado en la nube, pooler de Supabase con SSL). Las credenciales viven en
 | GET | `/api/usuarios/:id` | Obtener un usuario por ID |
 | POST | `/api/usuarios/registrar` | Registrar nuevo usuario (nombre, email, password) |
 | POST | `/api/usuarios/login` | Iniciar sesión (email, password) |
+| POST | `/api/usuarios/recuperar-password` | Pedir enlace de recuperación (email) |
+| POST | `/api/usuarios/restablecer-password` | Cambiar la contraseña con token (token, passwordNueva) |
 | GET | `/api/usuarios/:id/progreso` | Obtener progreso completo de un usuario |
 | GET | `/api/cursos` | Listar cursos activos |
 | GET | `/api/cursos/:id` | Obtener un curso |
@@ -239,7 +245,21 @@ DB_PASSWORD=<password de Supabase>
 DB_NAME=postgres
 DB_SSL=true
 PORT=3000
+
+# Recuperación de contraseña por correo (opcional en desarrollo)
+FRONTEND_URL=http://localhost:5500/code/index.html
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=
+SMTP_PASS=
+SMTP_FROM=TAMI <no-reply@tami.local>
 ```
+
+> La recuperación de contraseña necesita un servidor SMTP para enviar el enlace.
+> Sin SMTP, en desarrollo local se puede usar `RESET_DEBUG_LINK=true` para mostrar
+> el enlace en la interfaz. Los detalles están en
+> [server/README.md](server/README.md#recuperación-de-contraseña).
 
 Verificar la conexión, crear el esquema y cargar los datos iniciales:
 
