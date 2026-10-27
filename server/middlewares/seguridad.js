@@ -24,9 +24,15 @@ function encabezadosSeguridad(req, res, next) {
   res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
   res.setHeader("Cross-Origin-Resource-Policy", "same-site");
   // Los datos de la API no deben guardarse en caché (contienen datos personales)
-  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
   // Solo aplica si en el futuro se publica por HTTPS (en HTTP los navegadores lo ignoran)
-  res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  if (String(process.env.NODE_ENV || "").toLowerCase() === "production") {
+    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
+  } else {
+    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  }
   next();
 }
 

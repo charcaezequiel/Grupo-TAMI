@@ -27,14 +27,38 @@ async function main() {
     console.log("[Seed] Insertando cursos iniciales...");
     await pool.query(`
       INSERT INTO cursos (titulo, descripcion, nivel, duracion_min, tema) VALUES
-        ('Uso de Smartphones', 'Aprendé a usar tu celular de forma segura.', 'principiante', 30, 'movil'),
-        ('Redes e Internet', 'Navegá por internet con confianza.', 'principiante', 40, 'redes'),
-        ('Trámites en Línea', 'Hacé trámites desde tu casa de forma segura.', 'intermedio', 45, 'tramites'),
-        ('Fraudes Digitales (Phishing)', 'Identificá y evitá estafas en línea.', 'principiante', 35, 'fraudes'),
-        ('Comunicación Digital', 'Mantené el contacto con tu familia de forma segura.', 'principiante', 25, 'comunicacion')
+        ('Uso de Smartphones', 'Perdé el miedo al celular: aprendé a encenderlo, usarlo, comunicarte y protegerlo, desde cero y sin apuro.', 'principiante', 80, 'movil'),
+        ('Redes e Internet', 'Entendé cómo funciona internet, cómo buscar información confiable y cómo cuidar tus datos mientras navegás.', 'principiante', 80, 'redes'),
+        ('Trámites en Línea', 'Hacé tus trámites desde casa con seguridad: cuentas oficiales, constancias, turnos y comprobantes, sin filas ni traslados.', 'intermedio', 90, 'tramites'),
+        ('Fraudes Digitales (Phishing)', 'Aprendé a reconocer estafas por correo, WhatsApp, SMS y llamadas, y a proteger tus cuentas y tu dinero.', 'principiante', 80, 'fraudes'),
+        ('Comunicación Digital', 'Hablá con tu familia por WhatsApp: mensajes, audios, fotos, grupos y videollamadas, cuidando tu privacidad.', 'principiante', 70, 'comunicacion')
       ON CONFLICT DO NOTHING
     `);
     console.log("[Seed] Cursos cargados correctamente.");
+  }
+
+  // Mantiene el catálogo alineado con los 4 niveles de cada curso:
+  // actualiza descripción y duración de los cursos que ya existían.
+  const catalogo = [
+    ["Uso de Smartphones", "Perdé el miedo al celular: aprendé a encenderlo, usarlo, comunicarte y protegerlo, desde cero y sin apuro.", 80],
+    ["Redes e Internet", "Entendé cómo funciona internet, cómo buscar información confiable y cómo cuidar tus datos mientras navegás.", 80],
+    ["Trámites en Línea", "Hacé tus trámites desde casa con seguridad: cuentas oficiales, constancias, turnos y comprobantes, sin filas ni traslados.", 90],
+    ["Fraudes Digitales (Phishing)", "Aprendé a reconocer estafas por correo, WhatsApp, SMS y llamadas, y a proteger tus cuentas y tu dinero.", 80],
+    ["Comunicación Digital", "Hablá con tu familia por WhatsApp: mensajes, audios, fotos, grupos y videollamadas, cuidando tu privacidad.", 70],
+  ];
+  let catalogoActualizado = 0;
+  for (const [titulo, descripcion, duracion] of catalogo) {
+    const resultado = await pool.query(
+      `UPDATE cursos
+          SET descripcion = $2, duracion_min = $3
+        WHERE titulo = $1
+          AND (descripcion IS DISTINCT FROM $2 OR duracion_min IS DISTINCT FROM $3)`,
+      [titulo, descripcion, duracion]
+    );
+    catalogoActualizado += resultado.rowCount;
+  }
+  if (catalogoActualizado > 0) {
+    console.log(`[Seed] Catálogo actualizado en ${catalogoActualizado} curso(s).`);
   }
 
   // Si los cursos ya existian (o se insertaron sin tema en versiones previas),

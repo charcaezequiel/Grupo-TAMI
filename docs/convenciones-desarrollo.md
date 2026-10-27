@@ -47,7 +47,7 @@ let contadorIntentosLogin = 0;
 ```javascript
 function validarEmail(email) { ... }
 function obtenerRespuestasDeTest(contenedorId) { ... }
-function renderizarAlertasEscudo() { ... }
+function renderizarRetoEscudo() { ... }
 ```
 
 ### booleanos: preguntas o estados

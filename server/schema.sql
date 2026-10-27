@@ -189,10 +189,15 @@ CREATE TABLE IF NOT EXISTS auditoria_seguridad (
   accion TEXT NOT NULL,
   detalle TEXT,
   ip TEXT,
+  user_agent TEXT,
   creado_en TIMESTAMP NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_auditoria_accion ON auditoria_seguridad (accion, creado_en DESC);
 CREATE INDEX IF NOT EXISTS idx_auditoria_usuario ON auditoria_seguridad (usuario_id, creado_en DESC);
+CREATE INDEX IF NOT EXISTS idx_auditoria_creado_en ON auditoria_seguridad (creado_en DESC);
+
+-- Ampliación de auditoría para mayor trazabilidad (idempotente)
+ALTER TABLE auditoria_seguridad ADD COLUMN IF NOT EXISTS user_agent TEXT;
 
 -- Enlaces de recuperación de contraseña.
 -- Se guarda SOLO el hash SHA-256 del token, nunca el token en texto plano.
@@ -213,3 +218,45 @@ CREATE INDEX IF NOT EXISTS idx_recuperacion_usuario
   ON recuperacion_password (usuario_id, creado_en DESC);
 CREATE INDEX IF NOT EXISTS idx_recuperacion_expira
   ON recuperacion_password (expira_en);
+
+-- ============================================
+-- RBAC: Roles, Permisos y Relación
+-- ============================================
+
+-- Catálogo de roles
+CREATE TABLE IF NOT EXISTS roles (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(50) NOT NULL UNIQUE,
+  description TEXT,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- Catálogo de permisos granulares
+CREATE TABLE IF NOT EXISTS permissions (
+  id SERIAL PRIMARY KEY,
+  code VARCHAR(100) NOT NULL UNIQUE,
+  module VARCHAR(50) NOT NULL,
+  action VARCHAR(50) NOT NULL,
+  description TEXT,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- Relación muchos a muchos entre roles y permisos
+CREATE TABLE IF NOT EXISTS role_permissions (
+  role_id INTEGER NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+  permission_id INTEGER NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (role_id, permission_id)
+);
+CREATE INDEX IF NOT EXISTS idx_role_permissions_role ON role_permissions (role_id);
+CREATE INDEX IF NOT EXISTS idx_role_permissions_perm ON role_permissions (permission_id);
+
+-- Ampliación de usuarios para RBAC y control de cuenta (idempotente)
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS role_id INTEGER REFERENCES roles(id);
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS twofa_enabled BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMP;
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS failed_login_count INTEGER NOT NULL DEFAULT 0;
+
+CREATE INDEX IF NOT EXISTS idx_usuarios_role_id ON usuarios (role_id);
+CREATE INDEX IF NOT EXISTS idx_usuarios_is_active ON usuarios (is_active);

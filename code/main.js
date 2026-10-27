@@ -16,8 +16,10 @@ const CLAVE_SESION = "tami:sesion";
 const CLAVE_USUARIOS_CACHE = "tami:usuariosCache";
 const CLAVE_TEST_CACHE = "tami:testCache";
 const CLAVE_EXAMEN_CACHE = "tami:examenCache";
-const CLAVE_ALERTAS_CACHE = "tami:alertasCache";
 const CLAVE_AVATAR = "tami:avatar";
+const CLAVE_PROGRESO_CACHE = "tami:progresoCache";
+const CLAVE_MINI_TRABAJOS_CACHE = "tami:miniTrabajosCache";
+const TIEMPO_MAXIMO_API_MS = 2500;
 
 // Token del enlace de recuperación que llega en la URL (?reset=...).
 // Se mantiene en memoria para no dejarlo guardado en LocalStorage.
@@ -35,6 +37,16 @@ function claveExamenCache(usuarioId) {
 
 function claveAvatar(usuarioId) {
   return usuarioId ? CLAVE_AVATAR + ":" + usuarioId : CLAVE_AVATAR;
+}
+
+// El avance de los niveles se guarda también en el dispositivo: así el
+// desbloqueo del nivel siguiente se mantiene aunque la API no responda.
+function claveProgresoCache(usuarioId) {
+  return usuarioId ? CLAVE_PROGRESO_CACHE + ":" + usuarioId : CLAVE_PROGRESO_CACHE;
+}
+
+function claveMiniTrabajosCache(usuarioId) {
+  return usuarioId ? CLAVE_MINI_TRABAJOS_CACHE + ":" + usuarioId : CLAVE_MINI_TRABAJOS_CACHE;
 }
 
 // Mapa de navegacion: pantalla -> breadcrumb
@@ -73,11 +85,18 @@ const MAPA_NAVEGACION = {
     { etiqueta: "Mi entorno seguro", pantalla: "pantalla-dashboard" },
     { etiqueta: "Campus Educativo", pantalla: null }
   ],
+  "pantalla-curso": [
+    { etiqueta: "Inicio", pantalla: "pantalla-inicio" },
+    { etiqueta: "Mi entorno seguro", pantalla: "pantalla-dashboard" },
+    { etiqueta: "Campus Educativo", pantalla: "pantalla-campus" },
+    { etiqueta: "Curso", pantalla: null }
+  ],
   "pantalla-leccion": [
     { etiqueta: "Inicio", pantalla: "pantalla-inicio" },
     { etiqueta: "Mi entorno seguro", pantalla: "pantalla-dashboard" },
     { etiqueta: "Campus Educativo", pantalla: "pantalla-campus" },
-    { etiqueta: "Modulo 4: Fraudes", pantalla: null }
+    { etiqueta: "Curso", pantalla: "pantalla-curso" },
+    { etiqueta: "Nivel", pantalla: null }
   ],
   "pantalla-escudo": [
     { etiqueta: "Inicio", pantalla: "pantalla-inicio" },
@@ -103,7 +122,8 @@ const MAPA_NAVEGACION = {
     { etiqueta: "Inicio", pantalla: "pantalla-inicio" },
     { etiqueta: "Mi entorno seguro", pantalla: "pantalla-dashboard" },
     { etiqueta: "Campus Educativo", pantalla: "pantalla-campus" },
-    { etiqueta: "Examen rapido", pantalla: null }
+    { etiqueta: "Curso", pantalla: "pantalla-curso" },
+    { etiqueta: "Examen del nivel", pantalla: null }
   ]
 };
 
@@ -135,9 +155,32 @@ function guardarLocal(clave, valor) {
 // si falla, usa LocalStorage como fallback.
 // ============================================
 
+// La API local puede tardar varios segundos en rechazar la conexión en Windows.
+// Con este límite, la interfaz cae al respaldo local sin dejar botones "colgados".
+async function fetchApi(recurso, opciones) {
+  const controlador = new AbortController();
+  const temporizador = setTimeout(function () {
+    controlador.abort();
+  }, TIEMPO_MAXIMO_API_MS);
+
+  try {
+    return await fetch(API_URL + "/" + recurso, Object.assign({}, opciones, {
+      signal: controlador.signal
+    }));
+  } finally {
+    clearTimeout(temporizador);
+  }
+}
+
+function esErrorDeConexion(error) {
+  if (!error) return false;
+  if (error.name === "AbortError") return true;
+  return /failed to fetch|networkerror|load failed|abort|timeout/i.test(String(error.message || ""));
+}
+
 async function apiGet(recurso) {
   try {
-    const respuesta = await fetch(API_URL + "/" + recurso, {
+    const respuesta = await fetchApi(recurso, {
       headers: { "Content-Type": "application/json" }
     });
     if (!respuesta.ok) {
@@ -146,14 +189,15 @@ async function apiGet(recurso) {
     const datos = await respuesta.json();
     return { exito: true, datos: datos };
   } catch (error) {
+    const conexion = esErrorDeConexion(error);
     console.error("API GET falló (" + recurso + "):", error.message);
-    return { exito: false, datos: null, error: error.message };
+    return { exito: false, datos: null, error: conexion ? "offline" : error.message, esConexion: conexion };
   }
 }
 
 async function apiPost(recurso, cuerpo) {
   try {
-    const respuesta = await fetch(API_URL + "/" + recurso, {
+    const respuesta = await fetchApi(recurso, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(cuerpo)
@@ -164,14 +208,15 @@ async function apiPost(recurso, cuerpo) {
     }
     return { exito: true, datos: datos };
   } catch (error) {
+    const conexion = esErrorDeConexion(error);
     console.error("API POST falló (" + recurso + "):", error.message);
-    return { exito: false, datos: null, error: error.message };
+    return { exito: false, datos: null, error: conexion ? "offline" : error.message, esConexion: conexion };
   }
 }
 
 async function apiPut(recurso, cuerpo) {
   try {
-    const respuesta = await fetch(API_URL + "/" + recurso, {
+    const respuesta = await fetchApi(recurso, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(cuerpo)
@@ -182,8 +227,9 @@ async function apiPut(recurso, cuerpo) {
     }
     return { exito: true, datos: datos };
   } catch (error) {
+    const conexion = esErrorDeConexion(error);
     console.error("API PUT falló (" + recurso + "):", error.message);
-    return { exito: false, datos: null, error: error.message };
+    return { exito: false, datos: null, error: conexion ? "offline" : error.message, esConexion: conexion };
   }
 }
 
@@ -550,7 +596,7 @@ async function registrarUsuario(nombre, email, password) {
   }
 
   // Si la API no está disponible, usa localStorage como fallback
-  if (resultado.error && resultado.error.includes("Failed to fetch")) {
+  if (resultado.esConexion) {
     console.warn("API no disponible, usando localStorage como fallback");
     return registrarUsuarioFallback(nombre, email, password);
   }
@@ -558,7 +604,25 @@ async function registrarUsuario(nombre, email, password) {
   return { exito: false, mensaje: resultado.datos ? resultado.datos.error : "Error al registrar" };
 }
 
-function registrarUsuarioFallback(nombre, email, password) {
+// Los usuarios de respaldo viven solo en este dispositivo. Guardamos un hash
+// de la contraseña para que el acceso local no quede abierto a cualquiera.
+async function generarHashPassword(password) {
+  const texto = String(password || "");
+  if (window.crypto && window.crypto.subtle && window.TextEncoder) {
+    const datos = new TextEncoder().encode("tami:" + texto);
+    const buffer = await window.crypto.subtle.digest("SHA-256", datos);
+    return Array.from(new Uint8Array(buffer)).map(function (byte) {
+      return byte.toString(16).padStart(2, "0");
+    }).join("");
+  }
+  let hash = 5381;
+  for (let i = 0; i < texto.length; i++) {
+    hash = ((hash << 5) + hash + texto.charCodeAt(i)) | 0;
+  }
+  return "local:" + (hash >>> 0).toString(16);
+}
+
+async function registrarUsuarioFallback(nombre, email, password) {
   const usuarios = leerLocal(CLAVE_USUARIOS_CACHE, []);
   const emailNormalizado = email.trim().toLowerCase();
 
@@ -573,6 +637,7 @@ function registrarUsuarioFallback(nombre, email, password) {
     id: Date.now(),
     nombre: nombre.trim(),
     email: emailNormalizado,
+    password_hash: await generarHashPassword(password),
     nivel_digital: "principiante",
     creado_en: new Date().toISOString()
   };
@@ -596,7 +661,7 @@ async function iniciarSesion(email, password) {
   }
 
   // Fallback a localStorage
-  if (resultado.error && resultado.error.includes("Failed to fetch")) {
+  if (resultado.esConexion) {
     console.warn("API no disponible, usando localStorage como fallback");
     return iniciarSesionFallback(email, password);
   }
@@ -604,14 +669,27 @@ async function iniciarSesion(email, password) {
   return { exito: false, mensaje: resultado.datos ? resultado.datos.error : "Error al iniciar sesión" };
 }
 
-function iniciarSesionFallback(email, password) {
+async function iniciarSesionFallback(email, password) {
   const usuarios = leerLocal(CLAVE_USUARIOS_CACHE, []);
-  const usuario = usuarios.find(function (u) {
+  const indice = usuarios.findIndex(function (u) {
     return u.email === email.trim().toLowerCase();
   });
 
-  if (!usuario) {
+  if (indice === -1) {
     return { exito: false, mensaje: "No se encontró una cuenta con ese correo." };
+  }
+
+  const usuario = usuarios[indice];
+  const hashIngresado = await generarHashPassword(password);
+
+  // Cuentas creadas antes de guardar el hash: se vincula en el primer acceso.
+  if (usuario.password_hash && usuario.password_hash !== hashIngresado) {
+    return { exito: false, mensaje: "La contraseña no es correcta." };
+  }
+
+  if (!usuario.password_hash) {
+    usuarios[indice] = Object.assign({}, usuario, { password_hash: hashIngresado });
+    guardarLocal(CLAVE_USUARIOS_CACHE, usuarios);
   }
 
   guardarSesion(usuario);
@@ -809,52 +887,41 @@ async function enviarTest(usuarioId, respuestas, preguntas) {
 }
 
 // ============================================
-// LECCIÓN MÓDULO 4: FRAUDES DIGITALES
+// LECCIÓN DE UN NIVEL DEL CURSO
+// El contenido de cada nivel vive en contenido-cursos.js
 // ============================================
 
-const pasosLeccion = [
-  {
-    titulo: "¿Qué es el Phishing?",
-    contenido: "<p>El <strong>phishing</strong> es una técnica que usan los estafadores para engañarte y hacerte creer que estás hablando con alguien de confianza (como tu banco, una empresa o una persona conocida).</p><p>Lo hacen a través de <strong>correos electrónicos, mensajes de WhatsApp o llamadas telefónicas</strong> que parecen reales pero son falsos.</p>",
-    consejo: "💡 Consejo: Si algo te genera duda, ¡pará y consultá con alguien de confianza!"
-  },
-  {
-    titulo: "¿Cómo reconocer un mensaje falso?",
-    contenido: "<p>Los mensajes de phishing suelen tener estas características:</p><ul><li><strong>Urgencia:</strong> Te dicen que tu cuenta será bloqueada o que debés actuar rápido.</li><li><strong>Errores:</strong> Tienen faltas de ortografía o frases raras.</li><li><strong>Links sospechosos:</strong> Las direcciones web no coinciden con las oficiales.</li><li><strong>Piden datos personales:</strong> Contraseñas, números de tarjeta o DNI.</li></ul>",
-    consejo: "💡 Consejo: Tu banco NUNCA te va a pedir datos sensibles por mensaje o correo."
-  },
-  {
-    titulo: "¿Qué hacer si recibís un mensaje sospechoso?",
-    contenido: "<p>Seguí estos pasos si recibís un mensaje que te genera desconfianza:</p><ul><li><strong>No hagas clic</strong> en ningún enlace del mensaje.</li><li><strong>No descargues</strong> archivos adjuntos.</li><li><strong>No respondas</strong> con tus datos personales.</li><li><strong>Eliminá el mensaje</strong> y, si querés, bloqueá al remitente.</li><li><strong>Consultá</strong> directamente con la empresa llamando al número oficial.</li></ul>",
-    consejo: "💡 Consejo: Es mejor prevenir. Ante la duda, no hagas nada y preguntá."
-  },
-  {
-    titulo: "Ejemplos reales de phishing",
-    contenido: "<p>Estos son algunos ejemplos comunes:</p><ul><li><strong>«Tu cuenta del banco fue bloqueada. Hacé clic aquí para desbloquearla»</strong> — El banco jamás pide esto por correo.</li><li><strong>«Ganaste un premio. Hacé clic para reclamarlo»</strong> — Si no participaste de ningún sorteo, es mentira.</li><li><strong>«Tu envío está retenido. Pagá el impuesto aquí»</strong> — Correos oficiales no piden pagos por links.</li></ul>",
-    consejo: "💡 Consejo: Si recibís algo así, compará siempre con la fuente oficial antes de actuar."
-  },
-  {
-    titulo: "¡Felicitaciones! Completaste el módulo",
-    contenido: "<p>Ahora conocés las principales técnicas de phishing y sabés cómo protegerte. Recordá:</p><ul><li><strong>Nunca compartas</strong> datos personales por mensaje o correo.</li><li><strong>Si tenés duda</strong>, consultá con alguien de confianza.</li><li><strong>Tu seguridad</strong> está en tus manos.</li></ul><p>Podés volver a revisar esta lección cuando quieras desde el Campus Educativo.</p>",
-    consejo: "🔒 Estás en un entorno seguro. Tus datos están protegidos."
-  }
-];
-
+let cursoActual = null;
+let moduloActual = null;
 let indicePasoActual = 0;
+
+function pasosDelNivelActual() {
+  return moduloActual && Array.isArray(moduloActual.pasos) ? moduloActual.pasos : [];
+}
 
 function renderizarPasoLeccion(indice) {
   const contenedor = document.getElementById("contenido-leccion");
   if (!contenedor) return;
 
-  const paso = pasosLeccion[indice];
+  const pasos = pasosDelNivelActual();
   contenedor.innerHTML = "";
+
+  if (pasos.length === 0) {
+    const vacio = document.createElement("p");
+    vacio.className = "leccion__vacio";
+    vacio.textContent = "Este nivel todavía no tiene contenido. Volvé al curso y elegí otro nivel.";
+    contenedor.appendChild(vacio);
+    return;
+  }
+
+  const paso = pasos[indice] || pasos[0];
 
   const divPaso = document.createElement("div");
   divPaso.className = "leccion__paso";
 
   const numeroPaso = document.createElement("p");
   numeroPaso.className = "leccion__numero";
-  numeroPaso.textContent = "Paso " + (indice + 1) + " de " + pasosLeccion.length;
+  numeroPaso.textContent = "Teoría " + (indice + 1) + " de " + pasos.length;
   divPaso.appendChild(numeroPaso);
 
   const tituloPaso = document.createElement("h3");
@@ -876,24 +943,24 @@ function renderizarPasoLeccion(indice) {
 
   contenedor.appendChild(divPaso);
 
-  // Actualiza estado de botones
   const botonAnterior = document.getElementById("btn-leccion-anterior");
   const botonSiguiente = document.getElementById("btn-leccion-siguiente");
 
   if (botonAnterior) {
     botonAnterior.disabled = (indice === 0);
-    botonAnterior.style.opacity = indice === 0 ? "0.4" : "1";
   }
 
   if (botonSiguiente) {
-    botonSiguiente.textContent = indice === pasosLeccion.length - 1
-      ? "✓ Finalizar módulo"
-      : "Siguiente →";
+    botonSiguiente.textContent = indice === pasos.length - 1
+      ? "✓ Ir al repaso del nivel"
+      : "Siguiente teoría →";
   }
 }
 
-// Guarda progreso del módulo en la API
+// Guarda progreso del módulo en la API y en el dispositivo
 async function guardarProgresoModulo(usuarioId, moduloId, paso, completado) {
+  actualizarProgresoLocal(usuarioId, moduloId, paso, completado);
+
   await apiPost("progreso/modulo", {
     usuarioId: usuarioId,
     moduloId: moduloId,
@@ -903,182 +970,547 @@ async function guardarProgresoModulo(usuarioId, moduloId, paso, completado) {
 }
 
 // ============================================
-// ESCUDO DE SEGURIDAD (ALERTAS)
+// ESCUDO DE SEGURIDAD (MINI RETOS)
 // ============================================
 
-function renderizarAlertasEscudo() {
-  const contenedor = document.getElementById("lista-alertas-escudo");
+const RETOS_ESCUDO_DATA = (typeof RETOS_ESCUDO !== "undefined" && Array.isArray(RETOS_ESCUDO))
+  ? RETOS_ESCUDO
+  : [];
+
+let retosEscudo = [];
+let retoActualEscudo = null;
+let indiceRetoEscudo = 0;
+let aciertosRetoEscudo = 0;
+let estadoRetoEscudo = "inicio";
+let resultadoRetoEscudo = null;
+
+function mezclarRetos(lista) {
+  const copia = lista.slice();
+  for (let i = copia.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const temporal = copia[i];
+    copia[i] = copia[j];
+    copia[j] = temporal;
+  }
+  return copia;
+}
+
+function prepararRetosEscudo() {
+  return mezclarRetos(RETOS_ESCUDO_DATA).map(function (reto) {
+    const copia = Object.assign({}, reto);
+    copia.tipos = mezclarRetos(Array.isArray(reto.tipos) ? reto.tipos : []);
+    return copia;
+  });
+}
+
+function iniciarRetosEscudo(enfocar) {
+  retosEscudo = prepararRetosEscudo();
+  indiceRetoEscudo = 0;
+  aciertosRetoEscudo = 0;
+  resultadoRetoEscudo = null;
+  retoActualEscudo = retosEscudo[0] || null;
+  estadoRetoEscudo = retoActualEscudo ? "decision" : "fin";
+  renderizarRetoEscudo(Boolean(enfocar));
+}
+
+function crearTarjetaRetoEscudo(reto) {
+  const tarjeta = document.createElement("div");
+  tarjeta.className = "reto__tarjeta";
+
+  const barra = document.createElement("div");
+  barra.className = "reto__app";
+
+  const icono = document.createElement("span");
+  icono.className = "reto__app-icono";
+  icono.setAttribute("aria-hidden", "true");
+  icono.textContent = reto.icono || "📩";
+  barra.appendChild(icono);
+
+  const canal = document.createElement("span");
+  canal.className = "reto__canal";
+  canal.textContent = reto.canal;
+  barra.appendChild(canal);
+
+  const hora = document.createElement("span");
+  hora.className = "reto__hora";
+  hora.textContent = reto.hora || "Ahora";
+  barra.appendChild(hora);
+
+  tarjeta.appendChild(barra);
+
+  const cuerpo = document.createElement("div");
+  cuerpo.className = "reto__cuerpo-mensaje";
+
+  const etiquetasRemitente = {
+    "Correo electrónico": "De: ",
+    "Mensaje de texto (SMS)": "De: ",
+    "Llamada telefónica": "Llamada de: ",
+    "WhatsApp": "De: ",
+    "Sitio web": "Sitio: ",
+    "Red social": "Perfil: "
+  };
+  const remitente = document.createElement("p");
+  remitente.className = "reto__remitente";
+  remitente.textContent = (etiquetasRemitente[reto.canal] || "De: ") + reto.remitente;
+  cuerpo.appendChild(remitente);
+
+  if (reto.asunto) {
+    const etiquetasAsunto = {
+      "Correo electrónico": "Asunto:",
+      "Sitio web": "Título:",
+      "Red social": "Publicación:"
+    };
+    const asunto = document.createElement("p");
+    asunto.className = "reto__asunto";
+    const etiquetaAsunto = document.createElement("span");
+    etiquetaAsunto.className = "reto__asunto-etiqueta";
+    etiquetaAsunto.textContent = etiquetasAsunto[reto.canal] || "Asunto:";
+    asunto.appendChild(etiquetaAsunto);
+    asunto.appendChild(document.createTextNode(" " + reto.asunto));
+    cuerpo.appendChild(asunto);
+  }
+
+  const mensaje = document.createElement("p");
+  mensaje.className = "reto__mensaje";
+  mensaje.textContent = reto.mensaje;
+  cuerpo.appendChild(mensaje);
+
+  if (reto.enlace) {
+    const cajaEnlace = document.createElement("div");
+    cajaEnlace.className = "reto__enlace-caja";
+    const etiquetaEnlace = document.createElement("span");
+    etiquetaEnlace.className = "reto__enlace-etiqueta";
+    etiquetaEnlace.textContent = "🔗 Enlace";
+    const enlace = document.createElement("span");
+    enlace.className = "reto__enlace";
+    enlace.textContent = reto.enlace;
+    enlace.title = "Enlace de ejemplo: no se puede abrir";
+    cajaEnlace.appendChild(etiquetaEnlace);
+    cajaEnlace.appendChild(enlace);
+    cuerpo.appendChild(cajaEnlace);
+  }
+
+  if (reto.adjunto) {
+    const adjunto = document.createElement("p");
+    adjunto.className = "reto__adjunto";
+    adjunto.textContent = "📎 " + reto.adjunto;
+    cuerpo.appendChild(adjunto);
+  }
+
+  const nota = document.createElement("p");
+  nota.className = "reto__nota";
+  nota.textContent = "Mensaje simulado con fines educativos.";
+  cuerpo.appendChild(nota);
+
+  tarjeta.appendChild(cuerpo);
+  return tarjeta;
+}
+
+function renderizarRetoEscudo(enfocar) {
+  const contenedor = document.getElementById("escudo-retos");
   if (!contenedor) return;
 
-  // Muestra las alertas guardadas (o el respaldo local) sin esperar la red.
-  const alertasIniciales = leerLocal(CLAVE_ALERTAS_CACHE, null) || obtenerAlertasFallback();
-  renderizarListaAlertas(contenedor, alertasIniciales);
-
-  // Luego intenta actualizar desde la API.
-  apiGet("alertas").then(function (resultado) {
-    let alertas;
-
-    if (resultado.exito && resultado.datos.length > 0) {
-      alertas = resultado.datos;
-      guardarLocal(CLAVE_ALERTAS_CACHE, alertas);
-    } else {
-      // Fallback: usa caché local o datos hardcodeados
-      alertas = leerLocal(CLAVE_ALERTAS_CACHE, null);
-      if (!alertas) {
-        alertas = obtenerAlertasFallback();
-        guardarLocal(CLAVE_ALERTAS_CACHE, alertas);
-      }
-    }
-
-    renderizarListaAlertas(contenedor, alertas);
-  });
-}
-
-function obtenerAlertasFallback() {
-  return [
-    {
-      titulo: "Correo falso del banco",
-      severidad: "alta",
-      descripcion: "Detectamos un correo haciéndose pasar por tu banco pidiéndote que verifiques tu cuenta con urgencia.",
-      que_hacer: "No hagas clic en ningún enlace. Eliminá el mensaje y llamá al número oficial de tu banco.",
-      icono: "🚨"
-    },
-    {
-      titulo: "Mensaje de WhatsApp con premio falso",
-      severidad: "alta",
-      descripcion: "Recibiste un mensaje diciendo que ganaste un celular. Te piden hacer clic en un enlace.",
-      que_hacer: "No hagas clic. Ninguna empresa regala cosas por WhatsApp. Eliminá el mensaje.",
-      icono: "🚨"
-    },
-    {
-      titulo: "Llamada sospechosa suplantando a tu banco",
-      severidad: "alta",
-      descripcion: "Te llaman desde un número que parece oficial y te piden tu número de tarjeta.",
-      que_hacer: "Colgá inmediatamente. Tu banco nunca te pide esos datos por teléfono.",
-      icono: "🚨"
-    },
-    {
-      titulo: "Mensaje de texto con link a trámite falso",
-      severidad: "media",
-      descripcion: "Te envían un mensaje diciendo que tenés un trámite pendiente con un link falso.",
-      que_hacer: "No hagas clic. Andá directamente al sitio oficial del organismo.",
-      icono: "⚠️"
-    },
-    {
-      titulo: "Correo de empresa de envíos con cargo extra",
-      severidad: "media",
-      descripcion: "Recibís un correo diciendo que tu paquete está retenido por falta de pago.",
-      que_hacer: "No pagues nada sin verificar. Entrá al sitio oficial de la empresa de envíos.",
-      icono: "⚠️"
-    },
-    {
-      titulo: "Solicitud de amistad sospechosa en redes",
-      severidad: "baja",
-      descripcion: "Una persona desconocida te envía solicitud de amistad y te pide datos personales.",
-      que_hacer: "No aceptes la solicitud ni compartas información.",
-      icono: "ℹ️"
-    }
-  ];
-}
-
-function renderizarListaAlertas(contenedor, alertas) {
   contenedor.innerHTML = "";
 
-  alertas.forEach(function (alerta) {
-    const divAlerta = document.createElement("div");
-    divAlerta.className = "alerta-seguridad";
-    if (alerta.severidad === "alta") {
-      divAlerta.className += " alerta-seguridad--alta";
+  if (retosEscudo.length === 0) {
+    const aviso = document.createElement("p");
+    aviso.className = "reto__fin-texto";
+    aviso.textContent = "No se pudieron cargar los mini retos. Recargá la página e intentá de nuevo.";
+    contenedor.appendChild(aviso);
+    return;
+  }
+
+  if (estadoRetoEscudo === "fin") {
+    renderizarFinRetosEscudo(contenedor);
+    if (enfocar) {
+      const fin = contenedor.querySelector(".reto__fin");
+      if (fin) fin.focus();
+    }
+    return;
+  }
+
+  const reto = retoActualEscudo;
+  if (!reto) return;
+
+  const completados = indiceRetoEscudo + (estadoRetoEscudo === "resultado" ? 1 : 0);
+  const porcentaje = Math.round((completados / retosEscudo.length) * 100);
+
+  const cabecera = document.createElement("div");
+  cabecera.className = "reto__cabecera";
+
+  const contador = document.createElement("span");
+  contador.className = "reto__contador";
+  contador.textContent = "Reto " + (indiceRetoEscudo + 1) + " de " + retosEscudo.length;
+
+  const aciertos = document.createElement("span");
+  aciertos.className = "reto__aciertos";
+  aciertos.textContent = "Aciertos: " + aciertosRetoEscudo;
+
+  cabecera.appendChild(contador);
+  cabecera.appendChild(aciertos);
+  contenedor.appendChild(cabecera);
+
+  const barra = document.createElement("div");
+  barra.className = "reto__barra";
+  barra.setAttribute("role", "progressbar");
+  barra.setAttribute("aria-label", "Avance de los mini retos");
+  barra.setAttribute("aria-valuemin", "0");
+  barra.setAttribute("aria-valuemax", String(retosEscudo.length));
+  barra.setAttribute("aria-valuenow", String(completados));
+
+  const relleno = document.createElement("div");
+  relleno.className = "reto__barra-relleno";
+  relleno.style.width = porcentaje + "%";
+  barra.appendChild(relleno);
+  contenedor.appendChild(barra);
+
+  contenedor.appendChild(crearTarjetaRetoEscudo(reto));
+
+  if (estadoRetoEscudo === "resultado" && resultadoRetoEscudo) {
+    const acertado = resultadoRetoEscudo.acertado;
+    const caja = document.createElement("div");
+    caja.className = "reto__feedback" + (acertado ? "" : " reto__feedback--error");
+    caja.tabIndex = -1;
+
+    const titulo = document.createElement("p");
+    titulo.className = "reto__feedback-titulo";
+    if (acertado) {
+      titulo.textContent = "✅ ¡Correcto!";
+    } else if (reto.esEstafa) {
+      titulo.textContent = "❌ Ojo: era una estafa";
+    } else {
+      titulo.textContent = "❌ Era un mensaje confiable";
+    }
+    caja.appendChild(titulo);
+
+    const texto = document.createElement("p");
+    texto.className = "reto__feedback-texto";
+    texto.textContent = reto.explicacion;
+    caja.appendChild(texto);
+
+    if (reto.esEstafa && reto.tipo) {
+      const tipo = document.createElement("p");
+      tipo.className = "reto__feedback-texto";
+      const etiquetaTipo = document.createElement("strong");
+      etiquetaTipo.textContent = "Tipo de estafa: ";
+      tipo.appendChild(etiquetaTipo);
+      tipo.appendChild(document.createTextNode(reto.tipo));
+      caja.appendChild(tipo);
     }
 
-    const icono = document.createElement("div");
-    icono.className = "alerta-seguridad__icono";
-    icono.setAttribute("aria-hidden", "true");
-    icono.textContent = alerta.icono || (alerta.severidad === "alta" ? "🚨" : "⚠️");
-    divAlerta.appendChild(icono);
-
-    const titulo = document.createElement("h3");
-    titulo.className = "alerta-seguridad__titulo";
-    titulo.textContent = alerta.titulo;
-    divAlerta.appendChild(titulo);
-
-    const descripcion = document.createElement("p");
-    descripcion.className = "alerta-seguridad__descripcion";
-    descripcion.textContent = alerta.descripcion;
-    divAlerta.appendChild(descripcion);
-
-    if (alerta.que_hacer) {
-      const queHacer = document.createElement("div");
-      queHacer.className = "alerta-seguridad__que-hacer";
-      const tituloQueHacer = document.createElement("strong");
-      tituloQueHacer.textContent = "🔒 Qué hacer:";
-      queHacer.appendChild(tituloQueHacer);
-      queHacer.appendChild(document.createTextNode(" " + alerta.que_hacer));
-      divAlerta.appendChild(queHacer);
+    if (!acertado && resultadoRetoEscudo.tipoElegido) {
+      const elegido = document.createElement("p");
+      elegido.className = "reto__feedback-texto reto__feedback-texto--elegido";
+      const etiquetaElegido = document.createElement("strong");
+      etiquetaElegido.textContent = "Tu respuesta: ";
+      elegido.appendChild(etiquetaElegido);
+      elegido.appendChild(document.createTextNode(resultadoRetoEscudo.tipoElegido));
+      caja.appendChild(elegido);
     }
 
-    contenedor.appendChild(divAlerta);
+    if (Array.isArray(reto.senales) && reto.senales.length > 0) {
+      const bloqueSenales = document.createElement("div");
+      bloqueSenales.className = "reto__senales" + (reto.esEstafa ? " reto__senales--estafa" : " reto__senales--confiable");
+
+      const tituloSenales = document.createElement("p");
+      tituloSenales.className = "reto__senales-titulo";
+      tituloSenales.textContent = reto.esEstafa
+        ? "🔎 Señales para detectarlo"
+        : "🔎 Por qué es confiable";
+      bloqueSenales.appendChild(tituloSenales);
+
+      const listaSenales = document.createElement("ul");
+      listaSenales.className = "reto__senales-lista";
+      reto.senales.forEach(function (senal) {
+        const item = document.createElement("li");
+        item.textContent = senal;
+        listaSenales.appendChild(item);
+      });
+      bloqueSenales.appendChild(listaSenales);
+      caja.appendChild(bloqueSenales);
+    }
+
+    const consejo = document.createElement("div");
+    consejo.className = "reto__consejo";
+    const etiquetaConsejo = document.createElement("strong");
+    etiquetaConsejo.textContent = "🔒 Qué hacer: ";
+    consejo.appendChild(etiquetaConsejo);
+    consejo.appendChild(document.createTextNode(reto.consejo));
+    caja.appendChild(consejo);
+
+    contenedor.appendChild(caja);
+
+    const siguiente = document.createElement("button");
+    siguiente.type = "button";
+    siguiente.className = "btn btn--primario reto__siguiente";
+    siguiente.textContent = indiceRetoEscudo === retosEscudo.length - 1
+      ? "Ver mi resultado →"
+      : "Siguiente reto →";
+    siguiente.addEventListener("click", siguienteRetoEscudo);
+    contenedor.appendChild(siguiente);
+
+    if (enfocar) caja.focus();
+    return;
+  }
+
+  if (estadoRetoEscudo === "tipo") {
+    const pregunta = document.createElement("p");
+    pregunta.className = "reto__pregunta";
+    pregunta.textContent = "¿De qué tipo de estafa se trata?";
+    contenedor.appendChild(pregunta);
+
+    const tipos = document.createElement("div");
+    tipos.className = "reto__tipos";
+
+    reto.tipos.forEach(function (opcion, indice) {
+      const boton = document.createElement("button");
+      boton.type = "button";
+      boton.className = "btn btn--secundario reto__tipo";
+
+      const letra = document.createElement("span");
+      letra.className = "reto__letra";
+      letra.setAttribute("aria-hidden", "true");
+      letra.textContent = String.fromCharCode(65 + indice);
+
+      const etiqueta = document.createElement("span");
+      etiqueta.className = "reto__tipo-texto";
+      etiqueta.textContent = opcion.texto;
+
+      boton.appendChild(letra);
+      boton.appendChild(etiqueta);
+      boton.addEventListener("click", function () {
+        elegirTipoReto(indice);
+      });
+      tipos.appendChild(boton);
+    });
+
+    contenedor.appendChild(tipos);
+
+    if (enfocar) {
+      const primero = tipos.querySelector("button");
+      if (primero) primero.focus();
+    }
+    return;
+  }
+
+  const pregunta = document.createElement("p");
+  pregunta.className = "reto__pregunta";
+  pregunta.textContent = "¿Esta situación es una estafa?";
+  contenedor.appendChild(pregunta);
+
+  const acciones = document.createElement("div");
+  acciones.className = "reto__acciones";
+
+  const botonEstafa = document.createElement("button");
+  botonEstafa.type = "button";
+  botonEstafa.className = "btn btn--primario reto__opcion";
+  botonEstafa.textContent = "🚨 Sí, es una estafa";
+  botonEstafa.addEventListener("click", function () {
+    elegirDecisionReto(true);
   });
+
+  const botonConfiable = document.createElement("button");
+  botonConfiable.type = "button";
+  botonConfiable.className = "btn btn--secundario reto__opcion";
+  botonConfiable.textContent = "✅ No, es confiable";
+  botonConfiable.addEventListener("click", function () {
+    elegirDecisionReto(false);
+  });
+
+  acciones.appendChild(botonEstafa);
+  acciones.appendChild(botonConfiable);
+  contenedor.appendChild(acciones);
+
+  const ayuda = document.createElement("p");
+  ayuda.className = "reto__ayuda";
+  ayuda.textContent = "Revisá el remitente, el asunto, el enlace y lo que te piden. Desconfiá de la urgencia, de los premios y de los datos bancarios.";
+  contenedor.appendChild(ayuda);
+
+  if (enfocar) botonEstafa.focus();
+}
+
+function elegirDecisionReto(indicaEstafa) {
+  const reto = retoActualEscudo;
+  if (!reto || estadoRetoEscudo !== "decision") return;
+
+  if (reto.esEstafa && indicaEstafa) {
+    estadoRetoEscudo = "tipo";
+    renderizarRetoEscudo(true);
+    return;
+  }
+
+  const acertado = !reto.esEstafa && !indicaEstafa;
+  if (acertado) aciertosRetoEscudo += 1;
+  resultadoRetoEscudo = { acertado: acertado, tipoElegido: "" };
+  estadoRetoEscudo = "resultado";
+  renderizarRetoEscudo(true);
+}
+
+function elegirTipoReto(indice) {
+  const reto = retoActualEscudo;
+  if (!reto || estadoRetoEscudo !== "tipo" || !reto.tipos[indice]) return;
+
+  const opcion = reto.tipos[indice];
+  const acertado = Boolean(opcion.correcto);
+  if (acertado) aciertosRetoEscudo += 1;
+  resultadoRetoEscudo = { acertado: acertado, tipoElegido: opcion.texto };
+  estadoRetoEscudo = "resultado";
+  renderizarRetoEscudo(true);
+}
+
+function siguienteRetoEscudo() {
+  if (indiceRetoEscudo >= retosEscudo.length - 1) {
+    estadoRetoEscudo = "fin";
+    retoActualEscudo = null;
+    resultadoRetoEscudo = null;
+    renderizarRetoEscudo(true);
+    return;
+  }
+
+  indiceRetoEscudo += 1;
+  retoActualEscudo = retosEscudo[indiceRetoEscudo];
+  resultadoRetoEscudo = null;
+  estadoRetoEscudo = "decision";
+  renderizarRetoEscudo(true);
+}
+
+function mensajeFinRetosEscudo(aciertos, total) {
+  const proporcion = total > 0 ? aciertos / total : 0;
+  if (proporcion >= 0.85) {
+    return "Excelente: reconocés muy bien las señales de estafa y sabés qué hacer. Seguí así y compartí estos consejos con tu familia.";
+  }
+  if (proporcion >= 0.6) {
+    return "Muy bien: detectaste la mayoría de las estafas. Repasá los casos que fallaste y volvé a intentarlo cuando quieras.";
+  }
+  return "Buen comienzo: las estafas cambian de forma. Leé con calma el remitente, desconfiá de la urgencia y volvé a practicar.";
+}
+
+function renderizarFinRetosEscudo(contenedor) {
+  const total = retosEscudo.length;
+
+  const fin = document.createElement("div");
+  fin.className = "reto__fin";
+  fin.tabIndex = -1;
+
+  const titulo = document.createElement("h3");
+  titulo.className = "reto__fin-titulo";
+  titulo.textContent = "🛡️ ¡Terminaste los mini retos!";
+  fin.appendChild(titulo);
+
+  const puntaje = document.createElement("p");
+  puntaje.className = "reto__fin-puntaje";
+  const porcentaje = total > 0 ? Math.round((aciertosRetoEscudo / total) * 100) : 0;
+  puntaje.textContent = "Acertaste " + aciertosRetoEscudo + " de " + total + " (" + porcentaje + "%)";
+  fin.appendChild(puntaje);
+
+  const texto = document.createElement("p");
+  texto.className = "reto__fin-texto";
+  texto.textContent = mensajeFinRetosEscudo(aciertosRetoEscudo, total);
+  fin.appendChild(texto);
+
+  const tipos = [];
+  retosEscudo.forEach(function (reto) {
+    if (reto.esEstafa && reto.tipo && tipos.indexOf(reto.tipo) === -1) {
+      tipos.push(reto.tipo);
+    }
+  });
+
+  if (tipos.length > 0) {
+    const lista = document.createElement("p");
+    lista.className = "reto__fin-tipos";
+    lista.textContent = "Tipos de estafa que practicaste: " + tipos.join(", ") + ".";
+    fin.appendChild(lista);
+  }
+
+  const reiniciar = document.createElement("button");
+  reiniciar.type = "button";
+  reiniciar.className = "btn btn--primario reto__reiniciar";
+  reiniciar.textContent = "Volver a empezar";
+  reiniciar.addEventListener("click", function () {
+    iniciarRetosEscudo(true);
+  });
+  fin.appendChild(reiniciar);
+
+  contenedor.appendChild(fin);
 }
 
 // ============================================
-// EXAMEN RÁPIDO (POST-LECCIÓN)
+// EXAMEN RÁPIDO (AL FINAL DE CADA NIVEL)
 // ============================================
 
-const preguntasExamen = [
-  {
-    texto: "¿Qué es el phishing?",
-    opciones: [
-      { texto: "Un tipo de virus que daña tu computadora", valor: "falso" },
-      { texto: "Una técnica de engaño para robar datos personales haciéndose pasar por alguien de confianza", valor: "correcto" },
-      { texto: "Una actualización de seguridad del celular", valor: "falso" }
-    ]
-  },
-  {
-    texto: "Si recibís un correo de tu banco pidiéndote que verifies tu cuenta, ¿qué debés hacer?",
-    opciones: [
-      { texto: "Hacer clic en el enlace y completar los datos", valor: "falso" },
-      { texto: "Ignorarlo y eliminar el mensaje, luego llamar al banco si tenés dudas", valor: "correcto" },
-      { texto: "Reenviarlo a todos tus contactos para que se cuiden", valor: "falso" }
-    ]
-  },
-  {
-    texto: "¿Cuál de estas señales indica que un mensaje puede ser falso?",
-    opciones: [
-      { texto: "Te pide que actúes con urgencia y hagas clic en un enlace", valor: "correcto" },
-      { texto: "Viene de tu contacto de confianza", valor: "falso" },
-      { texto: "Tiene el logo de la empresa", valor: "falso" }
-    ]
-  }
-];
+let moduloExamenActual = null;
+
+function iniciarExamen(modulo) {
+  if (!modulo || !Array.isArray(modulo.examen) || modulo.examen.length === 0) return;
+
+  moduloExamenActual = modulo;
+
+  asignarTexto("examen-titulo", "Repaso del Nivel " + modulo.numero + ": " + modulo.titulo);
+  asignarTexto(
+    "examen-subtitulo",
+    "Curso " + modulo.cursoId + ": " + modulo.cursoTitulo + " · " + modulo.nivelComprension +
+      " · " + modulo.examen.length + " preguntas"
+  );
+
+  const contenedorResultado = document.getElementById("examen-resultado");
+  if (contenedorResultado) contenedorResultado.hidden = true;
+
+  const btnEnviar = document.getElementById("btn-enviar-examen");
+  if (btnEnviar) btnEnviar.hidden = false;
+
+  renderizarPreguntasTest("contenedor-examen", modulo.examen);
+
+  MAPA_NAVEGACION["pantalla-examen"][3].etiqueta =
+    "Curso " + modulo.cursoId + ": " + modulo.cursoTitulo;
+  MAPA_NAVEGACION["pantalla-examen"][4].etiqueta =
+    "Repaso del Nivel " + modulo.numero;
+
+  mostrarPantalla("pantalla-examen");
+}
 
 async function enviarExamen(usuarioId, respuestas) {
+  const modulo = moduloExamenActual;
+  const preguntas = modulo && Array.isArray(modulo.examen) ? modulo.examen : [];
+  const moduloId = modulo ? modulo.id : null;
+
   let puntaje = 0;
   respuestas.forEach(function (r) {
     if (r === "correcto") puntaje++;
   });
 
-  const resultado = await apiPost("progreso/examen", {
-    usuarioId: usuarioId,
-    moduloId: 4,
-    respuestas: respuestas,
-    puntaje: puntaje,
-    totalPreguntas: preguntasExamen.length
-  });
-
   const datos = {
     puntaje: puntaje,
-    total_preguntas: preguntasExamen.length,
-    modulo_id: 4,
+    total_preguntas: preguntas.length,
+    modulo_id: moduloId,
+    curso_id: modulo ? modulo.cursoId : null,
+    curso_titulo: modulo ? modulo.cursoTitulo : "",
+    nivel_numero: modulo ? modulo.numero : null,
+    nivel_nombre: modulo ? modulo.nivelComprension : "",
+    titulo: modulo ? "Nivel " + modulo.numero + ": " + modulo.titulo : "",
     creado_en: new Date().toISOString()
   };
-  guardarLocal(claveExamenCache(usuarioId), datos);
 
-  if (resultado.exito) {
-    return { exito: true, puntaje: puntaje, total: preguntasExamen.length, desdeApi: true };
+  let desdeApi = false;
+  if (moduloId) {
+    const resultado = await apiPost("progreso/examen", {
+      usuarioId: usuarioId,
+      moduloId: moduloId,
+      respuestas: respuestas,
+      puntaje: puntaje,
+      totalPreguntas: preguntas.length
+    });
+    desdeApi = Boolean(resultado.exito);
   }
 
-  return { exito: true, puntaje: puntaje, total: preguntasExamen.length, desdeApi: false };
+  guardarLocal(claveExamenCache(usuarioId), datos);
+  if (moduloId) guardarLocal(claveExamenCache(usuarioId) + ":" + moduloId, datos);
+
+  if (moduloId) {
+    const pasos = Array.isArray(modulo.pasos) ? modulo.pasos.length : 1;
+    await guardarProgresoModulo(usuarioId, moduloId, pasos, true);
+  }
+
+  return { exito: true, puntaje: puntaje, total: preguntas.length, desdeApi: desdeApi };
 }
 
 // ============================================
@@ -1099,19 +1531,74 @@ async function renderizarProgreso() {
 
   let testInicial = null;
   let examen = null;
+  let modulos = [];
 
   // Intenta cargar desde la API
   const resultadoProgreso = await apiGet("progreso/" + sesion.id);
   if (resultadoProgreso.exito && resultadoProgreso.datos) {
     testInicial = resultadoProgreso.datos.testInicial;
     examen = resultadoProgreso.datos.examen;
+    modulos = Array.isArray(resultadoProgreso.datos.modulos) ? resultadoProgreso.datos.modulos : [];
   } else {
-    // Fallback: usa caché local
+    // Fallback: usa lo guardado en el dispositivo
     testInicial = leerLocal(claveTestCache(sesion.id), null);
     examen = leerLocal(claveExamenCache(sesion.id), null);
   }
 
+  aplicarProgresoModulos(modulos, sesion.id);
+  modulos = progresoModulosCache.slice();
+
   contenedor.innerHTML = "";
+
+  // Sección: Avance por curso
+  const seccionCursos = document.createElement("div");
+  seccionCursos.className = "progreso__seccion";
+
+  const tituloCursos = document.createElement("h3");
+  tituloCursos.className = "progreso__titulo-seccion";
+  tituloCursos.textContent = "Avance por curso";
+  seccionCursos.appendChild(tituloCursos);
+
+  const nivelesCompletados = modulos.filter(function (fila) {
+    return Boolean(fila.completado) && Boolean(buscarNivelPorId(fila.modulo_id));
+  }).length;
+
+  const resumenCursos = document.createElement("p");
+  resumenCursos.className = "progreso__nivel";
+  resumenCursos.textContent =
+    "Niveles completados: " + nivelesCompletados + " de " + TOTAL_NIVELES_CAMPUS +
+    " (" + CURSOS.length + " cursos con " + TOTAL_NIVELES_POR_CURSO + " niveles cada uno).";
+  seccionCursos.appendChild(resumenCursos);
+
+  CURSOS.forEach(function (curso) {
+    const completados = nivelesCompletadosDeCurso(curso.id);
+    const detalle = document.createElement("div");
+    detalle.className = "progreso__curso";
+
+    const nombre = document.createElement("p");
+    nombre.className = "progreso__curso-nombre";
+    nombre.textContent = curso.icono + " Curso " + curso.id + ": " + curso.titulo;
+    detalle.appendChild(nombre);
+
+    detalle.appendChild(crearBarraDeProgreso(
+      completados,
+      curso.modulos.length,
+      "progreso__barra--curso",
+      "",
+      "Niveles"
+    ));
+
+    seccionCursos.appendChild(detalle);
+  });
+
+  if (nivelesCompletados === 0) {
+    const sinCursos = document.createElement("p");
+    sinCursos.className = "progreso__mensaje";
+    sinCursos.textContent = "Todavía no completaste ningún nivel. Entrá al Campus Educativo y empezá por el Curso 1.";
+    seccionCursos.appendChild(sinCursos);
+  }
+
+  contenedor.appendChild(seccionCursos);
 
   // Sección: Nivel inicial
   const seccionInicial = document.createElement("div");
@@ -1144,17 +1631,26 @@ async function renderizarProgreso() {
 
   contenedor.appendChild(seccionInicial);
 
-  // Sección: Examen post-lección
+  // Sección: Último repaso rendido
   const seccionExamen = document.createElement("div");
   seccionExamen.className = "progreso__seccion";
 
   const tituloExamen = document.createElement("h3");
   tituloExamen.className = "progreso__titulo-seccion";
-  tituloExamen.textContent = "Examen post-lección (Módulo 4: Fraudes)";
+  tituloExamen.textContent = "Último repaso de nivel";
   seccionExamen.appendChild(tituloExamen);
 
   if (examen) {
+    const nivelDelExamen = buscarNivelPorId(examen.modulo_id);
     const porcentajeExamen = Math.round((examen.puntaje / examen.total_preguntas) * 100);
+
+    const referencia = document.createElement("div");
+    referencia.className = "progreso__nivel";
+    referencia.textContent = nivelDelExamen
+      ? "Curso " + nivelDelExamen.curso.id + ": " + nivelDelExamen.curso.titulo +
+        " · Nivel " + nivelDelExamen.modulo.numero + ": " + nivelDelExamen.modulo.titulo
+      : "Nivel " + examen.modulo_id;
+    seccionExamen.appendChild(referencia);
 
     const barraExamen = crearBarraDeProgreso(
       examen.puntaje,
@@ -1175,7 +1671,7 @@ async function renderizarProgreso() {
       } else if (diferencia === 0) {
         textoComparacion = "Mantuviste tu nivel. ¡Seguí aprendiendo!";
       } else {
-        textoComparacion = "Repasá el módulo para reforzar tus conocimientos. 💪";
+        textoComparacion = "Repasá el nivel para reforzar tus conocimientos. 💪";
       }
       comparacion.textContent = textoComparacion;
       seccionExamen.appendChild(comparacion);
@@ -1183,7 +1679,7 @@ async function renderizarProgreso() {
   } else {
     const sinExamen = document.createElement("p");
     sinExamen.className = "progreso__mensaje";
-    sinExamen.textContent = "Completá el Módulo 4 para rendir el examen rápido y ver tu progreso.";
+    sinExamen.textContent = "Todavía no rendiste ningún repaso de nivel. Cada nivel termina con 6 preguntas rápidas.";
     seccionExamen.appendChild(sinExamen);
 
     const botonCampus = document.createElement("button");
@@ -1200,21 +1696,21 @@ async function renderizarProgreso() {
   contenedor.appendChild(seccionExamen);
 }
 
-function crearBarraDeProgreso(valor, total, claseColor, textoSuperior) {
+function crearBarraDeProgreso(valor, total, claseColor, textoSuperior, etiqueta) {
   const wrapper = document.createElement("div");
 
-  const etiqueta = document.createElement("div");
-  etiqueta.className = "progreso__etiqueta";
+  const etiquetaEl = document.createElement("div");
+  etiquetaEl.className = "progreso__etiqueta";
 
   const labelIzq = document.createElement("span");
-  labelIzq.textContent = "Progreso";
-  etiqueta.appendChild(labelIzq);
+  labelIzq.textContent = etiqueta || "Progreso";
+  etiquetaEl.appendChild(labelIzq);
 
   const labelDer = document.createElement("span");
   labelDer.textContent = valor + " / " + total;
-  etiqueta.appendChild(labelDer);
+  etiquetaEl.appendChild(labelDer);
 
-  wrapper.appendChild(etiqueta);
+  wrapper.appendChild(etiquetaEl);
 
   const contenedorBarra = document.createElement("div");
   contenedorBarra.className = "progreso__barra-contenedor";
@@ -1232,18 +1728,36 @@ function crearBarraDeProgreso(valor, total, claseColor, textoSuperior) {
 }
 
 // ============================================
-// CAMPUS EDUCATIVO
-// Catálogo de módulos. Solo el Módulo 4 tiene la lección completa;
-// el resto se muestra como "Próximamente" para no romper la navegación.
+// CAMPUS EDUCATIVO: CURSOS Y NIVELES DE COMPRENSIÓN
+// Cada curso tiene 4 niveles (Descubrir, Comprender, Practicar,
+// Dominar y proteger). El contenido vive en contenido-cursos.js.
 // ============================================
 
-const MODULOS_CAMPUS = [
-  { id: 1, titulo: "Uso de Smartphones", tema: "movil", icono: "📱", nivel: "principiante", duracion: 30, disponible: false },
-  { id: 2, titulo: "Redes e Internet", tema: "redes", icono: "🌐", nivel: "principiante", duracion: 40, disponible: false },
-  { id: 3, titulo: "Trámites en Línea", tema: "tramites", icono: "🧾", nivel: "intermedio", duracion: 45, disponible: false },
-  { id: 4, titulo: "Fraudes Digitales (Phishing)", tema: "fraudes", icono: "🛡️", nivel: "principiante", duracion: 35, disponible: true },
-  { id: 5, titulo: "Comunicación Digital", tema: "comunicacion", icono: "💬", nivel: "principiante", duracion: 25, disponible: false }
-];
+const CURSOS = (typeof CONTENIDO_CURSOS !== "undefined" && Array.isArray(CONTENIDO_CURSOS))
+  ? CONTENIDO_CURSOS
+  : [];
+
+const GUIA_NIVELES = (typeof NIVELES_COMPRENSION !== "undefined" && Array.isArray(NIVELES_COMPRENSION))
+  ? NIVELES_COMPRENSION
+  : [];
+
+// Teorías complementarias por nivel (clave "101" a "504").
+// Se suman a las 4 teorías base de contenido-cursos.js hasta llegar a 10.
+const TEORIAS_POR_NIVEL = (typeof TEORIAS_EXTRA !== "undefined" && TEORIAS_EXTRA && typeof TEORIAS_EXTRA === "object")
+  ? TEORIAS_EXTRA
+  : {};
+
+// Preguntas adicionales del repaso (clave "101" a "504").
+// Se suman a las 3 preguntas base de cada nivel para llegar a 6.
+const PREGUNTAS_POR_NIVEL = (typeof PREGUNTAS_EXTRA !== "undefined" && PREGUNTAS_EXTRA && typeof PREGUNTAS_EXTRA === "object")
+  ? PREGUNTAS_EXTRA
+  : {};
+
+const TOTAL_NIVELES_POR_CURSO = 4;
+
+const TOTAL_NIVELES_CAMPUS = CURSOS.reduce(function (total, curso) {
+  return total + (Array.isArray(curso.modulos) ? curso.modulos.length : 0);
+}, 0);
 
 const ETIQUETAS_TEMA = {
   movil: "Celular y aplicaciones",
@@ -1253,9 +1767,7 @@ const ETIQUETAS_TEMA = {
   comunicacion: "Mensajes y videollamadas"
 };
 
-const ICONOS_TRABAJO = { 1: "📱", 2: "🌐", 3: "🧾", 4: "🛡️", 5: "💬" };
-
-// Un mini trabajo por módulo y por nivel. El texto es simple y accionable.
+// Un mini trabajo por curso y por nivel de usuario. El texto es simple y accionable.
 const TRABAJOS_PRACTICOS = {
   1: {
     principiante: "Encendé tu celular y bajá el brillo desde los ajustes. Contale a alguien de confianza qué pasos hiciste.",
@@ -1293,17 +1805,169 @@ const NIVELES_TRABAJO = [
 const COLORES_AVATAR = ["#0A4B5C", "#007A87", "#2E7D32", "#B45309", "#6D4C41", "#7B1FA2"];
 
 let filtroCampusNivel = false;
-let modulosCampusCache = MODULOS_CAMPUS.slice();
-let moduloActual = MODULOS_CAMPUS[3];
+let progresoModulosCache = [];
+let cursosCache = CURSOS.map(function (curso) { return crearCursoCache(curso); });
 let nivelTrabajos = null;
 let miniTrabajosCache = [];
 
+function crearCursoCache(curso) {
+  return {
+    id: curso.id,
+    titulo: curso.titulo,
+    resumen: curso.resumen,
+    icono: curso.icono,
+    tema: curso.tema,
+    nivel: curso.nivel,
+    duracion: curso.duracion,
+    totalNiveles: Array.isArray(curso.modulos) ? curso.modulos.length : 0,
+    nivelesCompletados: 0
+  };
+}
+
+function idNivelCurso(cursoId, numero) {
+  return Number(cursoId) * 100 + Number(numero);
+}
+
+function buscarCurso(cursoId) {
+  return CURSOS.find(function (curso) {
+    return Number(curso.id) === Number(cursoId);
+  }) || null;
+}
+
+function buscarNivelPorId(moduloId) {
+  const id = Number(moduloId);
+  for (let i = 0; i < CURSOS.length; i++) {
+    const curso = CURSOS[i];
+    const modulos = Array.isArray(curso.modulos) ? curso.modulos : [];
+    for (let j = 0; j < modulos.length; j++) {
+      if (idNivelCurso(curso.id, modulos[j].numero) === id) {
+        return { curso: curso, modulo: modulos[j] };
+      }
+    }
+  }
+  return null;
+}
+
+function nombreNivel(modulo) {
+  return "Nivel " + modulo.numero + " · " + modulo.nivelComprension;
+}
+
+// Une las 4 teorías base con las 6 complementarias del archivo contenido-teorias.js.
+function teoriasDelNivel(cursoId, modulo) {
+  const base = Array.isArray(modulo.pasos) ? modulo.pasos.slice() : [];
+  const extras = TEORIAS_POR_NIVEL[String(idNivelCurso(cursoId, modulo.numero))];
+  return Array.isArray(extras) ? base.concat(extras) : base;
+}
+
+// Une las 3 preguntas base con las 3 complementarias del archivo contenido-repaso.js.
+function examenDelNivel(cursoId, modulo) {
+  const base = Array.isArray(modulo.examen) ? modulo.examen.slice() : [];
+  const extras = PREGUNTAS_POR_NIVEL[String(idNivelCurso(cursoId, modulo.numero))];
+  return Array.isArray(extras) ? base.concat(extras) : base;
+}
+
+// El avance guardado en el dispositivo se suma al de la API: nunca se pierde
+// un nivel completado por una respuesta vieja o por estar sin conexión.
+function leerProgresoLocal(usuarioId) {
+  const filas = leerLocal(claveProgresoCache(usuarioId), []);
+  return Array.isArray(filas) ? filas : [];
+}
+
+function guardarProgresoLocal(usuarioId) {
+  if (!usuarioId) return;
+  guardarLocal(claveProgresoCache(usuarioId), progresoModulosCache);
+}
+
+function combinarProgreso(remotos, usuarioId) {
+  const mapa = new Map();
+
+  (Array.isArray(remotos) ? remotos : []).forEach(function (fila) {
+    if (!fila || !fila.modulo_id) return;
+    mapa.set(Number(fila.modulo_id), {
+      modulo_id: Number(fila.modulo_id),
+      paso_actual: Number(fila.paso_actual) || 0,
+      completado: Boolean(fila.completado)
+    });
+  });
+
+  leerProgresoLocal(usuarioId).forEach(function (fila) {
+    if (!fila || !fila.modulo_id) return;
+    const id = Number(fila.modulo_id);
+    const previo = mapa.get(id);
+    mapa.set(id, {
+      modulo_id: id,
+      paso_actual: Math.max(previo ? previo.paso_actual : 0, Number(fila.paso_actual) || 0),
+      completado: Boolean(previo && previo.completado) || Boolean(fila.completado)
+    });
+  });
+
+  return Array.from(mapa.values());
+}
+
+function aplicarProgresoModulos(remotos, usuarioId) {
+  progresoModulosCache = combinarProgreso(remotos, usuarioId);
+  guardarProgresoLocal(usuarioId);
+  refrescarAvanceCursos();
+}
+
+function actualizarProgresoLocal(usuarioId, moduloId, paso, completado) {
+  const fila = progresoModulosCache.find(function (registro) {
+    return Number(registro.modulo_id) === Number(moduloId);
+  });
+  const pasoNumero = Number(paso) || 0;
+
+  if (fila) {
+    fila.paso_actual = Math.max(Number(fila.paso_actual) || 0, pasoNumero);
+    fila.completado = Boolean(fila.completado) || Boolean(completado);
+  } else {
+    progresoModulosCache.push({
+      modulo_id: Number(moduloId),
+      paso_actual: pasoNumero,
+      completado: Boolean(completado)
+    });
+  }
+
+  guardarProgresoLocal(usuarioId);
+  refrescarAvanceCursos();
+}
+
+// Un nivel se abre al completar el anterior. El Nivel 1 siempre está abierto,
+// y un nivel ya completado se puede repasar aunque sea de un curso anterior.
+function nivelDesbloqueado(cursoId, numero) {
+  if (Number(numero) <= 1) return true;
+  if (nivelEstaCompletado(idNivelCurso(cursoId, numero))) return true;
+  return nivelEstaCompletado(idNivelCurso(cursoId, Number(numero) - 1));
+}
+
+function nivelEstaCompletado(moduloId) {
+  return progresoModulosCache.some(function (fila) {
+    return Number(fila.modulo_id) === Number(moduloId) && Boolean(fila.completado);
+  });
+}
+
+function nivelesCompletadosDeCurso(cursoId) {
+  const curso = buscarCurso(cursoId);
+  if (!curso || !Array.isArray(curso.modulos)) return 0;
+  return curso.modulos.reduce(function (total, modulo) {
+    return total + (nivelEstaCompletado(idNivelCurso(curso.id, modulo.numero)) ? 1 : 0);
+  }, 0);
+}
+
+function refrescarAvanceCursos() {
+  cursosCache.forEach(function (curso) {
+    curso.nivelesCompletados = nivelesCompletadosDeCurso(curso.id);
+  });
+}
+
 // Evita que los datos de una cuenta queden visibles al entrar con otra.
 function reiniciarDatosDeSesion() {
-  modulosCampusCache = MODULOS_CAMPUS.slice();
+  cursosCache = CURSOS.map(function (curso) { return crearCursoCache(curso); });
+  progresoModulosCache = [];
   miniTrabajosCache = [];
   nivelTrabajos = null;
   filtroCampusNivel = false;
+  cursoActual = null;
+  moduloActual = null;
 }
 
 function normalizarNivel(nivel) {
@@ -1328,12 +1992,17 @@ function inicialDe(nombre) {
   return limpio ? limpio.charAt(0).toUpperCase() : "T";
 }
 
+function asignarTexto(id, texto) {
+  const elemento = document.getElementById(id);
+  if (elemento) elemento.textContent = texto;
+}
+
 async function renderizarCampus() {
   const lista = document.getElementById("lista-modulos");
   if (!lista) return;
 
   // Muestra el catálogo local al instante y luego lo completa con la API.
-  renderizarListaCampus(modulosCampusCache);
+  renderizarListaCampus(cursosCache);
 
   const cargar = [apiGet("cursos")];
   const sesion = obtenerSesion();
@@ -1343,35 +2012,36 @@ async function renderizarCampus() {
   const resultadoCursos = respuestas[0];
   const resultadoProgreso = respuestas[1];
 
-  const modulosApi = resultadoCursos.exito && Array.isArray(resultadoCursos.datos)
+  const cursosApi = resultadoCursos.exito && Array.isArray(resultadoCursos.datos)
     ? resultadoCursos.datos
     : [];
 
-  modulosCampusCache = MODULOS_CAMPUS.map(function (base) {
-    const api = modulosApi.find(function (m) { return Number(m.id) === base.id; });
+  cursosCache = CURSOS.map(function (base) {
+    const api = cursosApi.find(function (m) { return Number(m.id) === Number(base.id); });
     return {
       id: base.id,
       titulo: api && api.titulo ? api.titulo : base.titulo,
-      tema: api && api.tema ? api.tema : base.tema,
+      resumen: base.resumen,
       icono: base.icono,
+      tema: base.tema,
       nivel: api && api.nivel ? api.nivel : base.nivel,
-      duracion: api && api.duracion_min ? api.duracion_min : base.duracion,
-      disponible: base.disponible
+      duracion: base.duracion,
+      totalNiveles: Array.isArray(base.modulos) ? base.modulos.length : 0,
+      nivelesCompletados: 0
     };
   });
 
-  if (resultadoProgreso && resultadoProgreso.exito && resultadoProgreso.datos) {
-    const completados = resultadoProgreso.datos.modulos || [];
-    modulosCampusCache.forEach(function (modulo) {
-      const avance = completados.find(function (m) { return Number(m.modulo_id) === modulo.id; });
-      modulo.completado = Boolean(avance && avance.completado);
-    });
-  }
+  aplicarProgresoModulos(
+    resultadoProgreso && resultadoProgreso.exito && resultadoProgreso.datos
+      ? resultadoProgreso.datos.modulos
+      : [],
+    sesion ? sesion.id : null
+  );
 
-  renderizarListaCampus(modulosCampusCache);
+  renderizarListaCampus(cursosCache);
 }
 
-function renderizarListaCampus(modulos) {
+function renderizarListaCampus(cursos) {
   const lista = document.getElementById("lista-modulos");
   if (!lista) return;
 
@@ -1380,94 +2050,280 @@ function renderizarListaCampus(modulos) {
   const nivelUsuario = sesion ? normalizarNivel(sesion.nivelDigital) : null;
   const visibles = filtroCampusNivel && nivelUsuario
     ? (nivelCrudo === "protegido"
-        ? modulos
-        : modulos.filter(function (m) { return normalizarNivel(m.nivel) === nivelUsuario; }))
-    : modulos;
+        ? cursos
+        : cursos.filter(function (curso) { return normalizarNivel(curso.nivel) === nivelUsuario; }))
+    : cursos;
 
   lista.innerHTML = "";
 
   if (visibles.length === 0) {
     const vacio = document.createElement("li");
     vacio.className = "lista-modulos__vacio";
-    vacio.textContent = "Todavía no hay módulos para tu nivel. Probá con «Todos».";
+    vacio.textContent = "Todavía no hay cursos para tu nivel. Probá con «Todos».";
     lista.appendChild(vacio);
     return;
   }
 
-  visibles.forEach(function (modulo) {
+  visibles.forEach(function (curso) {
     const item = document.createElement("li");
-    const esBoton = modulo.disponible;
-    const elemento = document.createElement(esBoton ? "button" : "div");
-    elemento.className = "modulo " + (esBoton ? "modulo--disponible" : "modulo--bloqueado");
-    elemento.setAttribute("type", esBoton ? "button" : "div");
-
-    if (!esBoton) {
-      elemento.setAttribute("aria-disabled", "true");
-    }
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.className = "modulo modulo--disponible";
 
     const icono = document.createElement("span");
     icono.className = "modulo__icono";
     icono.setAttribute("aria-hidden", "true");
-    icono.textContent = modulo.icono;
-    elemento.appendChild(icono);
+    icono.textContent = curso.icono || "📘";
+    boton.appendChild(icono);
 
     const info = document.createElement("span");
     info.className = "modulo__info";
 
     const nombre = document.createElement("span");
     nombre.className = "modulo__nombre";
-    nombre.textContent = "Módulo " + modulo.id + ": " + modulo.titulo;
+    nombre.textContent = "Curso " + curso.id + ": " + curso.titulo;
     info.appendChild(nombre);
 
+    const completo = curso.totalNiveles > 0 && curso.nivelesCompletados >= curso.totalNiveles;
     const estado = document.createElement("span");
-    estado.className = "modulo__estado" + (modulo.completado || modulo.disponible ? " modulo__estado--disponible" : "");
-    if (modulo.completado) {
-      estado.textContent = "✓ Completado";
-    } else if (modulo.disponible) {
-      estado.textContent = "Disponible · " + (modulo.duracion || 35) + " min · Nivel " + formatearNivel(modulo.nivel);
+    estado.className = "modulo__estado" + (completo || curso.nivelesCompletados > 0 ? " modulo__estado--disponible" : "");
+    if (completo) {
+      estado.textContent = "✓ Curso completado";
+    } else if (curso.nivelesCompletados > 0) {
+      estado.textContent = curso.nivelesCompletados + " de " + curso.totalNiveles + " niveles completados";
     } else {
-      estado.textContent = "Próximamente";
+      estado.textContent = curso.totalNiveles + " niveles · " + curso.duracion + " min · Nivel " + formatearNivel(curso.nivel);
     }
     info.appendChild(estado);
-    elemento.appendChild(info);
 
-    if (esBoton) {
-      elemento.addEventListener("click", function () {
-        abrirModulo(modulo);
-      });
-    }
+    const barra = document.createElement("span");
+    barra.className = "modulo__barra";
+    barra.setAttribute("aria-hidden", "true");
+    const relleno = document.createElement("span");
+    relleno.className = "modulo__barra-relleno";
+    const porcentaje = curso.totalNiveles > 0
+      ? Math.round((curso.nivelesCompletados / curso.totalNiveles) * 100)
+      : 0;
+    relleno.style.width = porcentaje + "%";
+    barra.appendChild(relleno);
+    info.appendChild(barra);
 
-    item.appendChild(elemento);
+    boton.appendChild(info);
+    boton.addEventListener("click", function () {
+      abrirCurso(curso);
+    });
+
+    item.appendChild(boton);
     lista.appendChild(item);
   });
 }
 
-function abrirModulo(modulo) {
-  if (!modulo || !modulo.disponible) {
-    mostrarMensaje("Este módulo estará disponible próximamente.", 3000);
+async function abrirCurso(curso) {
+  if (!curso) return;
+
+  renderizarCurso(curso);
+  mostrarPantalla("pantalla-curso");
+
+  const sesion = obtenerSesion();
+  if (!sesion) return;
+
+  const resultado = await apiGet("usuarios/" + sesion.id + "/progreso");
+  aplicarProgresoModulos(
+    resultado.exito && resultado.datos ? resultado.datos.modulos : [],
+    sesion.id
+  );
+  renderizarCurso(curso);
+}
+
+function renderizarCurso(curso) {
+  const detalle = buscarCurso(curso.id);
+  if (!detalle) return;
+
+  cursoActual = curso;
+
+  asignarTexto("curso-etiqueta", "Curso " + detalle.id);
+  asignarTexto("curso-titulo", detalle.titulo);
+  asignarTexto("curso-resumen", detalle.resumen || "");
+
+  const meta = document.getElementById("curso-meta");
+  if (meta) {
+    meta.innerHTML = "";
+    const etiquetas = [
+      "📚 " + detalle.modulos.length + " niveles",
+      "📖 " + teoriasDelNivel(detalle.id, detalle.modulos[0]).length + " teorías por nivel",
+      "⏱️ " + detalle.duracion + " min en total",
+      "🎯 Nivel " + formatearNivel(detalle.nivel)
+    ];
+    etiquetas.forEach(function (texto) {
+      const badge = document.createElement("span");
+      badge.className = "badge";
+      badge.textContent = texto;
+      meta.appendChild(badge);
+    });
+
+    if (detalle.porQueImporta) {
+      const porque = document.createElement("p");
+      porque.className = "curso__porque";
+      porque.textContent = "Por qué importa: " + detalle.porQueImporta;
+      meta.appendChild(porque);
+    }
+  }
+
+  const guia = document.getElementById("curso-niveles-guia");
+  if (guia) {
+    guia.innerHTML = "";
+    GUIA_NIVELES.forEach(function (nivel) {
+      const item = document.createElement("li");
+      const titulo = document.createElement("strong");
+      titulo.textContent = "Nivel " + nivel.numero + " · " + nivel.etiqueta + ": ";
+      item.appendChild(titulo);
+      item.appendChild(document.createTextNode(nivel.descripcion));
+      guia.appendChild(item);
+    });
+  }
+
+  const lista = document.getElementById("lista-niveles-curso");
+  if (lista) {
+    lista.innerHTML = "";
+
+    detalle.modulos.forEach(function (modulo) {
+      const moduloId = idNivelCurso(detalle.id, modulo.numero);
+      const hecho = nivelEstaCompletado(moduloId);
+      const bloqueado = !nivelDesbloqueado(detalle.id, modulo.numero);
+
+      const tarjeta = document.createElement("article");
+      tarjeta.className = "nivel-card" +
+        (hecho ? " nivel-card--hecho" : "") +
+        (bloqueado ? " nivel-card--bloqueado" : "");
+
+      const numero = document.createElement("span");
+      numero.className = "nivel-card__numero";
+      numero.setAttribute("aria-hidden", "true");
+      numero.textContent = modulo.numero;
+      tarjeta.appendChild(numero);
+
+      const cuerpo = document.createElement("div");
+      cuerpo.className = "nivel-card__cuerpo";
+
+      const etiqueta = document.createElement("p");
+      etiqueta.className = "nivel-card__etiqueta";
+      etiqueta.textContent = "Nivel " + modulo.numero + " · " + modulo.nivelComprension;
+      cuerpo.appendChild(etiqueta);
+
+      const titulo = document.createElement("h4");
+      titulo.className = "nivel-card__titulo";
+      titulo.textContent = modulo.titulo;
+      cuerpo.appendChild(titulo);
+
+      const subtitulo = document.createElement("p");
+      subtitulo.className = "nivel-card__texto";
+      subtitulo.textContent = modulo.subtitulo;
+      cuerpo.appendChild(subtitulo);
+
+      const metaNivel = document.createElement("p");
+      metaNivel.className = "nivel-card__meta";
+      if (bloqueado) {
+        metaNivel.textContent = "🔒 Completá el Nivel " + (modulo.numero - 1) + " para desbloquear este nivel.";
+      } else {
+        const teorias = teoriasDelNivel(detalle.id, modulo).length;
+        const preguntas = examenDelNivel(detalle.id, modulo).length;
+        metaNivel.textContent = "⏱️ " + modulo.duracion + " min · " + teorias + " teorías · " +
+          (hecho ? "✓ Completado" : preguntas + " preguntas de repaso");
+      }
+      cuerpo.appendChild(metaNivel);
+
+      const boton = document.createElement("button");
+      boton.type = "button";
+      boton.className = "btn " + (hecho ? "btn--secundario" : "btn--primario") + " nivel-card__boton";
+      boton.textContent = bloqueado
+        ? "🔒 Primero completá el Nivel " + (modulo.numero - 1)
+        : (hecho ? "Repasar nivel" : "Empezar nivel");
+      boton.disabled = bloqueado;
+      if (bloqueado) {
+        boton.title = "Este nivel se abre cuando completes el Nivel " + (modulo.numero - 1) + ".";
+      }
+      boton.addEventListener("click", function () {
+        iniciarNivel(detalle, modulo);
+      });
+      cuerpo.appendChild(boton);
+
+      tarjeta.appendChild(cuerpo);
+      lista.appendChild(tarjeta);
+    });
+  }
+
+  MAPA_NAVEGACION["pantalla-curso"][3].etiqueta = "Curso " + detalle.id + ": " + detalle.titulo;
+}
+
+function iniciarNivel(curso, modulo) {
+  const detalle = buscarCurso(curso.id);
+  if (!detalle) return;
+
+  if (!nivelDesbloqueado(detalle.id, modulo.numero)) {
+    mostrarMensaje(
+      "🔒 Para entrar al Nivel " + modulo.numero + " primero tenés que completar el Nivel " +
+        (modulo.numero - 1) + ", incluido su repaso final.",
+      4500
+    );
     return;
   }
 
-  moduloActual = modulo;
+  cursoActual = curso;
+  moduloActual = {
+    id: idNivelCurso(detalle.id, modulo.numero),
+    cursoId: detalle.id,
+    cursoTitulo: detalle.titulo,
+    tema: detalle.tema,
+    numero: modulo.numero,
+    titulo: modulo.titulo,
+    nivelComprension: modulo.nivelComprension,
+    subtitulo: modulo.subtitulo,
+    objetivo: modulo.objetivo,
+    objetivos: modulo.objetivos || [],
+    pasos: teoriasDelNivel(detalle.id, modulo),
+    glosario: modulo.glosario || [],
+    examen: examenDelNivel(detalle.id, modulo)
+  };
+
   indicePasoActual = 0;
-
-  const etiquetaTema = document.getElementById("leccion-tema-etiqueta");
-  if (etiquetaTema) {
-    etiquetaTema.textContent = "Tema: " + (ETIQUETAS_TEMA[modulo.tema] || "Aprendizaje digital");
-  }
-
-  const tituloLeccion = document.getElementById("leccion-titulo");
-  if (tituloLeccion) {
-    tituloLeccion.textContent = "Módulo " + modulo.id + ": " + modulo.titulo;
-  }
-
-  const rutaLeccion = MAPA_NAVEGACION["pantalla-leccion"];
-  if (rutaLeccion && rutaLeccion[3]) {
-    rutaLeccion[3].etiqueta = "Módulo " + modulo.id + ": " + modulo.titulo;
-  }
-
+  actualizarEncabezadoLeccion();
   renderizarPasoLeccion(0);
   mostrarPantalla("pantalla-leccion");
+}
+
+function actualizarEncabezadoLeccion() {
+  if (!moduloActual) return;
+
+  asignarTexto("leccion-tema-etiqueta", "Curso " + moduloActual.cursoId + ": " + moduloActual.cursoTitulo);
+  asignarTexto("leccion-titulo", "Nivel " + moduloActual.numero + ": " + moduloActual.titulo);
+  asignarTexto("leccion-nivel-badge", "Nivel " + moduloActual.numero + " de " + TOTAL_NIVELES_POR_CURSO + " · " + moduloActual.nivelComprension);
+  asignarTexto("leccion-objetivo", moduloActual.objetivo || "");
+
+  const listaObjetivos = document.getElementById("leccion-objetivos");
+  if (listaObjetivos) {
+    listaObjetivos.innerHTML = "";
+    (moduloActual.objetivos || []).forEach(function (objetivo) {
+      const item = document.createElement("li");
+      item.textContent = objetivo;
+      listaObjetivos.appendChild(item);
+    });
+  }
+
+  const glosario = document.getElementById("leccion-glosario");
+  if (glosario) {
+    glosario.innerHTML = "";
+    (moduloActual.glosario || []).forEach(function (entrada) {
+      const termino = document.createElement("dt");
+      termino.textContent = entrada.termino;
+      const definicion = document.createElement("dd");
+      definicion.textContent = entrada.definicion;
+      glosario.appendChild(termino);
+      glosario.appendChild(definicion);
+    });
+  }
+
+  MAPA_NAVEGACION["pantalla-leccion"][3].etiqueta = "Curso " + moduloActual.cursoId + ": " + moduloActual.cursoTitulo;
+  MAPA_NAVEGACION["pantalla-leccion"][4].etiqueta = "Nivel " + moduloActual.numero + ": " + moduloActual.titulo;
 }
 
 // ============================================
@@ -1506,11 +2362,30 @@ async function renderizarTrabajos() {
   renderizarListaTrabajos();
 
   const resultado = await apiGet("usuarios/" + sesion.id + "/progreso");
-  miniTrabajosCache = resultado.exito && resultado.datos && Array.isArray(resultado.datos.miniTrabajos)
+  const remotos = resultado.exito && resultado.datos && Array.isArray(resultado.datos.miniTrabajos)
     ? resultado.datos.miniTrabajos
     : [];
+  miniTrabajosCache = combinarMiniTrabajos(remotos, sesion.id);
+  guardarLocal(claveMiniTrabajosCache(sesion.id), miniTrabajosCache);
 
   renderizarListaTrabajos();
+}
+
+// Los trabajos hechos sin conexión se guardan en el dispositivo y se suman
+// a los que devuelve la API cuando vuelve a estar disponible.
+function combinarMiniTrabajos(remotos, usuarioId) {
+  const locales = leerLocal(claveMiniTrabajosCache(usuarioId), []);
+  const mapa = new Map();
+
+  remotos.forEach(function (trabajo) {
+    mapa.set(String(trabajo.modulo_id) + ":" + String(trabajo.nivel), trabajo);
+  });
+  (Array.isArray(locales) ? locales : []).forEach(function (trabajo) {
+    const clave = String(trabajo.modulo_id) + ":" + String(trabajo.nivel);
+    if (!mapa.has(clave)) mapa.set(clave, trabajo);
+  });
+
+  return Array.from(mapa.values());
 }
 
 function trabajoEstaHecho(moduloId, nivel) {
@@ -1527,9 +2402,9 @@ function renderizarListaTrabajos() {
 
   lista.innerHTML = "";
 
-  MODULOS_CAMPUS.forEach(function (modulo) {
-    const tarea = (TRABAJOS_PRACTICOS[modulo.id] || {})[nivelTrabajos] || "";
-    const hecho = trabajoEstaHecho(modulo.id, nivelTrabajos);
+  CURSOS.forEach(function (curso) {
+    const tarea = (TRABAJOS_PRACTICOS[curso.id] || {})[nivelTrabajos] || "";
+    const hecho = trabajoEstaHecho(curso.id, nivelTrabajos);
 
     const tarjeta = document.createElement("article");
     tarjeta.className = "trabajo" + (hecho ? " trabajo--hecho" : "");
@@ -1537,7 +2412,7 @@ function renderizarListaTrabajos() {
     const icono = document.createElement("span");
     icono.className = "trabajo__icono";
     icono.setAttribute("aria-hidden", "true");
-    icono.textContent = ICONOS_TRABAJO[modulo.id] || "🛠️";
+    icono.textContent = curso.icono || "🛠️";
     tarjeta.appendChild(icono);
 
     const cuerpo = document.createElement("div");
@@ -1545,7 +2420,7 @@ function renderizarListaTrabajos() {
 
     const titulo = document.createElement("h3");
     titulo.className = "trabajo__titulo";
-    titulo.textContent = "Módulo " + modulo.id + ": " + modulo.titulo;
+    titulo.textContent = "Curso " + curso.id + ": " + curso.titulo;
     cuerpo.appendChild(titulo);
 
     const texto = document.createElement("p");
@@ -1561,7 +2436,7 @@ function renderizarListaTrabajos() {
     boton.textContent = hecho ? "✓ Hecho" : "Marcar como hecho";
     boton.setAttribute("aria-pressed", hecho ? "true" : "false");
     boton.addEventListener("click", function () {
-      guardarMiniTrabajo(modulo.id, nivelTrabajos, !hecho);
+      guardarMiniTrabajo(curso.id, nivelTrabajos, !hecho);
     });
     tarjeta.appendChild(boton);
 
@@ -1573,18 +2448,6 @@ async function guardarMiniTrabajo(moduloId, nivel, completado) {
   const sesion = obtenerSesion();
   if (!sesion) return;
 
-  const resultado = await apiPost("progreso/mini-trabajo", {
-    usuarioId: sesion.id,
-    moduloId: moduloId,
-    nivel: nivel,
-    completado: completado
-  });
-
-  if (!resultado.exito) {
-    mostrarMensaje("No pudimos guardar el trabajo. Revisá tu conexión e intentá otra vez.", 4000);
-    return;
-  }
-
   const indice = miniTrabajosCache.findIndex(function (trabajo) {
     return Number(trabajo.modulo_id) === Number(moduloId) && String(trabajo.nivel) === nivel;
   });
@@ -1594,9 +2457,26 @@ async function guardarMiniTrabajo(moduloId, nivel, completado) {
   } else {
     miniTrabajosCache.push(registro);
   }
-
-  mostrarMensaje(completado ? "¡Trabajo guardado como hecho! 🎉" : "Trabajo marcado como pendiente.", 3000);
+  guardarLocal(claveMiniTrabajosCache(sesion.id), miniTrabajosCache);
   renderizarListaTrabajos();
+
+  const resultado = await apiPost("progreso/mini-trabajo", {
+    usuarioId: sesion.id,
+    moduloId: moduloId,
+    nivel: nivel,
+    completado: completado
+  });
+
+  if (resultado.exito) {
+    mostrarMensaje(completado ? "¡Trabajo guardado como hecho! 🎉" : "Trabajo marcado como pendiente.", 3000);
+  } else {
+    mostrarMensaje(
+      completado
+        ? "¡Trabajo guardado como hecho en este dispositivo!"
+        : "Trabajo marcado como pendiente en este dispositivo.",
+      4500
+    );
+  }
 }
 
 // ============================================
@@ -1939,25 +2819,36 @@ async function renderizarResumenDashboard(sesion) {
   let trabajosHechos = 0;
   let examen = null;
 
+  const modulosApi = resultado.exito && resultado.datos && Array.isArray(resultado.datos.modulos)
+    ? resultado.datos.modulos
+    : [];
+  aplicarProgresoModulos(modulosApi, sesion.id);
+  modulosCompletados = progresoModulosCache.filter(function (m) {
+    return Boolean(m.completado) && Boolean(buscarNivelPorId(m.modulo_id));
+  }).length;
+
   if (resultado.exito && resultado.datos) {
-    const modulos = resultado.datos.modulos || [];
-    modulosCompletados = modulos.filter(function (m) { return Boolean(m.completado); }).length;
     const trabajos = resultado.datos.miniTrabajos || [];
     trabajosHechos = trabajos.filter(function (t) { return Boolean(t.completado); }).length;
     examen = resultado.datos.examen;
   }
 
+  refrescarAvanceCursos();
+
   contenedor.innerHTML = "";
 
   const datos = [
     { etiqueta: "Tu nivel", valor: formatearNivel(sesion.nivelDigital), icono: "🎯" },
-    { etiqueta: "Módulos completados", valor: modulosCompletados + " de " + MODULOS_CAMPUS.length, icono: "📚" },
+    { etiqueta: "Niveles completados", valor: modulosCompletados + " de " + TOTAL_NIVELES_CAMPUS, icono: "📚" },
     { etiqueta: "Trabajos hechos", valor: String(trabajosHechos), icono: "🛠️" }
   ];
 
   if (examen && examen.total_preguntas) {
+    const nivelDelExamen = buscarNivelPorId(examen.modulo_id);
     datos.push({
-      etiqueta: "Último examen",
+      etiqueta: nivelDelExamen
+        ? "Último repaso: Nivel " + nivelDelExamen.modulo.numero
+        : "Último repaso",
       valor: examen.puntaje + " de " + examen.total_preguntas,
       icono: "🏅"
     });
@@ -1993,6 +2884,7 @@ async function renderizarResumenDashboard(sesion) {
 
 const MAPA_NAV_ACTIVA = {
   "pantalla-campus": "btn-nav-campus",
+  "pantalla-curso": "btn-nav-campus",
   "pantalla-leccion": "btn-nav-campus",
   "pantalla-trabajos": "btn-nav-trabajos",
   "pantalla-progreso": "btn-nav-progreso",
@@ -2331,7 +3223,11 @@ function inicializar() {
   }
 
   function abrirEscudo() {
-    renderizarAlertasEscudo();
+    if (retosEscudo.length === 0 || estadoRetoEscudo === "fin") {
+      iniciarRetosEscudo(false);
+    } else {
+      renderizarRetoEscudo(false);
+    }
     mostrarPantalla("pantalla-escudo");
   }
 
@@ -2624,7 +3520,7 @@ function inicializar() {
       filtroNivel.classList.toggle("chip-filtro--activo", filtroCampusNivel);
       filtroNivel.setAttribute("aria-pressed", filtroCampusNivel ? "true" : "false");
     }
-    renderizarListaCampus(modulosCampusCache);
+    renderizarListaCampus(cursosCache);
   }
 
   if (filtroTodos) {
@@ -2657,6 +3553,7 @@ function inicializar() {
 
   // --- Lección: Navegación ---
   document.getElementById("btn-leccion-anterior").addEventListener("click", function () {
+    if (!moduloActual) return;
     if (indicePasoActual > 0) {
       indicePasoActual--;
       renderizarPasoLeccion(indicePasoActual);
@@ -2666,19 +3563,52 @@ function inicializar() {
   });
 
   document.getElementById("btn-leccion-siguiente").addEventListener("click", async function () {
-    if (indicePasoActual < pasosLeccion.length - 1) {
+    if (!moduloActual) return;
+
+    const pasos = pasosDelNivelActual();
+    if (indicePasoActual < pasos.length - 1) {
       indicePasoActual++;
       renderizarPasoLeccion(indicePasoActual);
       const sesion = obtenerSesion();
       if (sesion) guardarProgresoModulo(sesion.id, moduloActual.id, indicePasoActual, false);
     } else {
       const sesion = obtenerSesion();
-      if (sesion) await guardarProgresoModulo(sesion.id, moduloActual.id, pasosLeccion.length, true);
-      mostrarMensaje("¡Módulo completado! Ahora rendí un examen rápido.", 3000);
-      mostrarPantalla("pantalla-examen");
-      renderizarPreguntasTest("contenedor-examen", preguntasExamen);
+      if (sesion) await guardarProgresoModulo(sesion.id, moduloActual.id, pasos.length, false);
+      mostrarMensaje(
+        "¡Leíste las " + pasos.length + " teorías! Respondé el repaso para completar el nivel y desbloquear el siguiente.",
+        4500
+      );
+      iniciarExamen(moduloActual);
     }
   });
+
+  // --- Curso: Volver al campus ---
+  const btnVolverCurso = document.getElementById("btn-volver-curso");
+  if (btnVolverCurso) {
+    btnVolverCurso.addEventListener("click", function () {
+      renderizarCampus();
+      mostrarPantalla("pantalla-campus");
+    });
+  }
+
+  // --- Examen: Volver al curso desde el resultado del repaso ---
+  const btnVolverCursoExamen = document.getElementById("btn-volver-al-curso-examen");
+  if (btnVolverCursoExamen) {
+    btnVolverCursoExamen.addEventListener("click", function () {
+      if (!moduloActual) {
+        renderizarCampus();
+        mostrarPantalla("pantalla-campus");
+        return;
+      }
+      const curso = buscarCurso(moduloActual.cursoId);
+      if (curso) {
+        abrirCurso(curso);
+      } else {
+        renderizarCampus();
+        mostrarPantalla("pantalla-campus");
+      }
+    });
+  }
 
   // --- Examen: continuar ---
   document.getElementById("btn-continuar-desde-examen").addEventListener("click", function () {
@@ -2750,59 +3680,95 @@ function vincularBotonesEnvio() {
       boton.id = idBoton;
       boton.className = "btn btn--primario btn--masivo";
       boton.type = "button";
-      boton.textContent = texto;
       boton.style.marginTop = "16px";
-      boton.addEventListener("click", callback);
+      boton.addEventListener("click", function () {
+        callback(boton);
+      });
       contenedor.parentNode.appendChild(boton);
     }
+    boton.hidden = false;
+    boton.disabled = false;
+    boton.textContent = texto;
   }
 
   const observerConfig = { childList: true, subtree: true };
 
   const observerTest = new MutationObserver(function () {
     if (!contenedorTest.hidden && contenedorTest.children.length > 0) {
-      agregarBotonEnviar(contenedorTest, "btn-enviar-test", "Enviar mis respuestas", async function () {
+      agregarBotonEnviar(contenedorTest, "btn-enviar-test", "Enviar mis respuestas", async function (boton) {
         const respuestas = obtenerRespuestasDeTest("contenedor-preguntas", preguntasTestInicial.length);
         if (tieneRespuestasNull(respuestas)) {
           mostrarMensaje("Por favor, respondé todas las preguntas antes de continuar.", 3000);
           return;
         }
 
-        const sesion = obtenerSesion();
-        const usuarioId = sesion ? sesion.id : null;
-        const resultado = await enviarTest(usuarioId, respuestas, preguntasTestInicial);
+        const textoOriginal = boton.textContent;
+        boton.disabled = true;
+        boton.textContent = "Enviando…";
 
-        const resultadoEl = document.getElementById("test-resultado");
-        const resultadoTexto = document.getElementById("test-resultado-texto");
-        resultadoTexto.textContent = "Tu nivel inicial es: " + resultado.nivel + ". ¡Ahora entrás a TAMI!";
+        try {
+          const sesion = obtenerSesion();
+          const usuarioId = sesion ? sesion.id : null;
+          const resultado = await enviarTest(usuarioId, respuestas, preguntasTestInicial);
 
-        contenedorTest.hidden = true;
-        document.getElementById("btn-enviar-test").hidden = true;
-        resultadoEl.hidden = false;
+          const resultadoEl = document.getElementById("test-resultado");
+          const resultadoTexto = document.getElementById("test-resultado-texto");
+          resultadoTexto.textContent = "Tu nivel inicial es: " + resultado.nivel + ". ¡Ahora entrás a TAMI!";
+
+          contenedorTest.hidden = true;
+          boton.hidden = true;
+          resultadoEl.hidden = false;
+        } finally {
+          boton.disabled = false;
+          boton.textContent = textoOriginal;
+        }
       });
     }
   });
 
   const observerExamen = new MutationObserver(function () {
     if (!contenedorExamen.hidden && contenedorExamen.children.length > 0) {
-      agregarBotonEnviar(contenedorExamen, "btn-enviar-examen", "Enviar mis respuestas", async function () {
-        const respuestas = obtenerRespuestasDeTest("contenedor-examen", preguntasExamen.length);
+      agregarBotonEnviar(contenedorExamen, "btn-enviar-examen", "Enviar mis respuestas", async function (boton) {
+        const totalPreguntas = moduloExamenActual && Array.isArray(moduloExamenActual.examen)
+          ? moduloExamenActual.examen.length
+          : 0;
+        if (totalPreguntas === 0) return;
+
+        const respuestas = obtenerRespuestasDeTest("contenedor-examen", totalPreguntas);
         if (tieneRespuestasNull(respuestas)) {
           mostrarMensaje("Por favor, respondé todas las preguntas antes de continuar.", 3000);
           return;
         }
 
-        const sesion = obtenerSesion();
-        const usuarioId = sesion ? sesion.id : null;
-        const resultado = await enviarExamen(usuarioId, respuestas);
+        const textoOriginal = boton.textContent;
+        boton.disabled = true;
+        boton.textContent = "Enviando…";
 
-        const resultadoEl = document.getElementById("examen-resultado");
-        const resultadoTexto = document.getElementById("examen-resultado-texto");
-        resultadoTexto.textContent = "Obtuviste " + resultado.puntaje + " de " + resultado.total + " respuestas correctas.";
+        try {
+          const sesion = obtenerSesion();
+          const usuarioId = sesion ? sesion.id : null;
+          const resultado = await enviarExamen(usuarioId, respuestas);
 
-        contenedorExamen.hidden = true;
-        document.getElementById("btn-enviar-examen").hidden = true;
-        resultadoEl.hidden = false;
+          const resultadoEl = document.getElementById("examen-resultado");
+          const resultadoTexto = document.getElementById("examen-resultado-texto");
+          const nombreNivelExamen = moduloExamenActual
+            ? "Nivel " + moduloExamenActual.numero + ": " + moduloExamenActual.titulo
+            : "el nivel";
+          const siguienteNumero = moduloExamenActual ? moduloExamenActual.numero + 1 : null;
+          const avisoDesbloqueo = siguienteNumero && siguienteNumero <= TOTAL_NIVELES_POR_CURSO
+            ? " Nivel completado: ya podés entrar al Nivel " + siguienteNumero + "."
+            : " Nivel completado. ¡Terminaste los cuatro niveles de este curso!";
+          resultadoTexto.textContent =
+            "Obtuviste " + resultado.puntaje + " de " + resultado.total +
+            " respuestas correctas en " + nombreNivelExamen + "." + avisoDesbloqueo;
+
+          contenedorExamen.hidden = true;
+          boton.hidden = true;
+          resultadoEl.hidden = false;
+        } finally {
+          boton.disabled = false;
+          boton.textContent = textoOriginal;
+        }
       });
     }
   });

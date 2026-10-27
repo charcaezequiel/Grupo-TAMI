@@ -10,7 +10,9 @@
     "db:estado": "node scripts/estado.js",
     "db:migrate": "node scripts/migrate.js",
     "db:seed": "node scripts/seed.js",
-    "db:seguridad": "node scripts/seguridad.js"
+    "db:seguridad": "node scripts/seguridad.js",
+    "db:rbac": "node scripts/rbac-apply.js",
+    "db:rbac:full": "node scripts/migrar-rbac-seguridad.js"
   },
   "keywords": [
     "tami",

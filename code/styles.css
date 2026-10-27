@@ -4,6 +4,32 @@
    Paleta: 60% Cian Glacial / 30% Teal Oscuro / 10% Teal Contraste
    ============================================ */
 
+/* ÍNDICE
+   01. Variables del Design System
+   02. Reset
+   03. Header
+   04. Zona de mensajes globales
+   05. Main y pantallas (SPA)
+   06. Hero / Bienvenida
+   07. Paneles de presentación
+   08. Botones
+   09. Formularios
+   10. Señalización de formularios
+   11. Test de nivelación / Examen
+   12. Dashboard
+   13. Lista de módulos (Campus)
+   14. Pantalla de curso: 4 niveles de comprensión
+   15. Lección (Módulo 4)
+   16. Escudo de seguridad (mini retos)
+   17. Progreso
+   18. Footer
+   19. Skip link
+   20. Breadcrumbs
+   21. Accesibilidad
+   22. Responsive
+   23. Mejoras de navegación, perfil y trabajos
+   ============================================ */
+
 /* --- Variables del Design System --- */
 :root {
   /* 60% Fondo de interfaz */
@@ -577,13 +603,18 @@ body {
   border-radius: var(--radio-borde);
   cursor: pointer;
   text-decoration: none;
-  transition: background-color 0.2s, opacity 0.2s, box-shadow 0.2s;
+  transition: background-color 0.2s, opacity 0.2s, box-shadow 0.2s, transform 0.12s;
   width: 100%;
 }
 
 .btn:focus-visible {
   outline: 3px solid var(--color-acento);
   outline-offset: 2px;
+}
+
+/* Respuesta táctil: el botón se hunde apenas al presionarlo */
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
 }
 
 .btn--masivo {
@@ -598,8 +629,8 @@ body {
   border-color: var(--color-primario);
 }
 
-.btn--primario:hover,
-.btn--primario:focus {
+.btn--primario:hover:not(:disabled),
+.btn--primario:focus:not(:disabled) {
   background-color: var(--color-acento);
   border-color: var(--color-acento);
 }
@@ -610,8 +641,8 @@ body {
   border-color: var(--color-primario);
 }
 
-.btn--secundario:hover,
-.btn--secundario:focus {
+.btn--secundario:hover:not(:disabled),
+.btn--secundario:focus:not(:disabled) {
   background-color: var(--color-fondo);
 }
 
@@ -625,13 +656,22 @@ body {
   padding: 8px 16px;
 }
 
-.btn--fantasma:hover,
-.btn--fantasma:focus {
+.btn--fantasma:hover:not(:disabled),
+.btn--fantasma:focus:not(:disabled) {
   text-decoration: underline;
 }
 
 .btn--volver {
   margin-top: var(--espaciado-lg);
+}
+
+/* Estado de espera o bloqueo: visible y sin cambios al pasar el mouse */
+.btn:disabled,
+.btn[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+  text-decoration: none;
 }
 
 /* ============================================
@@ -643,6 +683,15 @@ body {
   border-radius: var(--radio-borde-grande);
   padding: var(--espaciado-xl);
   box-shadow: 0 3px 14px rgba(10, 75, 92, 0.1);
+}
+
+/* Logo oficial de la carpeta img, usado en las pantallas de acceso. */
+.marca-auth {
+  display: block;
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  margin: 0 auto var(--espaciado-lg);
 }
 
 .contenedor-formulario__titulo {
@@ -1140,11 +1189,196 @@ body {
   font-weight: 700;
 }
 
+.modulo__barra {
+  display: block;
+  width: 100%;
+  height: 8px;
+  margin-top: var(--espaciado-xs);
+  background-color: var(--color-fondo-alto);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.modulo__barra-relleno {
+  display: block;
+  height: 100%;
+  background-color: var(--color-acento);
+}
+
+/* ============================================
+   PANTALLA DE CURSO: 4 NIVELES DE COMPRENSIÓN
+   ============================================ */
+.curso__etiqueta {
+  display: inline-block;
+  margin: 0 0 var(--espaciado-xs);
+  padding: 2px 12px;
+  border-radius: 999px;
+  background-color: var(--color-primario);
+  color: var(--color-blanco);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.curso__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espaciado-sm);
+  margin-bottom: var(--espaciado);
+}
+
+.curso__porque {
+  flex-basis: 100%;
+  margin: var(--espaciado-sm) 0 0;
+  padding: var(--espaciado);
+  background-color: var(--color-alerta-fondo);
+  border-left: 4px solid var(--color-alerta-borde);
+  border-radius: 0 var(--radio-borde) var(--radio-borde) 0;
+  color: var(--color-texto);
+}
+
+.curso__explicacion {
+  margin-bottom: var(--espaciado-lg);
+}
+
+.curso__subtitulo {
+  color: var(--color-primario);
+  font-size: var(--tam-fuente-lg);
+  margin: 0 0 var(--espaciado-sm);
+}
+
+.curso__texto {
+  margin: 0 0 var(--espaciado);
+  color: var(--color-texto);
+}
+
+.curso__niveles-guia {
+  margin: 0 0 var(--espaciado-lg);
+  padding: var(--espaciado) var(--espaciado) var(--espaciado) var(--espaciado-xl);
+  background-color: var(--color-fondo-alto);
+  border-radius: var(--radio-borde);
+}
+
+.curso__niveles-guia li {
+  margin-bottom: var(--espaciado-sm);
+}
+
+.curso__niveles-guia li:last-child {
+  margin-bottom: 0;
+}
+
+.lista-niveles {
+  display: grid;
+  gap: var(--espaciado);
+}
+
+.nivel-card {
+  display: flex;
+  gap: var(--espaciado);
+  padding: var(--espaciado-lg);
+  background-color: var(--color-blanco);
+  border: 2px solid var(--color-borde);
+  border-radius: var(--radio-borde-grande);
+  box-shadow: 0 2px 10px rgba(10, 75, 92, 0.07);
+}
+
+.nivel-card--hecho {
+  border-color: var(--color-exito);
+}
+
+.nivel-card__numero {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background-color: var(--color-primario);
+  color: var(--color-blanco);
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+.nivel-card--hecho .nivel-card__numero {
+  background-color: var(--color-exito);
+}
+
+.nivel-card__cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaciado-xs);
+  min-width: 0;
+  flex: 1;
+}
+
+.nivel-card__etiqueta {
+  margin: 0;
+  color: var(--color-acento);
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.nivel-card__titulo {
+  margin: 0;
+  color: var(--color-primario);
+  font-size: 1.25rem;
+}
+
+.nivel-card__texto {
+  margin: 0;
+  color: var(--color-texto);
+}
+
+.nivel-card__meta {
+  margin: 0;
+  color: var(--color-texto-claro);
+  font-size: 0.9rem;
+}
+
+.nivel-card__boton {
+  align-self: flex-start;
+  margin-top: var(--espaciado-sm);
+}
+
+.nivel-card--bloqueado {
+  background-color: var(--color-fondo);
+  border-style: dashed;
+}
+
+.nivel-card--bloqueado .nivel-card__numero {
+  background-color: var(--color-borde);
+  color: var(--color-texto-claro);
+}
+
+.nivel-card--bloqueado .nivel-card__meta {
+  color: var(--color-primario);
+  font-weight: 600;
+}
+
+.nivel-card__boton:disabled {
+  background-color: var(--color-borde);
+  color: var(--color-texto-claro);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 /* ============================================
    LECCIÓN (Módulo 4)
    ============================================ */
 .leccion {
   margin-bottom: var(--espaciado-lg);
+}
+
+.leccion__tema-etiqueta {
+  margin: 0 0 var(--espaciado-xs);
+  color: var(--color-acento);
+  font-weight: 700;
+  font-size: 0.95rem;
 }
 
 .leccion__paso {
@@ -1201,55 +1435,508 @@ body {
   margin-top: var(--espaciado-lg);
 }
 
+.leccion__vacio {
+  padding: var(--espaciado-lg);
+  background-color: var(--color-alerta-fondo);
+  border-left: 4px solid var(--color-alerta-borde);
+  border-radius: 0 var(--radio-borde) var(--radio-borde) 0;
+  font-weight: 600;
+}
+
+/* --- Contexto del nivel (objetivo, objetivos y glosario) --- */
+.leccion-meta {
+  margin: 0 0 var(--espaciado-lg);
+  padding: var(--espaciado);
+  background-color: var(--color-blanco);
+  border: 2px solid var(--color-borde);
+  border-radius: var(--radio-borde-grande);
+}
+
+.leccion-meta__nivel {
+  margin: 0 0 var(--espaciado-xs);
+  color: var(--color-acento);
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.leccion-meta__objetivo {
+  margin: 0 0 var(--espaciado);
+  font-weight: 600;
+  color: var(--color-primario);
+}
+
+.leccion-meta__detalle {
+  margin-bottom: var(--espaciado-sm);
+  padding: var(--espaciado-sm) var(--espaciado);
+  background-color: var(--color-fondo);
+  border-radius: var(--radio-borde);
+}
+
+.leccion-meta__detalle:last-child {
+  margin-bottom: 0;
+}
+
+.leccion-meta__detalle summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+  color: var(--color-primario);
+}
+
+.leccion-meta__detalle summary:focus-visible {
+  outline: 3px solid var(--color-acento);
+  outline-offset: 2px;
+}
+
+.leccion-meta__lista {
+  margin: var(--espaciado-sm) 0 0;
+  padding-left: var(--espaciado-lg);
+}
+
+.leccion-meta__lista li {
+  margin-bottom: var(--espaciado-xs);
+}
+
+.glosario {
+  margin: var(--espaciado-sm) 0 0;
+}
+
+.glosario dt {
+  font-weight: 700;
+  color: var(--color-primario);
+  margin-top: var(--espaciado-sm);
+}
+
+.glosario dd {
+  margin: var(--espaciado-xs) 0 0;
+  color: var(--color-texto);
+}
+
 /* ============================================
-   ALERTAS (Escudo de Seguridad)
+   ESCUDO DE SEGURIDAD (MINI RETOS)
    ============================================ */
-.lista-alertas {
+.escudo-retos {
   display: grid;
+  gap: var(--espaciado);
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.reto__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaciado);
+  color: var(--color-primario);
+  font-weight: 700;
+}
+
+.reto__contador {
+  font-size: 1rem;
+}
+
+.reto__aciertos {
+  padding: 4px 12px;
+  background-color: var(--color-blanco);
+  border: 1px solid var(--color-borde);
+  border-radius: 999px;
+  color: var(--color-acento);
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.reto__barra {
+  height: 14px;
+  background-color: var(--color-fondo);
+  border: 1px solid var(--color-borde);
+  border-radius: 999px;
+  box-shadow: inset 0 1px 3px rgba(10, 75, 92, 0.12);
+  overflow: hidden;
+}
+
+.reto__barra-relleno {
+  height: 100%;
+  background-color: var(--color-acento);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+/* Tarjeta que imita una aplicación real de mensajes o correo */
+.reto__tarjeta {
+  overflow: hidden;
+  background-color: var(--color-blanco);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde-grande);
+  box-shadow: 0 8px 22px rgba(10, 75, 92, 0.13);
+}
+
+.reto__app {
+  display: flex;
+  align-items: center;
+  gap: var(--espaciado-sm);
+  padding: 12px var(--espaciado);
+  background: linear-gradient(135deg, var(--color-primario) 0%, var(--color-acento) 100%);
+  color: var(--color-blanco);
+}
+
+.reto__app-icono {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.18);
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.reto__canal {
+  margin: 0;
+  color: var(--color-blanco);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.reto__hora {
+  margin-left: auto;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
+
+.reto__cuerpo-mensaje {
+  padding: var(--espaciado-lg);
+}
+
+.reto__remitente {
+  margin: 0 0 var(--espaciado-xs);
+  color: var(--color-texto-claro);
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
+}
+
+.reto__asunto {
+  margin: 0 0 var(--espaciado);
+  color: var(--color-primario);
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.reto__asunto-etiqueta {
+  color: var(--color-texto-claro);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.reto__mensaje {
+  margin: 0;
+  padding: var(--espaciado);
+  background-color: var(--color-fondo);
+  border: 1px solid var(--color-borde);
+  border-radius: 4px var(--radio-borde) var(--radio-borde) var(--radio-borde);
+  color: var(--color-texto);
+  font-size: 1.02rem;
+  line-height: 1.7;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.reto__enlace-caja {
+  display: grid;
+  gap: 4px;
+  margin-top: var(--espaciado);
+  padding: 10px 12px;
+  background-color: #F7FBFC;
+  border: 1px dashed var(--color-borde);
+  border-radius: var(--radio-borde);
+}
+
+.reto__enlace-etiqueta {
+  color: var(--color-texto-claro);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.reto__enlace {
+  color: var(--color-acento);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.reto__adjunto {
+  display: inline-block;
+  max-width: 100%;
+  margin: var(--espaciado) 0 0;
+  padding: 8px 14px;
+  background-color: #EEF6F8;
+  border: 1px solid var(--color-borde);
+  border-radius: 999px;
+  color: var(--color-primario);
+  font-size: 0.9rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.reto__nota {
+  margin: var(--espaciado-sm) 0 0;
+  color: var(--color-texto-claro);
+  font-size: 0.8rem;
+  font-style: italic;
+  text-align: right;
+}
+
+/* Pregunta, decisiones y ayuda */
+.reto__pregunta {
+  margin: var(--espaciado-sm) 0 0;
+  color: var(--color-primario);
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.reto__acciones {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: var(--espaciado);
 }
 
-.alerta-seguridad {
+.reto__opcion {
+  justify-content: center;
+  height: auto;
+  min-height: var(--altura-masiva);
+  padding-top: 14px;
+  padding-bottom: 14px;
+  text-align: center;
+  line-height: 1.35;
+}
+
+/* Opciones del tipo de estafa */
+.reto__tipos {
+  display: grid;
+  gap: var(--espaciado-sm);
+}
+
+.reto__tipo {
+  justify-content: flex-start;
+  height: auto;
+  padding: 12px 16px;
+  text-align: left;
+  line-height: 1.4;
+}
+
+.reto__letra {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  background-color: var(--color-primario);
+  border-radius: 50%;
+  color: var(--color-blanco);
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.reto__tipo-texto {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.reto__tipo:hover .reto__letra,
+.reto__tipo:focus-visible .reto__letra {
+  background-color: var(--color-acento);
+}
+
+.reto__ayuda {
+  margin: var(--espaciado) 0 0;
+  color: var(--color-texto-claro);
+  font-size: 0.95rem;
+}
+
+/* Resultado: explicación, señales y consejo */
+.reto__feedback {
+  margin-top: 0;
   padding: var(--espaciado-lg);
+  background-color: #EDF7ED;
+  border: 2px solid var(--color-exito);
   border-radius: var(--radio-borde-grande);
-  border-left: 6px solid var(--color-alerta-borde);
-  background-color: var(--color-alerta-fondo);
+  animation: aparecer 0.25s ease-out;
 }
 
-.alerta-seguridad--alta {
-  border-left-color: var(--color-error);
-  background-color: #FFEBEE;
+.reto__feedback--error {
+  background-color: #FDECEE;
+  border-color: var(--color-error);
 }
 
-.alerta-seguridad__icono {
-  font-size: 1.5rem;
-  margin-bottom: var(--espaciado-sm);
-}
-
-.alerta-seguridad__titulo {
-  color: var(--color-primario);
-  font-size: var(--tam-fuente-lg);
-  font-weight: 700;
+.reto__feedback-titulo {
   margin: 0 0 var(--espaciado-sm);
+  color: var(--color-exito);
+  font-size: 1.15rem;
+  font-weight: 800;
 }
 
-.alerta-seguridad__descripcion {
+.reto__feedback--error .reto__feedback-titulo {
+  color: var(--color-error);
+}
+
+.reto__feedback-texto {
   margin: 0 0 var(--espaciado);
   line-height: 1.7;
 }
 
-.alerta-seguridad__que-hacer {
-  background-color: var(--color-blanco);
-  border: 2px solid var(--color-exito);
-  border-radius: var(--radio-borde);
+.reto__feedback-texto--elegido {
+  color: var(--color-error);
+}
+
+.reto__senales {
+  margin: var(--espaciado) 0;
   padding: var(--espaciado);
-  font-weight: 600;
+  background-color: var(--color-blanco);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+}
+
+.reto__senales-titulo {
+  margin: 0 0 var(--espaciado-sm);
+  color: var(--color-primario);
+  font-weight: 700;
+}
+
+.reto__senales-lista {
+  display: grid;
+  gap: var(--espaciado-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.reto__senales-lista li {
+  position: relative;
+  padding-left: 26px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.reto__senales-lista li::before {
+  position: absolute;
+  left: 0;
+  top: 0;
+  content: "•";
+  color: var(--color-acento);
+  font-weight: 800;
+}
+
+.reto__senales--estafa .reto__senales-titulo {
+  color: var(--color-error);
+}
+
+.reto__senales--estafa .reto__senales-lista li::before {
+  content: "!";
+  color: var(--color-error);
+}
+
+.reto__senales--confiable .reto__senales-titulo {
   color: var(--color-exito);
 }
 
-.alerta-seguridad__que-hacer strong {
-  display: block;
-  margin-bottom: var(--espaciado-xs);
+.reto__senales--confiable .reto__senales-lista li::before {
+  content: "✓";
+  color: var(--color-exito);
+}
+
+.reto__consejo {
+  padding: var(--espaciado);
+  background-color: var(--color-blanco);
+  border: 2px solid var(--color-exito);
+  border-radius: var(--radio-borde);
+  line-height: 1.6;
+}
+
+.reto__feedback--error .reto__consejo {
+  border-color: var(--color-acento);
+}
+
+.reto__siguiente {
+  margin-top: 0;
+}
+
+/* Resumen final de la ronda */
+.reto__fin {
+  padding: var(--espaciado-xl);
+  background-color: #EDF7ED;
+  border: 2px solid var(--color-exito);
+  border-radius: var(--radio-borde-grande);
+  text-align: center;
+  animation: aparecer 0.25s ease-out;
+}
+
+.reto__fin-titulo {
+  margin: 0 0 var(--espaciado-sm);
+  color: var(--color-primario);
+}
+
+.reto__fin-puntaje {
+  margin: 0 0 var(--espaciado);
+  color: var(--color-exito);
+  font-size: 2rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.reto__fin-texto {
+  margin: 0 0 var(--espaciado);
+  line-height: 1.7;
+}
+
+.reto__fin-tipos {
+  margin: 0 0 var(--espaciado-lg);
+  color: var(--color-texto-claro);
+  line-height: 1.7;
+}
+
+.reto__reiniciar {
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+@media (max-width: 639px) {
+  .reto__acciones {
+    grid-template-columns: 1fr;
+  }
+
+  .reto__cuerpo-mensaje {
+    padding: var(--espaciado);
+  }
+
+  .reto__app {
+    padding: 10px var(--espaciado-sm);
+  }
+
+  .reto__app-icono {
+    width: 34px;
+    height: 34px;
+    font-size: 1.1rem;
+  }
+
+  .reto__fin {
+    padding: var(--espaciado-lg);
+  }
 }
 
 /* ============================================
@@ -1296,6 +1983,20 @@ body {
 
 .progreso__barra--examen {
   background-color: var(--color-exito);
+}
+
+.progreso__barra--curso {
+  background-color: var(--color-acento);
+}
+
+.progreso__curso {
+  margin-bottom: var(--espaciado);
+}
+
+.progreso__curso-nombre {
+  margin: 0 0 var(--espaciado-xs);
+  font-weight: 700;
+  color: var(--color-primario);
 }
 
 .progreso__etiqueta {

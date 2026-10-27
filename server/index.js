@@ -12,6 +12,7 @@ const usuariosRoutes = require("./routes/usuarios");
 const cursosRoutes = require("./routes/cursos");
 const alertasRoutes = require("./routes/alertas");
 const progresoRoutes = require("./routes/progreso");
+const adminRoutes = require("./routes/admin");
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -76,6 +77,7 @@ app.use("/api/usuarios", usuariosRoutes);
 app.use("/api/cursos", cursosRoutes);
 app.use("/api/alertas", alertasRoutes);
 app.use("/api/progreso", progresoRoutes);
+app.use("/api/admin", adminRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ error: "Ruta no encontrada" });
