@@ -1,70 +1,86 @@
 # Código Frontend - TAMI
 
-Capa de **Presentación** y **Lógica** del proyecto. Interfaz de usuario accesible con conexión a la API REST y fallback offline.
+Capa de **Presentación** y **Lógica** del proyecto. Interfaz accesible con conexión a la API REST y fallback offline.
 
 ## Arquitectura Cliente-Servidor en 3 Capas
 
 ```text
-┌──────────────────────────────────────┐
-│ 1. Presentación  HTML / CSS          │  index.html y styles.css
-├──────────────────────────────────────┤
-│ 2. Lógica         JavaScript + fetch │  main.js (conexión API + fallback)
-├──────────────────────────────────────┤
-│ 3. Datos          API REST / LocalStorage │  PostgreSQL o caché local
-└──────────────────────────────────────┘
+┌──────────────────────────────────────────────┐
+│ 1. Presentación   HTML / CSS                 │  index.html, admin.html y styles.css
+├──────────────────────────────────────────────┤
+│ 2. Lógica         JavaScript + fetch         │  main.js (API + fallback)
+├──────────────────────────────────────────────┤
+│ 3. Datos          API REST / LocalStorage    │  PostgreSQL o caché local
+└──────────────────────────────────────────────┘
 ```
 
 ## Archivos
 
 ### `index.html` (Presentación)
-- HTML5 semántico con 14 pantallas: Inicio, Registro, Login, Recuperar contraseña, Nueva contraseña, Test, Dashboard, Campus, Lección, Escudo de Seguridad, Progreso, Trabajos, Configuración y Examen.
+- HTML5 semántico con **15 pantallas**: Inicio, Registro, Login, Recuperar contraseña, Nueva contraseña, Test, Dashboard, Campus, Curso, Lección, Examen, Escudo, Progreso, Trabajos y Configuración.
 - Atributos ARIA: `aria-live`, `aria-pressed`, `aria-required`, `aria-label`, `role`, `aria-describedby`, `aria-current`.
-- **Skip link** "Saltar al contenido principal" para usuarios de teclado (WCAG 2.4.1).
+- **Skip link** "Saltar al contenido principal" (WCAG 2.4.1).
 - **Breadcrumbs** dinámicos con `<nav aria-label="Migas de pan">` y microdatos Schema.org.
-- **Marca del sitio**: favicon (`../img/icono.svg`), logo institucional (`../img/logo.svg`) en la pantalla de Inicio e icono de escudo en el header y el footer.
+- Favicon (`../img/icono.svg`), logo institucional (`../img/logo.svg`) e icono de escudo en header y footer.
 - Navegación lineal sin `target="_blank"`.
+- Carga en orden los archivos de contenido y luego `main.js`.
+
+### `admin.html` (Backoffice)
+- Pantalla independiente con login y dashboard administrativo.
+- Métricas de usuarios, cursos, alertas, test, exámenes y auditoría de las últimas 24 horas.
+- Tabla de usuarios con rol y estado; activación/desactivación de cuentas.
+- Tabla con los últimos 50 eventos de auditoría.
+- Consume `/api/admin/*` con la cabecera `x-usuario-id`; el backend exige rol **superadmin**.
 
 ### `styles.css` (Design System)
-- **Propuesta 4: Protección Proactiva** - Paleta 60-30-10:
+- **"Protección Proactiva"**, paleta 60-30-10:
   - 60% Fondo: Cian Glacial `#EBF8FA`
   - 30% Estructura: Teal Oscuro `#0A4B5C`
   - 10% Acentos: Teal de Contraste `#007A87`
-- Tipografía 18-36px, botones mínimos 52px / masivos 60px.
-- Estilos de **skip link** y **breadcrumbs** accesibles.
-- Media query `prefers-reduced-motion` para reducir animaciones.
-- Responsive: 1 columna en móvil, 3 columnas en desktop.
+- El azul institucional es el tema por defecto. Las preferencias de lectura permiten agrandar la letra y elegir temas alternativos.
+- Tipografía de 18 a 36px, botones mínimos de 52px y botones masivos de 60px.
+- Estilos de skip link, breadcrumbs, foco visible, estados `:disabled` y `prefers-reduced-motion`.
+- Responsive: 1 columna en móvil y varias columnas en escritorio.
+- Hoja organizada por secciones con índice y comentarios internos.
 
 ### `main.js` (Lógica + API)
-- **Capa API**: Funciones `apiGet()` y `apiPost()` para comunicarse con el backend.
-- **Fallback automático**: si el servidor no responde, usa LocalStorage como caché.
-- **Autenticación**: registro y login conectados a la API (bcrypt del lado del servidor).
-- **Recuperación de contraseña**: lee el token de `?reset=...`, valida la contraseña nueva y lo envía a la API. Al completar el cambio, el backend reemplaza el hash anterior, el frontend borra la sesión local y el token se elimina de la URL. El token no se guarda en LocalStorage.
-- **Breadcrumbs**: `actualizarBreadcrumb()` pinta la ruta según la pantalla; los niveles previos son clicables y el actual es texto plano.
-- **Manejo de foco**: al cambiar de pantalla, el foco se mueve al título (`tabindex="-1"`).
-- **Test de nivelación**: 3 preguntas, cálculo "Principiante" o "Protegido".
-- **Lección Módulo 4**: 5 pasos interactivos con navegación lineal.
-- **Examen post-lección**: 3 preguntas de phishing.
-- **Progreso**: gráficos de barras CSS nivel inicial vs. examen.
-- **Escudo de Seguridad**: 6 alertas desde la API con fallback offline.
+- **Capa API**: `fetchApi()` con `AbortController` y un máximo de espera de **2,5 segundos**; `apiGet()` y `apiPost()` para el backend.
+- **Fallback automático**: si el servidor no responde, usa LocalStorage como caché y respaldo.
+- **Autenticación**: registro y login contra la API (bcrypt en el servidor). En modo offline guarda un hash local SHA-256 solo como respaldo educativo.
+- **Recuperación de contraseña**: lee el token de `?reset=...`, valida la contraseña nueva y la envía a la API. Al completar el cambio, el backend reemplaza el hash anterior, el frontend borra la sesión local y elimina el token de la URL.
+- **Campus**: 5 cursos × 4 niveles, con 10 teorías y 6 preguntas de repaso por nivel.
+- **Desbloqueo secuencial**: el Nivel 1 está abierto; cada nivel siguiente requiere completar el anterior, incluido su repaso.
+- **Escudo**: motor de 15 mini retos con decisión estafa/confiable, tipo de estafa, señales, explicación y puntaje.
+- **Mini trabajos**: guardado local inmediato y sincronización con la API cuando está disponible.
+- **Progreso**: combina el avance de la API con el local para no perder niveles completados.
+- **Preferencias**: tamaño de letra, tema, perfil, cambio de correo y cambio de contraseña.
+- **Foco y accesibilidad**: al cambiar de pantalla, el foco se mueve al título (`tabindex="-1"`).
+
+### Archivos de contenido
+- `contenido-cursos.js`: 5 cursos, 4 niveles cada uno, con teorías base, objetivos, glosario y examen.
+- `contenido-teorias.js`: 6 teorías complementarias por nivel (10 en total).
+- `contenido-repaso.js`: 3 preguntas complementarias por nivel (6 en total).
+- `contenido-retos.js`: 15 mini retos del Escudo (12 estafas y 3 mensajes legítimos).
 
 ## Pantallas (SPA)
 
 | # | Pantalla | Descripción |
 |---|----------|-------------|
-| 1 | Inicio | Presentación detallada: propósito y pilares del proyecto, el problema que resuelve, detalle de las 5 lecciones, recorrido de aprendizaje, impacto buscado y CTA de registro/ingreso |
-| 2 | Registro | Formulario accesible con validación client-side |
-| 3 | Login | Inicio de sesión verificando credenciales |
+| 1 | Inicio | Presentación del proyecto, pilares, los 5 cursos, recorrido e impacto |
+| 2 | Registro | Formulario accesible con validación en el cliente y el servidor |
+| 3 | Login | Inicio de sesión con credenciales |
 | 4 | Recuperar contraseña | Pide el correo y envía un enlace de un solo uso |
-| 5 | Nueva contraseña | Lee el token del enlace, guarda la contraseña nueva y reemplaza la anterior en el backend |
+| 5 | Nueva contraseña | Lee el token, guarda la contraseña nueva y reemplaza la anterior |
 | 6 | Test | 3 preguntas de nivelación digital |
-| 7 | Dashboard | Menú principal con accesos masivos y resumen |
-| 8 | Campus | Lista de 5 módulos (solo Módulo 4 activo) |
-| 9 | Lección | 5 pasos interactivos de Fraudes Digitales |
-| 10 | Escudo | 6 alertas de seguridad con consejos |
-| 11 | Progreso | Barras comparativas inicial vs. examen |
-| 12 | Trabajos | Mini trabajos prácticos por nivel |
-| 13 | Configuración | Perfil, foto, preferencias de lectura y contraseña |
-| 14 | Examen | 3 preguntas post-lección |
+| 7 | Dashboard | Accesos a Campus, Trabajos, Escudo y Progreso |
+| 8 | Campus | 5 cursos con avance y estado |
+| 9 | Curso | 4 niveles con desbloqueo secuencial |
+| 10 | Lección | Teorías paso a paso, objetivos, glosario y progreso |
+| 11 | Examen | Repaso final de 6 preguntas por nivel |
+| 12 | Escudo | 15 mini retos antiestafa |
+| 13 | Progreso | Barras comparativas y avance por curso |
+| 14 | Trabajos | Mini trabajos prácticos filtrados por nivel |
+| 15 | Configuración | Perfil, preferencias, correo y contraseña |
 
 ## Conexión con la API
 
@@ -73,22 +89,27 @@ El frontend se comunica con el backend en `http://localhost:3000/api`:
 - **Registro**: `POST /api/usuarios/registrar`
 - **Login**: `POST /api/usuarios/login`
 - **Recuperación**: `POST /api/usuarios/recuperar-password` y `POST /api/usuarios/restablecer-password`
+- **Perfil**: `PUT /api/usuarios/:id/perfil`, `/email` y `/password`
 - **Test**: `POST /api/progreso/test`
 - **Examen**: `POST /api/progreso/examen`
-- **Progreso módulo**: `POST /api/progreso/modulo`
-- **Alertas**: `GET /api/alertas`
-- **Progreso usuario**: `GET /api/progreso/:usuarioId`
+- **Progreso del nivel**: `POST /api/progreso/modulo`
+- **Mini trabajo**: `POST /api/progreso/mini-trabajo`
+- **Progreso del usuario**: `GET /api/progreso/:usuarioId`
+- **Cursos**: `GET /api/cursos`
+- **Alertas heredadas**: `GET /api/alertas`
+- **Panel admin**: `GET /api/admin/dashboard`, `/usuarios`, `/roles`, `/auditoria`; `PUT /api/admin/usuarios/:id/rol` y `/estado`
 
-> Si el servidor no está disponible, todas las operaciones funcionan con LocalStorage como fallback.
+> Si el servidor no está disponible, las operaciones principales funcionan con LocalStorage como respaldo.
 
 ## Cómo Probar
 
 1. Abrí `index.html` en tu navegador (doble clic o arrastrá el archivo).
-2. Registrá una cuenta nueva con nombre, email y contraseña.
+2. Registrá una cuenta con nombre, email y contraseña.
 3. Completá el test de nivelación.
-4. Entrá al Campus Educativo → Módulo 4 (Fraudes).
-5. Completá la lección y rendí el examen.
-6. Mirá el breadcrumb en cada pantalla y tu progreso en "Mi Progreso".
-7. Para probar la recuperación, configurá SMTP en `server/.env` o usá
-   `RESET_DEBUG_LINK=true` en desarrollo. Luego tocá
-   **“¿Olvidaste tu contraseña?”** en el login.
+4. Entrá al Campus Educativo y abrí un curso.
+5. Recorré las 10 teorías del Nivel 1 y respondé el repaso de 6 preguntas.
+6. Verificá que el Nivel 2 se desbloquee recién al completar el Nivel 1.
+7. Entrá al Escudo y resolvé los 15 mini retos.
+8. Revisá tu avance en "Mi Progreso".
+9. Para probar la recuperación, configurá SMTP en `server/.env` o usá `RESET_DEBUG_LINK=true`; luego tocá **“¿Olvidaste tu contraseña?”**.
+10. Para el panel admin, promové una cuenta a `superadmin` y abrí `admin.html`.
