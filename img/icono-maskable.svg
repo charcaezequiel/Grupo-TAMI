@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Icono de la aplicación TAMI para pantallas recortadas">
+  <rect width="512" height="512" fill="#0A4B5C"/>
+  <circle cx="256" cy="256" r="150" fill="#EBF8FA"/>
+  <path d="M256 148 L352 188 C352 308, 256 372, 256 384 C256 372, 160 308, 160 188 Z" fill="#0A4B5C" stroke="#007A87" stroke-width="12" stroke-linejoin="round"/>
+  <rect x="216" y="204" width="80" height="116" rx="14" fill="#FFFFFF" stroke="#007A87" stroke-width="9"/>
+  <path d="M234 258 L250 274 L282 236" fill="none" stroke="#2E7D32" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

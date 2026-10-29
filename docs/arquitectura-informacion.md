@@ -23,17 +23,27 @@ TAMI
 │
 ├── [1] Mi Entorno Seguro (Dashboard)
 │   ├── [2] Campus Educativo
-│   │   ├── [3] Modulo 1: Uso de Smartphones          (proximamente)
-│   │   ├── [3] Modulo 2: Redes e Internet            (proximamente)
-│   │   ├── [3] Modulo 3: Tramites en Linea           (proximamente)
-│   │   ├── [3] Modulo 4: Fraudes Digitales (Phishing) [ACTIVO]
-│   │   │       └── Leccion (5 pasos) + Examen rapido (3 preguntas)
-│   │   └── [3] Modulo 5: Comunicacion Digital        (proximamente)
+│   │   ├── [3] Curso 1: Uso de Smartphones          [ACTIVO · 4 niveles]
+│   │   ├── [3] Curso 2: Redes e Internet            [ACTIVO · 4 niveles]
+│   │   ├── [3] Curso 3: Tramites en Linea           [ACTIVO · 4 niveles]
+│   │   ├── [3] Curso 4: Fraudes Digitales (Phishing) [ACTIVO · 4 niveles]
+│   │   │       └── Leccion (10 teorias) + Examen rapido (6 preguntas)
+│   │   └── [3] Curso 5: Comunicacion Digital        [ACTIVO · 4 niveles]
 │   ├── [2] Escudo de Seguridad
-│   │   └── [3] Alerta de Fraude (ficha detallada con "Que hacer")
-│   └── [2] Mi Progreso
-│       └── [3] Resultados (test inicial + examen + modulos)
+│   │   └── [3] Reto de Fraude (15 casos con "Que hacer" y senales)
+│   ├── [2] Mini Trabajos
+│   │   └── [3] Trabajo practico filtrado por nivel
+│   ├── [2] Mi Progreso
+│   │   ├── [3] Camino de aprendizaje y logros
+│   │   └── [3] Certificado imprimible por curso
+│   └── [2] Mi Cuenta
+│       ├── [3] Configuracion (perfil, preferencias, datos personales)
+│       ├── [3] Ayuda (tour, lectura en voz alta, contraste, instalar app)
+│       └── [3] Legal (terminos, privacidad, accesibilidad)
 ```
+
+> Los 5 cursos se habilitan de forma secuencial: dentro de cada curso, el Nivel 1
+> está abierto y los siguientes se desbloquean al completar el anterior con su repaso.
 
 ### regla de profundidad
 
@@ -54,12 +64,15 @@ TAMI
 |----------|------------|------------|
 | Logo TAMI | visible | visible |
 | Inicio | visible | oculto (se usa el dashboard) |
+| Que es TAMI / Como funciona / Lecciones / Impacto / Preguntas | visible | oculto |
+| Ingresar / Crear cuenta | visible | oculto |
+| Campus / Progreso / Escudo / Trabajos / Perfil | oculto | visible |
 | Cerrar sesion | oculto | visible |
 
 ### 2.2 Submenus desplegables (dropdowns)
 
 - En el PMV V1.0 no se usan dropdowns: las opciones se presentan como **tarjetas masivas** en el dashboard.
-- Cuando los modulos 1, 2, 3 y 5 se habiliten, cada modulo del Campus Educativo sera un enlace a su leccion.
+- Cada uno de los 5 cursos del Campus Educativo es un enlace a su pantalla de curso, con 4 niveles de desbloqueo secuencial.
 - Los submenus futuros seguiran la regla: **nunca ocultar informacion esencial** detras de un hover (no accesible en tactil).
 
 ### 2.3 Dashboard como menu principal
@@ -68,9 +81,10 @@ El dashboard funciona como **mapa de navegacion inicial**:
 
 | Tarjeta masiva | Destino (Nivel 2) |
 |----------------|-------------------|
-| Campus Educativo | Lista de 5 modulos |
-| Escudo de Seguridad | Lista de alertas de fraude |
-| Mi Progreso | Comparativa de resultados |
+| Campus Educativo | Lista de 5 cursos |
+| Escudo de Seguridad | 15 retos antiestafa |
+| Mini Trabajos | Trabajos practicos por nivel |
+| Mi Progreso | Camino, logros y certificados |
 
 ---
 
@@ -95,13 +109,21 @@ Inicio > Categoria > Subcategoria > Pagina Actual
 | Inicio | `Inicio` |
 | Registro | `Inicio > Registro` |
 | Login | `Inicio > Ingresar` |
+| Recuperar contraseña | `Inicio > Ingresar > Recuperar contraseña` |
+| Nueva contraseña | `Inicio > Ingresar > Nueva contraseña` |
 | Test | `Inicio > Test de nivelacion` |
 | Dashboard | `Inicio > Mi entorno seguro` |
 | Campus | `Inicio > Mi entorno seguro > Campus Educativo` |
-| Leccion | `Inicio > Mi entorno seguro > Campus Educativo > Modulo 4: Fraudes` |
+| Curso | `Inicio > Mi entorno seguro > Campus Educativo > Curso` |
+| Leccion | `Inicio > Mi entorno seguro > Campus Educativo > Curso > Nivel` |
+| Examen | `Inicio > Mi entorno seguro > Campus Educativo > Curso > Examen del nivel` |
 | Escudo | `Inicio > Mi entorno seguro > Escudo de Seguridad` |
 | Progreso | `Inicio > Mi entorno seguro > Mi Progreso` |
-| Examen | `Inicio > Mi entorno seguro > Campus Educativo > Examen rapido` |
+| Certificado | `Inicio > Mi entorno seguro > Mi Progreso > Certificado` |
+| Trabajos | `Inicio > Mi entorno seguro > Trabajos Prácticos` |
+| Configuracion | `Inicio > Mi entorno seguro > Mi Perfil` |
+| Legal | `Inicio > Privacidad y términos` |
+| Ayuda | `Inicio > Ayuda` |
 
 ### 3.4 Consistencia de nombres
 

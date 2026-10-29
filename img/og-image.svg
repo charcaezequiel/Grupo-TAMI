@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="TAMI: Tecnología Amigable para Mayores e Inclusiva">
+  <defs>
+    <linearGradient id="fondo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0A4B5C"/>
+      <stop offset="1" stop-color="#083A47"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#fondo)"/>
+  <circle cx="1060" cy="90" r="130" fill="#007A87" opacity="0.28"/>
+  <circle cx="120" cy="580" r="150" fill="#007A87" opacity="0.2"/>
+
+  <g transform="translate(80,118)">
+    <text x="0" y="96" font-family="Segoe UI, Arial, sans-serif" font-size="112" font-weight="800" fill="#FFFFFF" letter-spacing="8">TAMI</text>
+    <rect x="4" y="122" width="180" height="7" rx="3.5" fill="#FFD400"/>
+    <text x="0" y="188" font-family="Segoe UI, Arial, sans-serif" font-size="35" font-weight="600" fill="#DEF2F8">Tecnología Amigable</text>
+    <text x="0" y="236" font-family="Segoe UI, Arial, sans-serif" font-size="35" font-weight="600" fill="#DEF2F8">para Mayores e Inclusiva</text>
+    <text x="0" y="302" font-family="Segoe UI, Arial, sans-serif" font-size="26" fill="#9FD4DE">Aprender · Cuidarse · Conectarse</text>
+    <text x="0" y="386" font-family="Segoe UI, Arial, sans-serif" font-size="21" font-weight="600" fill="#FFFFFF" opacity="0.8">ET N°20 "Carolina Muzilli" · Proyecto Integrador III</text>
+  </g>
+
+  <g transform="translate(760,96)">
+    <circle cx="180" cy="212" r="196" fill="#EBF8FA"/>
+    <path d="M180 76 L320 134 C320 306, 180 386, 180 400 C180 386, 40 306, 40 134 Z" fill="#007A87"/>
+    <rect x="122" y="150" width="116" height="168" rx="18" fill="#FFFFFF"/>
+    <path d="M150 222 L170 244 L215 190" fill="none" stroke="#2E7D32" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="180" cy="292" r="8" fill="#007A87"/>
+  </g>
+</svg>

@@ -80,9 +80,9 @@ Capa implementada en `middlewares/seguridad.js`, `middlewares/rbac.js`, `index.j
 - **Recuperación de contraseña**: token aleatorio de 32 bytes, guardado solo como hash SHA-256 en `recuperacion_password`, con vencimiento (30 minutos por defecto) y un solo uso. Un pedido nuevo invalida los enlaces anteriores. Los endpoints tienen límites propios por IP (5 solicitudes y 10 restablecimientos cada 15 minutos).
 - **Cambios sensibles**: cambiar correo o contraseña exige confirmar la contraseña actual.
 - **Auditoría**: eventos de login, registro, bloqueo, recuperación y cambios sensibles en `auditoria_seguridad`. Nunca se registra el token.
-- **RBAC**: las rutas `/api/admin/*` exigen un usuario activo con rol `superadmin`. La autorización se valida siempre en el backend.
-
-> En esta versión educativa el panel administrativo identifica la sesión con la cabecera `x-usuario-id`. La evolución a JWT firmado con expiración está documentada como siguiente paso.
+- **Sesiones JWT**: token firmado HS256 con emisor `tami`, `sub` = id de usuario y vencimiento (12 h por defecto). La identidad se toma siempre del token; el cliente nunca envía su id para autorizar.
+- **RBAC**: las rutas `/api/admin/*` exigen rol `superadmin`; ayuda y feedback permiten `superadmin`, `moderador` y `analista` según la acción. La autorización se valida siempre en el backend.
+- **Privacidad**: consentimiento en el registro, exportación de datos propios y eliminación con contraseña + `ELIMINAR`.
 
 ## Seguridad de la base de datos
 
@@ -121,7 +121,7 @@ También se aceptan las variables separadas `DB_HOST`, `DB_PORT`, `DB_USER`, `DB
 
 | Tabla | Descripción |
 |-------|-------------|
-| `usuarios` | Nombre, email, `password_hash` (bcrypt), nivel digital, preferencias, rol, estado y último acceso |
+| `usuarios` | Nombre, email, `password_hash` (bcrypt), nivel digital, preferencias, rol, estado, último acceso y `consentimiento_en` |
 | `cursos` | 5 cursos del Campus Educativo |
 | `alertas_fraude` | Alertas de la API heredada |
 | `inscripciones` | Relación usuario-curso |
@@ -129,6 +129,8 @@ También se aceptan las variables separadas `DB_HOST`, `DB_PORT`, `DB_USER`, `DB
 | `examenes` | Resultados de los repasos finales por nivel |
 | `progreso_modulos` | Avance paso a paso por nivel |
 | `mini_trabajos` | Tareas prácticas por usuario, módulo y nivel |
+| `solicitudes_ayuda` | Pedidos de acompañamiento (categoría, mensaje, estado) |
+| `feedback_experiencia` | Opiniones por pantalla (puntaje 1–5 y comentario) |
 | `intentos_login` | Intentos de acceso (email, IP, éxito, fecha) para rate limiting |
 | `auditoria_seguridad` | Eventos de seguridad: logins, registros, bloqueos, recuperación |
 | `recuperacion_password` | Tokens de recuperación (solo hash SHA-256, vencimiento y uso) |
@@ -147,6 +149,8 @@ También se aceptan las variables separadas `DB_HOST`, `DB_PORT`, `DB_USER`, `DB
 | `npm run db:seguridad` | Endurecimiento: RLS, políticas, auditoría, intentos de login y triggers |
 | `npm run db:rbac` | Carga roles, permisos y asignaciones base |
 | `npm run db:rbac:full` | Aplica `schema.sql` + `rbac_seed.sql` en un solo paso |
+| `npm run admin:promover -- email` | Asigna el rol `superadmin` a una cuenta |
+| `npm run smoke` | Verifica salud, frontend, PWA, catálogo y rutas protegidas |
 
 > ⚠️ **Importante**: `db:migrate` ya **no vuelve a insertar los datos de catálogo**.
 > Los cursos y alertas se cargan únicamente con `db:seed`, y este solo inserta
@@ -155,45 +159,59 @@ También se aceptan las variables separadas `DB_HOST`, `DB_PORT`, `DB_USER`, `DB
 
 ## Endpoints
 
-| Método | Ruta | Descripción | Body requerido |
-|--------|------|-------------|----------------|
-| GET | `/` | Estado de la API | — |
-| GET | `/api/usuarios` | Listar usuarios (sin correos salvo `x-api-key`) | — |
-| GET | `/api/usuarios/:id` | Obtener un usuario (sin correo salvo `x-api-key`) | — |
-| POST | `/api/usuarios/registrar` | Registrar usuario (bcrypt) | `{ nombre, email, password }` |
-| POST | `/api/usuarios/login` | Iniciar sesión (compare bcrypt) | `{ email, password }` |
-| POST | `/api/usuarios/recuperar-password` | Pedir enlace de recuperación (respuesta genérica) | `{ email }` |
-| POST | `/api/usuarios/restablecer-password` | Cambiar la contraseña con token de un solo uso | `{ token, passwordNueva }` |
-| GET | `/api/usuarios/:id/progreso` | Progreso completo | — |
-| PUT | `/api/usuarios/:id/perfil` | Actualizar nombre, nivel y preferencias | `{ nombre, nivel, tamanoFuente, tema, passwordActual }` |
-| PUT | `/api/usuarios/:id/email` | Cambiar correo | `{ email, passwordActual }` |
-| PUT | `/api/usuarios/:id/password` | Cambiar contraseña | `{ passwordActual, passwordNueva }` |
-| GET | `/api/cursos` | Listar cursos activos | — |
-| GET | `/api/cursos/:id` | Obtener un curso | — |
-| GET | `/api/alertas` | Listar alertas de fraude heredadas | — |
-| POST | `/api/progreso/test` | Guardar test de nivelación | `{ usuarioId, respuestas, nivel, puntaje, totalPreguntas }` |
-| POST | `/api/progreso/examen` | Guardar repaso final | `{ usuarioId, moduloId, respuestas, puntaje, totalPreguntas }` |
-| POST | `/api/progreso/modulo` | Guardar avance del nivel | `{ usuarioId, moduloId, pasoActual, completado }` |
-| POST | `/api/progreso/mini-trabajo` | Guardar mini trabajo | `{ usuarioId, moduloId, nivel, completado }` |
-| GET | `/api/progreso/:usuarioId` | Obtener progreso | — |
-| GET | `/api/admin/dashboard` | Métricas del panel | — |
-| GET | `/api/admin/usuarios` | Listado de usuarios con rol y estado | — |
-| GET | `/api/admin/roles` | Listado de roles | — |
-| GET | `/api/admin/auditoria?limite=50` | Últimos eventos de auditoría | — |
-| PUT | `/api/admin/usuarios/:id/rol` | Asignar rol | `{ role_id }` |
-| PUT | `/api/admin/usuarios/:id/estado` | Activar/desactivar cuenta | `{ is_active }` |
+Las rutas privadas requieren `Authorization: Bearer <token>`. El token se
+obtiene con `POST /api/usuarios/login` o al registrarse (`{ token, usuario }`).
 
-> Para recibir los correos en los listados de usuarios hay que enviar la cabecera
-> `x-api-key` con el valor de `ADMIN_KEY` del `.env`. Si `ADMIN_KEY` está vacía,
-> los listados **nunca** devuelven correos.
->
-> Las rutas `/api/admin/*` requieren la cabecera `x-usuario-id` de una cuenta con
-> rol `superadmin` y activa. El login puede responder `429` cuando se superan los
-> intentos fallidos permitidos.
+| Método | Ruta | Descripción | Acceso |
+|--------|------|-------------|--------|
+| GET | `/api/salud` | Estado de la API y de la base | Público |
+| GET | `/api/usuarios/yo` | Datos de la sesión actual | Sesión |
+| POST | `/api/usuarios/renovar` | Renovar token vigente | Sesión |
+| GET | `/api/usuarios` | Listar usuarios (sin correos) | `superadmin` |
+| GET | `/api/usuarios/:id` | Obtener un usuario | Propio o `superadmin` |
+| POST | `/api/usuarios/registrar` | Registrar (bcrypt + consentimiento) | Público |
+| POST | `/api/usuarios/login` | Iniciar sesión (bcrypt) y devolver JWT | Público |
+| POST | `/api/usuarios/recuperar-password` | Pedir enlace de recuperación | Público |
+| POST | `/api/usuarios/restablecer-password` | Cambiar contraseña con token | Público |
+| GET | `/api/usuarios/:id/progreso` | Progreso completo | Propio o `superadmin` |
+| PUT | `/api/usuarios/:id/perfil` | Actualizar nombre, nivel y preferencias | Propio o `superadmin` |
+| PUT | `/api/usuarios/:id/email` | Cambiar correo | Propio o `superadmin` |
+| PUT | `/api/usuarios/:id/password` | Cambiar contraseña | Propio o `superadmin` |
+| GET | `/api/usuarios/:id/datos` | Exportar datos personales (JSON) | Propio o `superadmin` |
+| DELETE | `/api/usuarios/:id` | Eliminar cuenta (`passwordActual` + `confirmar`) | Propio o `superadmin` |
+| GET | `/api/cursos` | Listar cursos activos | Público |
+| GET | `/api/cursos/:id` | Obtener un curso | Público |
+| GET | `/api/alertas` | Listar alertas de fraude heredadas | Público |
+| POST | `/api/progreso/test` | Guardar test de nivelación | Sesión |
+| POST | `/api/progreso/examen` | Guardar repaso final | Sesión |
+| POST | `/api/progreso/modulo` | Guardar avance del nivel | Sesión |
+| POST | `/api/progreso/mini-trabajo` | Guardar mini trabajo | Sesión |
+| GET | `/api/progreso/:usuarioId` | Obtener progreso | Propio o `superadmin` |
+| POST | `/api/ayuda` | Enviar solicitud de ayuda | Público |
+| GET | `/api/ayuda?estado=…` | Listar solicitudes | `superadmin`, `moderador`, `analista` |
+| PUT | `/api/ayuda/:id/estado` | Cambiar estado | `superadmin`, `moderador` |
+| POST | `/api/feedback` | Enviar opinión (1–5 + comentario) | Sesión |
+| GET | `/api/feedback` | Listar opiniones | `superadmin`, `analista`, `moderador` |
+| GET | `/api/admin/dashboard` | Métricas del panel | `superadmin` |
+| GET | `/api/admin/usuarios` | Listado de usuarios con rol y estado | `superadmin` |
+| GET | `/api/admin/roles` | Listado de roles | `superadmin` |
+| GET | `/api/admin/auditoria?limite=50` | Últimos eventos de auditoría | `superadmin` |
+| PUT | `/api/admin/usuarios/:id/rol` | Asignar rol | `superadmin` |
+| PUT | `/api/admin/usuarios/:id/estado` | Activar/desactivar cuenta | `superadmin` |
+
+> El login puede responder `429` cuando se superan los intentos fallidos
+> permitidos. Las rutas privadas responden `401` sin token, token vencido o
+> usuario inactivo, y `403` cuando el rol no alcanza.
 
 ### Habilitar el primer superadmin
 
-Después de registrarte, asigná el rol con SQL:
+Después de registrarte:
+
+```bash
+npm run admin:promover -- tu-correo@ejemplo.com
+```
+
+O con SQL:
 
 ```sql
 UPDATE usuarios
@@ -217,18 +235,23 @@ El flujo es:
 Agregá estas variables a `server/.env` (los valores reales no se suben al repo):
 
 ```env
-FRONTEND_URL=http://localhost:5500/code/index.html
+FRONTEND_URL=http://localhost:3000/
 RESET_TOKEN_MINUTOS=30
 
-SMTP_HOST=smtp.gmail.com
+SMTP_HOST=smtp-relay.brevo.com
 SMTP_PORT=587
 SMTP_SECURE=false
-SMTP_USER=tu_cuenta@gmail.com
-SMTP_PASS=tu_contraseña_de_aplicacion
-SMTP_FROM=TAMI <no-reply@tami.local>
+SMTP_USER=tu_usuario_smtp
+SMTP_PASS=tu_clave_smtp
+SMTP_FROM=TAMI <remitente_verificado>
 ```
 
-- **Gmail**: no uses la contraseña normal de la cuenta; generá una **contraseña de aplicación**.
+- **Brevo**: usar la **SMTP key** del panel (no la contraseña de la cuenta) y
+  verificar el remitente y el dominio. Si Brevo responde
+  **525 Unauthorized IP address**, agregar la IP del servidor en
+  **Transactional → Settings → Security → Authorized IPs**. Ver
+  [docs/despliegue-y-verificacion.md](../docs/despliegue-y-verificacion.md#4-correo-con-brevo).
+- **Gmail / Outlook**: usar una **contraseña de aplicación**, nunca la contraseña normal.
 - **Producción**: `FRONTEND_URL` debe ser la URL HTTPS real del frontend y `SMTP_*` debe apuntar a un proveedor transaccional (Brevo, Mailgun, SES, etc.).
 - Si `SMTP_HOST` no está configurado, el servidor no puede enviar correos. El endpoint sigue respondiendo de forma genérica para no romper la seguridad.
 
@@ -237,7 +260,7 @@ SMTP_FROM=TAMI <no-reply@tami.local>
 Con `RESET_DEBUG_LINK=true` la API devuelve además `resetUrl` y la interfaz muestra un botón **“Abrir enlace de prueba”**:
 
 ```env
-FRONTEND_URL=http://localhost:5500/code/index.html
+FRONTEND_URL=http://localhost:3000/
 RESET_DEBUG_LINK=true
 ```
 
@@ -251,7 +274,7 @@ RESET_DEBUG_LINK=true
 
    ```bash
    cp .env.example .env
-   # Editar .env con DATABASE_URL, CORS_ORIGINS, SMTP y ADMIN_KEY
+   # Editar .env con DATABASE_URL, JWT_SECRET, CORS_ORIGINS, SMTP y ADMIN_KEY
    ```
 
 3. Instalar dependencias:
@@ -282,4 +305,23 @@ RESET_DEBUG_LINK=true
    La API queda en `http://localhost:3000` y al arrancar imprime
    `[DB] Conectado a ...` si la conexión fue exitosa.
 
-> El frontend (`code/main.js`) intenta consumir la API y, si no está disponible, usa LocalStorage como respaldo offline.
+6. Promover tu cuenta a administrador (después de registrarte en la web):
+
+   ```bash
+   npm run admin:promover -- tu-correo@ejemplo.com
+   ```
+
+7. Abrir el frontend y el panel:
+
+   - `http://localhost:3000/`
+   - `http://localhost:3000/admin.html`
+   - `http://localhost:3000/api/salud`
+
+8. Verificación rápida:
+
+   ```bash
+   npm run smoke
+   ```
+
+> El frontend (`code/main.js`) consume la API en el mismo origen y, si no está
+> disponible, usa LocalStorage como respaldo offline con cola de pendientes.

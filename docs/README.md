@@ -15,6 +15,7 @@ Carpeta de **documentación técnica y administrativa** del proyecto. Contiene l
 | `arquitectura-informacion.md` | Arquitectura de Información | Árbol de 3 niveles, menú, breadcrumbs y WCAG de navegación. |
 | `auditoria-usabilidad.md` | Auditoría UX | Lista de chequeo en 6 dimensiones y matriz de hallazgos QA. |
 | `plan-ejecucion-10-dias.md` | Cronograma rápido | Plan de trabajo día a día del ciclo de 10 días. |
+| `despliegue-y-verificacion.md` | Despliegue y verificación | Variables de entorno, puesta en marcha, respaldos y checklist de QA. |
 
 ## Coherencia entre Documentos y Prototipo
 
@@ -23,4 +24,5 @@ Carpeta de **documentación técnica y administrativa** del proyecto. Contiene l
 - La **Arquitectura de Información** define la navegación real implementada (breadcrumbs en `code/index.html` y `code/main.js`).
 - El **Backlog** registra el Sprint 1 (autenticación) y la **Auditoría de Usabilidad** provee la matriz de hallazgos QA evaluable.
 - El **Design System** documenta la paleta y los criterios de accesibilidad que se implementan en `resources/` y `styles.css`.
+- La guía de **Despliegue y verificación** reúne variables de entorno (sin credenciales reales), puesta en marcha, respaldos y checklist de QA.
 - Esta cadena garantiza que **lo impreso, lo diseñado y lo desarrollado cuenten la misma historia**.

@@ -3,6 +3,12 @@ const crypto = require("crypto");
 const bcrypt = require("bcrypt");
 const pool = require("../db");
 const { crearLimitador } = require("../middlewares/seguridad");
+const { firmarToken } = require("../middlewares/auth");
+const {
+  requireAuth,
+  requireRole,
+  requirePropioOAdmin
+} = require("../middlewares/rbac");
 const {
   smtpConfigurado,
   enviarCorreoRecuperacion
@@ -88,7 +94,6 @@ function clavesIguales(a, b) {
   const hashB = crypto.createHash("sha256").update(String(b)).digest();
   return crypto.timingSafeEqual(hashA, hashB);
 }
-
 // El token que recibe la persona por correo nunca se guarda en la base:
 // solo se almacena su hash SHA-256. Así, una lectura de la tabla no permite
 // usar los enlaces de recuperación.
@@ -97,7 +102,7 @@ function hashTokenRecuperacion(token) {
 }
 
 function construirEnlaceRecuperacion(token) {
-  const porDefecto = "http://localhost:5500/code/index.html";
+  const porDefecto = "http://localhost:3000/";
   const configurada = String(process.env.FRONTEND_URL || "").trim();
   let base;
 
@@ -204,18 +209,64 @@ async function limpiarIntentosFallidos(email) {
 }
 
 // ============================================
-// GET /api/usuarios
-// Lista usuarios. Sin clave de administracion NO expone los correos.
+// GET /api/usuarios/yo
+// Devuelve los datos de la cuenta autenticada. El frontend lo usa para
+// confirmar que el token sigue vigente al abrir la aplicación.
 // ============================================
 
-router.get("/", async (req, res) => {
+router.get("/yo", requireAuth(), async (req, res) => {
   try {
-    const admin = esAdministrador(req);
-    const campos = admin
-      ? "id, nombre, email, nivel_digital, tamano_fuente, tema_preferido, creado_en"
-      : "id, nombre, nivel_digital, tamano_fuente, tema_preferido, creado_en";
+    const resultado = await pool.query(
+      `SELECT u.id, u.nombre, u.email, u.nivel_digital, u.tamano_fuente,
+              u.tema_preferido, u.creado_en, r.name AS role_name
+         FROM usuarios u
+         LEFT JOIN roles r ON r.id = u.role_id
+        WHERE u.id = $1`,
+      [req.usuario.id]
+    );
+    if (resultado.rows.length === 0) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+    res.json({
+      usuario: Object.assign(usuarioPublico(resultado.rows[0]), {
+        role_name: resultado.rows[0].role_name
+      })
+    });
+  } catch (error) {
+    console.error("Error al obtener la cuenta:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
 
-    const resultado = await pool.query(`SELECT ${campos} FROM usuarios ORDER BY id`);
+// ============================================
+// POST /api/usuarios/renovar
+// Emite un token nuevo para una sesión que sigue siendo válida.
+// ============================================
+
+router.post("/renovar", requireAuth(), async (req, res) => {
+  try {
+    const token = firmarToken(req.usuario);
+    res.json({ token: token, usuario: req.usuario });
+  } catch (error) {
+    console.error("Error al renovar la sesión:", error.message);
+    res.status(500).json({ error: "No se pudo renovar la sesión" });
+  }
+});
+
+// ============================================
+// GET /api/usuarios
+// Lista de cuentas: solo para superadministradores (datos personales).
+// ============================================
+
+router.get("/", requireAuth(), requireRole(["superadmin"]), async (req, res) => {
+  try {
+    const resultado = await pool.query(
+      `SELECT u.id, u.nombre, u.email, u.nivel_digital, u.tamano_fuente,
+              u.tema_preferido, u.is_active, u.creado_en, r.name AS role_name
+         FROM usuarios u
+         LEFT JOIN roles r ON r.id = u.role_id
+        ORDER BY u.id`
+    );
     res.json(resultado.rows);
   } catch (error) {
     console.error("Error al listar usuarios:", error);
@@ -225,28 +276,20 @@ router.get("/", async (req, res) => {
 
 // ============================================
 // GET /api/usuarios/:id
-// Retorna un usuario especifico (sin correo salvo administrador).
+// Retorna una cuenta: la propia o cualquiera si sos superadministrador.
 // ============================================
 
-router.get("/:id", async (req, res) => {
-  if (!esEnteroPositivo(req.params.id)) {
-    return res.status(400).json({ error: "El id debe ser un numero entero positivo" });
-  }
-
+router.get("/:id", requireAuth(), requirePropioOAdmin("id"), async (req, res) => {
   try {
-    const admin = esAdministrador(req);
-    const campos = admin
-      ? "id, nombre, email, nivel_digital, tamano_fuente, tema_preferido, creado_en"
-      : "id, nombre, nivel_digital, tamano_fuente, tema_preferido, creado_en";
-
     const resultado = await pool.query(
-      `SELECT ${campos} FROM usuarios WHERE id = $1`,
+      `SELECT id, nombre, email, nivel_digital, tamano_fuente, tema_preferido, creado_en
+         FROM usuarios WHERE id = $1`,
       [req.params.id]
     );
     if (resultado.rows.length === 0) {
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
-    res.json(resultado.rows[0]);
+    res.json(usuarioPublico(resultado.rows[0]));
   } catch (error) {
     console.error("Error al obtener usuario:", error);
     res.status(500).json({ error: "Error interno del servidor" });
@@ -264,7 +307,7 @@ router.get("/:id", async (req, res) => {
 // ============================================
 
 router.post("/registrar", async (req, res) => {
-  const { nombre, email, password } = req.body;
+  const { nombre, email, password, aceptaTerminos } = req.body;
 
   // Validacion: campos obligatorios y de tipo texto
   if (!nombre || !email || !password) {
@@ -272,6 +315,14 @@ router.post("/registrar", async (req, res) => {
   }
   if (typeof nombre !== "string" || typeof email !== "string" || typeof password !== "string") {
     return res.status(400).json({ error: "nombre, email y password deben ser texto" });
+  }
+
+  // Ley 25.326: los datos personales solo se tratan con consentimiento.
+  if (aceptaTerminos !== true) {
+    return res.status(400).json({
+      error:
+        "Para crear la cuenta tenés que leer y aceptar la Política de privacidad y los Términos de uso."
+    });
   }
 
   const nombreLimpio = nombre.trim();
@@ -307,14 +358,21 @@ router.post("/registrar", async (req, res) => {
     const passwordHash = await bcrypt.hash(password, COSTO_BCRYPT);
 
     const resultado = await pool.query(
-      `INSERT INTO usuarios (nombre, email, password_hash, nivel_digital)
-       VALUES ($1, $2, $3, $4)
-       RETURNING id, nombre, email, nivel_digital, creado_en`,
+      `INSERT INTO usuarios (nombre, email, password_hash, nivel_digital, consentimiento_en)
+       VALUES ($1, $2, $3, $4, NOW())
+       RETURNING id, nombre, email, nivel_digital, tamano_fuente, tema_preferido, creado_en`,
       [nombreLimpio, emailLimpio, passwordHash, "principiante"]
     );
 
-    await auditar("registro", resultado.rows[0].id, "Nuevo usuario registrado", req);
-    res.status(201).json(resultado.rows[0]);
+    const usuario = resultado.rows[0];
+    const token = firmarToken(usuario);
+
+    await auditar("registro", usuario.id, "Nuevo usuario registrado con consentimiento", req);
+    res.status(201).json({
+      mensaje: "Cuenta creada correctamente. ¡Te damos la bienvenida!",
+      token: token,
+      usuario: usuario
+    });
   } catch (error) {
     // Codigo 23505 = violacion de constraint UNIQUE en PostgreSQL
     if (error.code === "23505") {
@@ -362,7 +420,12 @@ router.post("/login", async (req, res) => {
 
   try {
     const resultado = await pool.query(
-      "SELECT id, nombre, email, password_hash, nivel_digital, creado_en FROM usuarios WHERE email = $1",
+      `SELECT u.id, u.nombre, u.email, u.password_hash, u.nivel_digital,
+              u.tamano_fuente, u.tema_preferido, u.is_active, u.creado_en,
+              r.name AS role_name
+         FROM usuarios u
+         LEFT JOIN roles r ON r.id = u.role_id
+        WHERE u.email = $1`,
       [emailLimpio]
     );
 
@@ -393,14 +456,25 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: MENSAJE_CREDENCIALES });
     }
 
+    // Una cuenta desactivada no puede iniciar sesión aunque la clave sea correcta.
+    if (usuario.is_active === false) {
+      await auditar("login_denegado", usuario.id, "Cuenta desactivada", req);
+      return res.status(403).json({
+        error: "Tu cuenta está desactivada. Escribinos para resolverlo."
+      });
+    }
+
     // Ingreso correcto: se descartan los fallos previos y se audita el acceso.
     await limpiarIntentosFallidos(emailLimpio);
     await registrarIntento(emailLimpio, req, true, null);
     await auditar("login_exitoso", usuario.id, "Inicio de sesion correcto", req);
 
-    // Se omite password_hash en la respuesta por seguridad
-    const { password_hash, ...usuarioSinPassword } = usuario;
-    res.json(usuarioSinPassword);
+    const token = firmarToken(usuario);
+    res.json({
+      mensaje: "Sesión iniciada correctamente",
+      token: token,
+      usuario: usuarioPublico(usuario)
+    });
   } catch (error) {
     console.error("Error al iniciar sesion:", error);
     res.status(500).json({ error: "Error interno del servidor" });
@@ -612,7 +686,7 @@ router.post("/restablecer-password", limiteRestablecerPassword, async (req, res)
 // test inicial, examen y modulos completados
 // ============================================
 
-router.get("/:id/progreso", async (req, res) => {
+router.get("/:id/progreso", requireAuth(), requirePropioOAdmin("id"), async (req, res) => {
   const usuarioId = req.params.id;
 
   if (!esEnteroPositivo(usuarioId)) {
@@ -706,7 +780,7 @@ async function verificarContrasenaActual(usuarioId, password) {
 
 // Proyecta la fila de un usuario sin exponer el hash de la contrasena.
 function usuarioPublico(fila) {
-  return {
+  const datos = {
     id: fila.id,
     nombre: fila.nombre,
     email: fila.email,
@@ -715,6 +789,8 @@ function usuarioPublico(fila) {
     tema_preferido: fila.tema_preferido,
     creado_en: fila.creado_en
   };
+  if (fila.role_name !== undefined) datos.role_name = fila.role_name;
+  return datos;
 }
 
 // ============================================
@@ -723,7 +799,7 @@ function usuarioPublico(fila) {
 // preferencias de lectura (tamaño de letra y tema de color).
 // ============================================
 
-router.put("/:id/perfil", limiteCambiosCuenta, async (req, res) => {
+router.put("/:id/perfil", requireAuth(), requirePropioOAdmin("id"), limiteCambiosCuenta, async (req, res) => {
   const usuarioId = req.params.id;
 
   if (!esEnteroPositivo(usuarioId)) {
@@ -824,7 +900,7 @@ router.put("/:id/perfil", limiteCambiosCuenta, async (req, res) => {
 // Cambia el correo electronico de la cuenta.
 // ============================================
 
-router.put("/:id/email", limiteCambiosCuenta, async (req, res) => {
+router.put("/:id/email", requireAuth(), requirePropioOAdmin("id"), limiteCambiosCuenta, async (req, res) => {
   const usuarioId = req.params.id;
   const { email, passwordActual } = req.body || {};
 
@@ -890,7 +966,7 @@ router.put("/:id/email", limiteCambiosCuenta, async (req, res) => {
 // Cambia la contrasena de la cuenta.
 // ============================================
 
-router.put("/:id/password", limiteCambiosCuenta, async (req, res) => {
+router.put("/:id/password", requireAuth(), requirePropioOAdmin("id"), limiteCambiosCuenta, async (req, res) => {
   const usuarioId = req.params.id;
   const { passwordActual, passwordNueva } = req.body || {};
 
@@ -931,6 +1007,144 @@ router.put("/:id/password", limiteCambiosCuenta, async (req, res) => {
     res.json(usuarioPublico(resultado.rows[0]));
   } catch (error) {
     console.error("Error al actualizar la contrasena:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
+// ============================================
+// GET /api/usuarios/:id/datos
+// Descarga una copia de todos los datos personales (Ley 25.326, derecho de
+// acceso). Solo la propia cuenta o un superadministrador.
+// ============================================
+
+router.get("/:id/datos", requireAuth(), requirePropioOAdmin("id"), async (req, res) => {
+  const usuarioId = req.params.id;
+
+  try {
+    const [cuenta, tests, examenes, modulos, miniTrabajos, inscripciones] = await Promise.all([
+      pool.query(
+        `SELECT id, nombre, email, nivel_digital, tamano_fuente, tema_preferido,
+                creado_en, consentimiento_en
+           FROM usuarios WHERE id = $1`,
+        [usuarioId]
+      ),
+      pool.query(
+        `SELECT nivel, puntaje, total_preguntas, creado_en
+           FROM test_nivelacion WHERE usuario_id = $1 ORDER BY creado_en`,
+        [usuarioId]
+      ),
+      pool.query(
+        `SELECT modulo_id, puntaje, total_preguntas, creado_en
+           FROM examenes WHERE usuario_id = $1 ORDER BY creado_en`,
+        [usuarioId]
+      ),
+      pool.query(
+        `SELECT modulo_id, paso_actual, completado, actualizado_en
+           FROM progreso_modulos WHERE usuario_id = $1 ORDER BY modulo_id`,
+        [usuarioId]
+      ),
+      pool.query(
+        `SELECT modulo_id, nivel, completado, actualizado_en
+           FROM mini_trabajos WHERE usuario_id = $1 ORDER BY modulo_id, nivel`,
+        [usuarioId]
+      ),
+      pool.query(
+        `SELECT curso_id, inscrito_en FROM inscripciones WHERE usuario_id = $1 ORDER BY curso_id`,
+        [usuarioId]
+      )
+    ]);
+
+    if (cuenta.rows.length === 0) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    const copia = {
+      generadoEn: new Date().toISOString(),
+      proyecto: "TAMI - Tecnología Amigable para Mayores e Inclusiva",
+      cuenta: cuenta.rows[0],
+      testDeNivelacion: tests.rows,
+      examenes: examenes.rows,
+      progresoDeModulos: modulos.rows,
+      miniTrabajos: miniTrabajos.rows,
+      inscripciones: inscripciones.rows
+    };
+
+    await auditar("datos_exportados", Number(usuarioId), "Copia de datos personales", req);
+
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    res.setHeader(
+      "Content-Disposition",
+      'attachment; filename="tami-mis-datos-' + Number(usuarioId) + '.json"'
+    );
+    res.send(JSON.stringify(copia, null, 2));
+  } catch (error) {
+    console.error("Error al exportar los datos:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
+// ============================================
+// DELETE /api/usuarios/:id
+// Elimina la cuenta y todos sus datos personales. Exige la contraseña actual
+// y la palabra ELIMINAR para evitar borrados accidentales.
+// ============================================
+
+router.delete("/:id", requireAuth(), requirePropioOAdmin("id"), limiteCambiosCuenta, async (req, res) => {
+  const usuarioId = req.params.id;
+  const { passwordActual, confirmar } = req.body || {};
+
+  if (String(confirmar || "").trim().toUpperCase() !== "ELIMINAR") {
+    return res.status(400).json({
+      error: "Para eliminar la cuenta escribí la palabra ELIMINAR en el campo de confirmación."
+    });
+  }
+  if (typeof passwordActual !== "string" || passwordActual.length === 0) {
+    return res.status(400).json({ error: "Tenés que confirmar tu contraseña actual." });
+  }
+
+  try {
+    const verificacion = await verificarContrasenaActual(usuarioId, passwordActual);
+    if (!verificacion.existe) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+    if (!verificacion.valida) {
+      await auditar("cuenta_eliminacion_denegada", Number(usuarioId), "Contraseña incorrecta", req);
+      return res.status(401).json({ error: "La contraseña actual no es correcta." });
+    }
+
+    const cuenta = await pool.query(
+      `SELECT u.email, r.name AS role_name
+         FROM usuarios u LEFT JOIN roles r ON r.id = u.role_id
+        WHERE u.id = $1`,
+      [usuarioId]
+    );
+    if (cuenta.rows.length === 0) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    // No dejar el sistema sin ningún superadministrador.
+    if (String(cuenta.rows[0].role_name || "").toLowerCase() === "superadmin") {
+      const admins = await pool.query(
+        `SELECT count(*)::int AS total
+           FROM usuarios u JOIN roles r ON r.id = u.role_id
+          WHERE lower(r.name) = 'superadmin' AND u.is_active = TRUE`
+      );
+      if (admins.rows[0].total <= 1) {
+        return res.status(409).json({
+          error: "No se puede eliminar la única cuenta de superadministrador."
+        });
+      }
+    }
+
+    await auditar("cuenta_eliminada", null, "La persona eliminó su cuenta (id " + Number(usuarioId) + ")", req);
+    await pool.query("DELETE FROM usuarios WHERE id = $1", [usuarioId]);
+    await pool.query("DELETE FROM intentos_login WHERE lower(btrim(email)) = lower(btrim($1))", [
+      cuenta.rows[0].email
+    ]);
+
+    res.json({ mensaje: "Tu cuenta y tus datos personales fueron eliminados." });
+  } catch (error) {
+    console.error("Error al eliminar la cuenta:", error);
     res.status(500).json({ error: "Error interno del servidor" });
   }
 });

@@ -97,12 +97,12 @@ Los retos se presentan como mensajes reales: correo, SMS, WhatsApp, llamada, red
 
 ## Tecnología y Arquitectura
 
-- **Frontend**: HTML5, CSS3 y JavaScript nativo (sin framework). SPA de **15 pantallas**.
+- **Frontend**: HTML5, CSS3 y JavaScript nativo (sin framework). SPA de **18 pantallas**, instalable como **PWA** y funcional sin conexión.
 - **Contenido**: archivos JS independientes (`contenido-cursos.js`, `contenido-teorias.js`, `contenido-repaso.js`, `contenido-retos.js`) para separar datos de la lógica.
 - **Backend**: Node.js + Express + PostgreSQL (**Supabase**).
-- **Arquitectura**: Cliente-Servidor en 3 capas (Presentación, Lógica y Datos).
-- **Seguridad**: contraseñas con hashing irreversible **bcrypt**, recuperación con token de un solo uso, consultas SQL parametrizadas, RLS, auditoría de accesos, bloqueo por fuerza bruta, cabeceras HTTP de protección, CORS restringido y **RBAC** para el panel de administración.
-- **Persistencia**: Supabase/PostgreSQL (principal) y LocalStorage (caché y fallback sin conexión).
+- **Arquitectura**: Cliente-Servidor en 3 capas (Presentación, Lógica y Datos). Express sirve el frontend y la API en el mismo origen.
+- **Seguridad**: contraseñas con hashing irreversible **bcrypt**, sesiones **JWT firmadas** con vencimiento, recuperación con token de un solo uso, consultas SQL parametrizadas, RLS, auditoría de accesos, bloqueo por fuerza bruta, cabeceras HTTP de protección, CORS restringido y **RBAC** para el panel de administración.
+- **Persistencia**: Supabase/PostgreSQL (principal) y LocalStorage (caché, cola de pendientes y fallback sin conexión).
 - **Accesibilidad**: WCAG 2.1 AA, ARIA roles, skip link, breadcrumbs, foco visible, contraste alto, botones mínimos de 52px y respeto por `prefers-reduced-motion`.
 - **Design System**: "Protección Proactiva" (paleta 60-30-10: `#EBF8FA` / `#0A4B5C` / `#007A87`). El azul institucional es el tema por defecto; las preferencias de lectura permiten agrandar la letra y elegir temas alternativos sin alterar la identidad visual.
 
@@ -111,13 +111,17 @@ Los retos se presentan como mensajes reales: correo, SMS, WhatsApp, llamada, red
 ## PMV V1.0 - Funcionalidades Implementadas
 
 ### 1. Pantalla de Inicio (Presentación del proyecto)
-- Logo institucional (`img/logo.svg`) y favicon (`img/icono.svg`) en header, hero y footer.
-- Tarjetas con los **4 pilares**, el problema que resuelve, el detalle de los **5 cursos**, el recorrido de aprendizaje y el impacto buscado.
+- Logo institucional (`img/logo.svg`), icono (`img/icono.svg`) e ilustración propia (`img/hero-ilustracion.svg`).
+- Orden pensado para personas mayores: **qué es TAMI → cómo funciona → demo interactiva del Escudo → lecciones → impacto → preguntas frecuentes → llamada final**.
+- Tarjetas con los **4 pilares**, el problema que resuelve, el detalle de los **5 cursos** y el impacto buscado.
+- **Demo pública “¿Es estafa o es confiable?”**: 3 casos con explicación y señales de alerta, sin necesidad de cuenta.
+- **Preguntas frecuentes** en acordeón accesible (gratuidad, datos, offline, tiempos, ayuda, registro).
 - CTA al inicio y al final: "Crear mi cuenta" y "Ya tengo cuenta, ingresar".
 - Diseño legible: medida de texto de ~70 caracteres, sin desbordes horizontales y tarjetas con bordes y sombras institucionales.
 
 ### 2. Registro, Login y Cuenta
-- Registro con Nombre, Correo Electrónico y Contraseña.
+- Registro con Nombre, Correo Electrónico y Contraseña, con **consentimiento informado obligatorio** (Ley 25.326) y enlaces a la política de privacidad y los términos.
+- La API devuelve `{ token, usuario }`; el frontend guarda la sesión y la usa en `Authorization: Bearer`.
 - Validación de nombre no vacío, formato de email y contraseña de 6 a 72 caracteres.
 - Hashing con **bcrypt** (costo 12) en el servidor y consultas SQL parametrizadas.
 - Protección contra fuerza bruta: bloqueo temporal tras 5 intentos fallidos por correo (15 minutos).
@@ -170,15 +174,48 @@ Los retos se presentan como mensajes reales: correo, SMS, WhatsApp, llamada, red
 
 ### 10. Panel de Administración (Backoffice)
 - Pantalla independiente en `code/admin.html`.
-- Login y dashboard con métricas: usuarios, cursos, alertas, test, exámenes y auditoría de las últimas 24 horas.
-- Listado de usuarios con rol, estado y activación/desactivación de cuentas.
-- Tabla con los últimos 50 eventos de auditoría.
-- Acceso restringido a cuentas con rol **superadmin**, validado en el backend.
+- Login con JWT para `superadmin`, `moderador` y `analista`; cada rol ve solo sus secciones.
+- Login y dashboard con métricas: usuarios, cursos, alertas, test, exámenes y auditoría de las últimas 24 horas (`superadmin`).
+- Listado de usuarios con rol, estado y activación/desactivación de cuentas (`superadmin`).
+- Tabla con los últimos 50 eventos de auditoría y gestión de roles (`superadmin`).
+- **Solicitudes de ayuda** con filtros y cambio de estado (`superadmin`, `moderador`, `analista`).
+- **Opiniones de experiencia** con puntaje y comentario (`superadmin`, `analista`, `moderador`).
 
 ### 11. Funcionamiento sin conexión
 - La API tiene un tiempo máximo de espera de 2,5 segundos para no bloquear la interfaz.
 - Si el servidor no está disponible, el registro, el login, el progreso, los exámenes y los mini trabajos siguen funcionando con LocalStorage.
 - En modo offline la contraseña se guarda con un hash local SHA-256 (solo como respaldo educativo); con el servidor disponible se usa siempre **bcrypt**.
+
+### 12. Privacidad y derechos sobre los datos (Ley 25.326)
+- Consentimiento informado obligatorio en el registro, con fecha guardada en `usuarios.consentimiento_en`.
+- Pantalla legal con política de privacidad, términos y accesibilidad.
+- **Descarga de datos personales** en JSON desde Configuración (`GET /api/usuarios/:id/datos`).
+- **Eliminación de cuenta** con contraseña actual + confirmación `ELIMINAR`; protege a la última cuenta `superadmin`.
+- El frontend no guarda datos sensibles fuera de la sesión y las rutas personales se validan contra el token.
+
+### 13. Acompañamiento y ayuda
+- Botón **Ayuda** visible en todas las pantallas con formulario de solicitud (categoría, mensaje y datos de contacto).
+- Las solicitudes quedan auditadas y el equipo las atiende desde el backoffice (`superadmin`, `moderador` y `analista`).
+- Tour guiado con `<dialog>`, lectura en voz alta (TTS es-AR), tamaño de letra A−/A+ y alto contraste.
+- Banner de sin conexión y mensajes claros cuando la API no responde.
+
+### 14. Camino de aprendizaje, certificados y opinión
+- “Mi Progreso” muestra el **camino de aprendizaje** por curso, con los 4 niveles, teorías leídas y estado de cada uno.
+- **Logros** e insignias por curso y por campus completo.
+- **Certificado imprimible** al completar un curso, con nombre, curso, fecha y detalle.
+- Widget de **opinión** (1 a 5 estrellas + comentario) para mejorar la experiencia.
+
+### 15. Inicio interactivo y PWA
+- Demo pública **“¿Es estafa o es confiable?”** con 3 casos, explicación y señales para recordar.
+- Panel de **preguntas frecuentes** con acordeón accesible.
+- Orden de secciones pensado para personas mayores: qué es → cómo funciona → demo → lecciones → impacto → preguntas.
+- `manifest.json` + service worker con caché del shell, instalación desde el navegador y actualización versionada.
+
+### 16. Backoffice ampliado
+- Acceso para `superadmin`, `moderador` y `analista`, con secciones ocultas según el rol.
+- Sección de **solicitudes de ayuda** con filtros por estado y cambio de estado (`pendiente`, `en_proceso`, `resuelto`).
+- Sección de **opiniones** con puntaje y comentario.
+- Métricas, usuarios y auditoría siguen reservados a `superadmin`.
 
 ---
 
@@ -189,20 +226,29 @@ Grupo-TAMI/
 ├── README.md               Documentación principal del proyecto
 ├── .gitignore              Excluye node_modules/, .env y *.log
 ├── code/                   Capa de Presentación y Lógica (frontend)
-│   ├── index.html          SPA accesible de 15 pantallas + breadcrumbs
+│   ├── index.html          SPA accesible de 18 pantallas + breadcrumbs
 │   ├── admin.html          Panel de administración (Backoffice RBAC)
+│   ├── config.js           URL pública de la API (window.TAMI_API_URL)
 │   ├── styles.css          Design System "Protección Proactiva"
-│   ├── main.js             Lógica + conexión API + fallback LocalStorage
+│   ├── main.js             Lógica + API JWT + fallback LocalStorage
 │   ├── contenido-cursos.js 5 cursos × 4 niveles (teorías base, glosario, examen)
 │   ├── contenido-teorias.js 6 teorías complementarias por nivel
 │   ├── contenido-repaso.js 3 preguntas complementarias por nivel
 │   ├── contenido-retos.js  15 mini retos del Escudo (12 estafas + 3 legítimos)
+│   ├── manifest.json       Manifest PWA (instalación, colores, iconos)
+│   ├── sw.js               Service worker (caché del shell y modo offline)
 │   └── README.md
-├── img/                    Marca oficial del sitio
+├── img/                    Marca oficial y materiales gráficos
 │   ├── logo.svg            Logo institucional
-│   └── icono.svg           Icono/escudo (favicon, header y footer)
+│   ├── icono.svg           Icono/escudo (favicon, header y footer)
+│   ├── hero-ilustracion.svg Ilustración del inicio
+│   ├── curso-1…5.svg       Portadas de los 5 cursos
+│   ├── nivel-1…4.svg       Iconos de los 4 niveles de comprensión
+│   ├── icono-app.svg, icono-maskable.svg  Iconos PWA
+│   ├── icono-192.png, icono-512.png, icono-maskable-512.png, apple-touch-icon.png
+│   └── og-image.svg, og-image.png  Vista previa para redes sociales
 ├── server/                 Backend Node.js + Express + PostgreSQL (Supabase)
-│   ├── index.js            Servidor, cabeceras de seguridad y rutas API
+│   ├── index.js            Servidor, cabeceras de seguridad, static y rutas API
 │   ├── db.js               Conexión a PostgreSQL/Supabase (pg Pool + SSL)
 │   ├── schema.sql          Esquema (tablas, índices, constraints, RBAC)
 │   ├── scripts/
@@ -212,17 +258,22 @@ Grupo-TAMI/
 │   │   ├── estado.js       npm run db:estado → informe de estado (solo lectura)
 │   │   ├── rbac-apply.js   npm run db:rbac → carga roles y permisos
 │   │   ├── migrar-rbac-seguridad.js  npm run db:rbac:full → esquema + RBAC
+│   │   ├── promover-admin.js  npm run admin:promover → asigna rol superadmin
+│   │   ├── smoke.js        npm run smoke → verificación rápida de la API
 │   │   └── rbac_seed.sql   Roles, permisos y asignaciones base
 │   ├── middlewares/
 │   │   ├── seguridad.js    Cabeceras HTTP, límite por IP y CORS restringido
+│   │   ├── auth.js         Firma y verificación de tokens JWT
 │   │   └── rbac.js         Autenticación y autorización por rol/permiso
 │   ├── services/
 │   │   └── email.js        Envío SMTP del enlace de recuperación (nodemailer)
 │   ├── routes/
-│   │   ├── usuarios.js     Registro/login/recuperación/perfil + auditoría
+│   │   ├── usuarios.js     Registro/login/recuperación/perfil/datos + auditoría
 │   │   ├── cursos.js       Listado de cursos
 │   │   ├── alertas.js      Alertas de fraude (API heredada)
 │   │   ├── progreso.js     Test, exámenes, avance y mini trabajos
+│   │   ├── ayuda.js        Solicitudes de ayuda (público + backoffice)
+│   │   ├── feedback.js     Opiniones de experiencia (con sesión)
 │   │   └── admin.js        Dashboard, usuarios, roles y auditoría (RBAC)
 │   ├── listar_cursos.js    Utilidad de consulta de cursos
 │   ├── .env                Credenciales reales (ignorado por git)
@@ -249,6 +300,7 @@ Grupo-TAMI/
     ├── arquitectura-informacion.md Árbol de navegación y breadcrumbs
     ├── auditoria-usabilidad.md   Auditoría UX (6 dimensiones + QA)
     ├── plan-ejecucion-10-dias.md Cronograma rápido día a día
+    ├── despliegue-y-verificacion.md Despliegue, SMTP/Brevo, respaldos y QA
     └── README.md
 ```
 
@@ -296,42 +348,60 @@ La base de datos corre en **Supabase** (PostgreSQL gestionado en la nube, pooler
 
 ## API REST - Endpoints
 
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| GET | `/` | Estado de la API |
-| GET | `/api/usuarios` | Listar usuarios (sin correos salvo `x-api-key` de administración) |
-| GET | `/api/usuarios/:id` | Obtener un usuario por ID |
-| POST | `/api/usuarios/registrar` | Registrar usuario (nombre, email, password) |
-| POST | `/api/usuarios/login` | Iniciar sesión (email, password) |
-| POST | `/api/usuarios/recuperar-password` | Pedir enlace de recuperación (email) |
-| POST | `/api/usuarios/restablecer-password` | Cambiar la contraseña con token (token, passwordNueva) |
-| GET | `/api/usuarios/:id/progreso` | Obtener el progreso completo de un usuario |
-| PUT | `/api/usuarios/:id/perfil` | Actualizar nombre, nivel y preferencias |
-| PUT | `/api/usuarios/:id/email` | Cambiar el correo (requiere contraseña actual) |
-| PUT | `/api/usuarios/:id/password` | Cambiar la contraseña (requiere contraseña actual) |
-| GET | `/api/cursos` | Listar cursos activos |
-| GET | `/api/cursos/:id` | Obtener un curso |
-| GET | `/api/alertas` | Listar alertas de fraude de la API heredada |
-| POST | `/api/progreso/test` | Guardar el test de nivelación |
-| POST | `/api/progreso/examen` | Guardar el resultado de un repaso final |
-| POST | `/api/progreso/modulo` | Guardar o actualizar el avance de un nivel |
-| POST | `/api/progreso/mini-trabajo` | Guardar el estado de un mini trabajo |
-| GET | `/api/progreso/:usuarioId` | Obtener el progreso de un usuario |
-| GET | `/api/admin/dashboard` | Métricas generales del panel (solo superadmin) |
-| GET | `/api/admin/usuarios` | Listado completo de usuarios (solo superadmin) |
-| GET | `/api/admin/roles` | Listado de roles (solo superadmin) |
-| GET | `/api/admin/auditoria?limite=50` | Últimos eventos de auditoría (solo superadmin) |
-| PUT | `/api/admin/usuarios/:id/rol` | Asignar un rol (solo superadmin) |
-| PUT | `/api/admin/usuarios/:id/estado` | Activar o desactivar una cuenta (solo superadmin) |
+Todas las rutas privadas usan `Authorization: Bearer <token>`. El token se
+obtiene en `POST /api/usuarios/login` (o en el registro) y dura 12 horas por
+defecto. El backend toma la identidad **siempre del token**, nunca de un id
+enviado por el cliente.
+
+| Método | Ruta | Descripción | Acceso |
+|--------|------|-------------|--------|
+| GET | `/api/salud` | Estado de la API y de la base | Público |
+| GET | `/api/usuarios/yo` | Datos de la sesión actual | Sesión |
+| POST | `/api/usuarios/renovar` | Renovar el token de una sesión vigente | Sesión |
+| GET | `/api/usuarios` | Listar usuarios (sin correos) | `superadmin` |
+| GET | `/api/usuarios/:id` | Obtener un usuario | Propio o `superadmin` |
+| POST | `/api/usuarios/registrar` | Registrar (nombre, email, password, aceptaTerminos) | Público |
+| POST | `/api/usuarios/login` | Iniciar sesión y devolver `{ token, usuario }` | Público |
+| POST | `/api/usuarios/recuperar-password` | Pedir enlace de recuperación | Público |
+| POST | `/api/usuarios/restablecer-password` | Cambiar contraseña con token | Público |
+| GET | `/api/usuarios/:id/progreso` | Progreso completo | Propio o `superadmin` |
+| PUT | `/api/usuarios/:id/perfil` | Actualizar nombre, nivel y preferencias | Propio o `superadmin` |
+| PUT | `/api/usuarios/:id/email` | Cambiar correo (requiere contraseña) | Propio o `superadmin` |
+| PUT | `/api/usuarios/:id/password` | Cambiar contraseña (requiere actual) | Propio o `superadmin` |
+| GET | `/api/usuarios/:id/datos` | Exportar datos personales en JSON | Propio o `superadmin` |
+| DELETE | `/api/usuarios/:id` | Eliminar cuenta (password + `ELIMINAR`) | Propio o `superadmin` |
+| GET | `/api/cursos` | Listar cursos activos | Público |
+| GET | `/api/cursos/:id` | Obtener un curso | Público |
+| GET | `/api/alertas` | Listar alertas de fraude heredadas | Público |
+| POST | `/api/progreso/test` | Guardar test de nivelación | Sesión |
+| POST | `/api/progreso/examen` | Guardar repaso final | Sesión |
+| POST | `/api/progreso/modulo` | Guardar avance del nivel | Sesión |
+| POST | `/api/progreso/mini-trabajo` | Guardar mini trabajo | Sesión |
+| GET | `/api/progreso/:usuarioId` | Obtener progreso | Propio o `superadmin` |
+| POST | `/api/ayuda` | Enviar solicitud de ayuda (público o con sesión) | Público |
+| GET | `/api/ayuda?estado=…` | Listar solicitudes | `superadmin`, `moderador`, `analista` |
+| PUT | `/api/ayuda/:id/estado` | Cambiar estado de una solicitud | `superadmin`, `moderador` |
+| POST | `/api/feedback` | Enviar opinión (puntaje 1–5 y comentario) | Sesión |
+| GET | `/api/feedback` | Listar opiniones | `superadmin`, `analista`, `moderador` |
+| GET | `/api/admin/dashboard` | Métricas generales del panel | `superadmin` |
+| GET | `/api/admin/usuarios` | Listado completo de usuarios | `superadmin` |
+| GET | `/api/admin/roles` | Listado de roles | `superadmin` |
+| GET | `/api/admin/auditoria?limite=50` | Últimos eventos de auditoría | `superadmin` |
+| PUT | `/api/admin/usuarios/:id/rol` | Asignar un rol | `superadmin` |
+| PUT | `/api/admin/usuarios/:id/estado` | Activar o desactivar una cuenta | `superadmin` |
 
 ---
 
 ## Panel de Administración y RBAC
 
-El panel vive en `code/admin.html` y consume `/api/admin/*`. Todas las rutas administrativas pasan por dos middlewares:
+El panel vive en `code/admin.html` y consume `/api/admin/*`, `/api/ayuda` y `/api/feedback` enviando `Authorization: Bearer <token>`. Cada ruta pasa por dos middlewares:
 
-1. **`requireAuth()`**: verifica que el usuario exista, esté activo y tenga un rol asignado.
-2. **`requireRole(["superadmin"])`**: rechaza con `403` a cualquier rol distinto de superadmin.
+1. **`requireAuth()`**: verifica el token JWT, que el usuario exista, esté activo y tenga el rol esperado.
+2. **`requireRole([...])`**: rechaza con `403` a cualquier rol no autorizado.
+
+Las métricas, los usuarios y la auditoría son exclusivos de `superadmin`. Las
+solicitudes de ayuda y las opiniones permiten además `moderador` y `analista`,
+y el frontend oculta las secciones que el rol no puede usar.
 
 **Roles base** cargados con `npm run db:rbac`:
 
@@ -339,11 +409,20 @@ El panel vive en `code/admin.html` y consume `/api/admin/*`. Todas las rutas adm
 |-----|---------|
 | `superadmin` | Acceso total al panel y a todos los permisos |
 | `editor` | Gestión de contenidos (ver, crear, editar y publicar) |
-| `analista` | Lectura de datos, exportación y consulta de usuarios |
-| `moderador` | Revisión de contenidos |
+| `analista` | Lectura de datos, exportación, consulta de usuarios y ayuda |
+| `moderador` | Revisión de contenidos, solicitudes de ayuda y opiniones |
 | `usuario` | Persona final que usa el Campus y el Escudo |
 
-Para habilitar el primer administrador, después de registrarte promové tu cuenta con SQL:
+Para habilitar el primer administrador, después de registrarte simulá el rol
+desde el servidor:
+
+```bash
+cd server
+npm run admin:promover -- tu-correo@ejemplo.com
+```
+
+El script asigna `superadmin` de forma segura e idempotente. También se puede
+hacer con SQL:
 
 ```sql
 UPDATE usuarios
@@ -351,7 +430,10 @@ UPDATE usuarios
  WHERE lower(btrim(email)) = lower(btrim('tu-correo@ejemplo.com'));
 ```
 
-> En esta versión educativa el panel identifica la sesión con la cabecera `x-usuario-id`, que el backend valida contra la base y el rol. La migración a **JWT firmado** con expiración está documentada como siguiente paso en [actividades hechas/TP-32-33-34-Seguridad-RBAC-Backoffice.md](actividades%20hechas/TP-32-33-34-Seguridad-RBAC-Backoffice.md).
+> La sesión del panel y de la app es un **JWT firmado HS256** con emisor `tami`,
+> vencimiento de 12 horas y el id del usuario en `sub`. El token viaja solo en la
+> cabecera `Authorization`; no se acepta `x-usuario-id` ni un id enviado por el
+> cliente. Al vencer, la persona vuelve a iniciar sesión.
 
 ---
 
@@ -421,12 +503,17 @@ NODE_ENV=development
 
 # PostgreSQL / Supabase (cadena completa con SSL)
 DATABASE_URL=postgresql://usuario:password@host:5432/tami
+DB_SSL=true
 
 # Orígenes permitidos del frontend
-CORS_ORIGINS=http://localhost:5500,http://127.0.0.1:5500
+CORS_ORIGINS=http://localhost:3000,http://localhost:5500
 TRUST_PROXY=false
 
-# Clave para endpoints que muestran correos
+# Sesión JWT
+JWT_SECRET=generar_una_clave_larga_y_aleatoria
+JWT_DURACION_MINUTOS=720
+
+# Clave para endpoints administrativos de emergencia
 ADMIN_KEY=
 
 # Límites de solicitudes
@@ -440,14 +527,14 @@ LIMITE_RESTABLECER=10
 MAX_INTENTOS_LOGIN=5
 VENTANA_BLOQUEO_LOGIN=15
 
-# Recuperación de contraseña por correo (opcional en desarrollo)
-SMTP_HOST=smtp.gmail.com
+# Recuperación de contraseña por correo (Brevo u otro SMTP)
+SMTP_HOST=smtp-relay.brevo.com
 SMTP_PORT=587
 SMTP_SECURE=false
-SMTP_USER=tu_correo@gmail.com
-SMTP_PASS=tu_contraseña_de_aplicacion
-SMTP_FROM=TAMI <tu_correo@gmail.com>
-FRONTEND_URL=http://localhost:5500/code/index.html
+SMTP_USER=tu_usuario_smtp
+SMTP_PASS=tu_clave_smtp
+SMTP_FROM=TAMI <tu_correo_verificado>
+FRONTEND_URL=http://localhost:3000/
 RESET_TOKEN_MINUTOS=30
 # Solo desarrollo: muestra el enlace si no hay SMTP
 RESET_DEBUG_LINK=false
@@ -455,8 +542,8 @@ RESET_DEBUG_LINK=false
 
 > La recuperación de contraseña necesita un servidor SMTP para enviar el enlace.
 > Sin SMTP, en desarrollo local se puede usar `RESET_DEBUG_LINK=true` para mostrar
-> el enlace en la interfaz. Los detalles están en
-> [server/README.md](server/README.md#recuperación-de-contraseña).
+> el enlace en la interfaz. Los detalles de Brevo (incluida la autorización de IP
+> y el error 525) están en [docs/despliegue-y-verificacion.md](docs/despliegue-y-verificacion.md#4-correo-con-brevo).
 
 ### 3. Crear el esquema y cargar los datos
 
@@ -476,6 +563,12 @@ npm run db:estado     # informe de estado (solo lectura)
 > se cargan con `db:seed`, que **no duplica** nada si ya existen.
 > `db:rbac:full` aplica el esquema completo y el seed RBAC en un solo paso.
 
+Después de crear tu cuenta desde la web, promové el primer administrador:
+
+```bash
+npm run admin:promover -- tu-correo@ejemplo.com
+```
+
 ### 4. Arrancar la API
 
 ```bash
@@ -489,12 +582,18 @@ La API queda disponible en `http://localhost:3000` y al arrancar imprime
 
 ### 5. Abrir el frontend
 
-Abrí `code/index.html` directamente en tu navegador (doble clic o arrastrá el archivo).
-El panel de administración está en `code/admin.html`.
+Con el servidor levantado, abrí:
 
-> **Nota**: el frontend intenta conectarse a la API en `http://localhost:3000`.
-> Si el servidor no está disponible, funciona automáticamente con LocalStorage
-> como caché y respaldo offline.
+- Aplicación: `http://localhost:3000/`
+- Panel de administración: `http://localhost:3000/admin.html`
+- Salud de la API: `http://localhost:3000/api/salud`
+
+Express sirve `code/` y `img/`, por lo que el frontend y la API comparten el
+mismo origen. No hace falta abrir `code/index.html` con doble clic (hacerlo
+limita CORS y rompe la instalación de la PWA).
+
+> **Nota**: si el servidor no está disponible, la aplicación funciona con
+> LocalStorage como caché y respaldo offline, y sincroniza al volver la conexión.
 
 ### Scripts disponibles (`server/`)
 
@@ -509,6 +608,8 @@ El panel de administración está en `code/admin.html`.
 | `npm run db:rbac` | Carga roles, permisos y asignaciones base |
 | `npm run db:rbac:full` | Aplica el esquema completo + seed RBAC |
 | `npm run db:estado` | Informe de estado (rol, tablas, duplicados, RLS) |
+| `npm run admin:promover -- email` | Asigna rol `superadmin` a una cuenta |
+| `npm run smoke` | Verifica salud, frontend, PWA, catálogo y rutas protegidas |
 
 ---
 
@@ -517,7 +618,8 @@ El panel de administración está en `code/admin.html`.
 - **Contraseñas**: bcrypt con costo 12 en el servidor; nunca se guarda texto plano.
 - **Recuperación**: token aleatorio de 32 bytes, guardado solo como hash SHA-256, de un solo uso y con vencimiento.
 - **Fuerza bruta**: máximo 5 intentos fallidos por correo cada 15 minutos y límites de solicitudes por IP.
-- **Sesión y roles**: RBAC en el backend; las rutas administrativas exigen rol `superadmin`.
+- **Sesión y roles**: JWT firmado HS256 (emisor, `sub` y vencimiento), identidad tomada siempre del token y RBAC en el backend. Las rutas administrativas exigen el rol adecuado; métricas, usuarios y auditoría solo `superadmin`.
+- **Privacidad**: consentimiento en el registro, exportación de datos propios, eliminación con contraseña + confirmación y protección de la última cuenta `superadmin`.
 - **SQL**: consultas parametrizadas y constraints en PostgreSQL.
 - **Base de datos**: RLS, políticas y privilegios mínimos para `anon` y `authenticated`.
 - **Cabeceras HTTP**: `nosniff`, `DENY`, `no-referrer`, `Permissions-Policy`, `Cache-Control: no-store` y HSTS en producción.
@@ -526,6 +628,28 @@ El panel de administración está en `code/admin.html`.
 - **Secretos**: solo en `.env`; `.env.example` no contiene credenciales reales.
 
 > Recomendación: si en algún momento se compartió la contraseña de la base, rotarla en Supabase y actualizar `DATABASE_URL`.
+
+---
+
+## Despliegue y respaldos
+
+La guía completa está en
+[docs/despliegue-y-verificacion.md](docs/despliegue-y-verificacion.md). Incluye:
+
+- variables de entorno de producción;
+- publicación en Render/Railway/VPS con Supabase y Brevo;
+- configuración SMTP de Brevo y solución del **error 525 (IP no autorizada)**;
+- respaldos con `pg_dump`, restauración de prueba y rotación de secretos;
+- checklist de QA funcional, de accesibilidad y de seguridad;
+- limitaciones conocidas (vencimiento del JWT, rate limiting en memoria,
+  caché del service worker y metadatos Open Graph absolutos).
+
+Verificación rápida con el servidor levantado:
+
+```bash
+cd server
+npm run smoke
+```
 
 ---
 

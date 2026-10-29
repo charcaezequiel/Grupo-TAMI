@@ -12,7 +12,9 @@
     "db:seed": "node scripts/seed.js",
     "db:seguridad": "node scripts/seguridad.js",
     "db:rbac": "node scripts/rbac-apply.js",
-    "db:rbac:full": "node scripts/migrar-rbac-seguridad.js"
+    "db:rbac:full": "node scripts/migrar-rbac-seguridad.js",
+    "admin:promover": "node scripts/promover-admin.js",
+    "smoke": "node scripts/smoke.js"
   },
   "keywords": [
     "tami",
@@ -26,6 +28,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
     "nodemailer": "^7.0.13",
     "pg": "^8.12.0"
   }

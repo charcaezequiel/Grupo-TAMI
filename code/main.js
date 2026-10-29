@@ -11,7 +11,7 @@
 // CONSTANTES Y CLAVES
 // ============================================
 
-const API_URL = "http://localhost:3000/api";
+const API_URL = String(window.TAMI_API_URL || "http://localhost:3000/api").replace(/\/+$/, "");
 const CLAVE_SESION = "tami:sesion";
 const CLAVE_USUARIOS_CACHE = "tami:usuariosCache";
 const CLAVE_TEST_CACHE = "tami:testCache";
@@ -108,6 +108,12 @@ const MAPA_NAVEGACION = {
     { etiqueta: "Mi entorno seguro", pantalla: "pantalla-dashboard" },
     { etiqueta: "Mi Progreso", pantalla: null }
   ],
+  "pantalla-certificado": [
+    { etiqueta: "Inicio", pantalla: "pantalla-inicio" },
+    { etiqueta: "Mi entorno seguro", pantalla: "pantalla-dashboard" },
+    { etiqueta: "Mi Progreso", pantalla: "pantalla-progreso" },
+    { etiqueta: "Certificado", pantalla: null }
+  ],
   "pantalla-trabajos": [
     { etiqueta: "Inicio", pantalla: "pantalla-inicio" },
     { etiqueta: "Mi entorno seguro", pantalla: "pantalla-dashboard" },
@@ -124,6 +130,14 @@ const MAPA_NAVEGACION = {
     { etiqueta: "Campus Educativo", pantalla: "pantalla-campus" },
     { etiqueta: "Curso", pantalla: "pantalla-curso" },
     { etiqueta: "Examen del nivel", pantalla: null }
+  ],
+  "pantalla-legal": [
+    { etiqueta: "Inicio", pantalla: "pantalla-inicio" },
+    { etiqueta: "Privacidad y términos", pantalla: null }
+  ],
+  "pantalla-ayuda": [
+    { etiqueta: "Inicio", pantalla: "pantalla-inicio" },
+    { etiqueta: "Ayuda", pantalla: null }
   ]
 };
 
@@ -178,18 +192,46 @@ function esErrorDeConexion(error) {
   return /failed to fetch|networkerror|load failed|abort|timeout/i.test(String(error.message || ""));
 }
 
+// La identidad viaja firmada en el token: el servidor ya no confía en un
+// número de usuario enviado por el navegador.
+function cabecerasApi(extra) {
+  const cabeceras = Object.assign({ "Content-Type": "application/json" }, extra || {});
+  const sesion = obtenerSesion();
+  if (sesion && sesion.token) cabeceras.Authorization = "Bearer " + sesion.token;
+  return cabeceras;
+}
+
+// Cuando el servidor responde 401, la sesión dejó de ser válida.
+// Se limpia el estado local y se invita a volver a entrar.
+function manejarSesionVencida() {
+  if (window.TAMI_SESION_VENCIDA_MOSTRADA) return;
+  window.TAMI_SESION_VENCIDA_MOSTRADA = true;
+  localStorage.removeItem(CLAVE_SESION);
+  reiniciarDatosDeSesion();
+  refrescarInterfazSesion(null);
+  mostrarPantalla("pantalla-login");
+  mostrarMensaje(
+    "Tu sesión venció por seguridad. Volvé a entrar con tu correo y contraseña.",
+    7000
+  );
+}
+
 async function apiGet(recurso) {
   try {
-    const respuesta = await fetchApi(recurso, {
-      headers: { "Content-Type": "application/json" }
-    });
-    if (!respuesta.ok) {
-      throw new Error("Error HTTP " + respuesta.status);
+    const respuesta = await fetchApi(recurso, { headers: cabecerasApi() });
+    const datos = await respuesta.json().catch(function () { return null; });
+    if (respuesta.status === 401) {
+      manejarSesionVencida();
+      return { exito: false, datos: datos, error: (datos && datos.error) || "Sesión vencida", noAutorizado: true };
     }
-    const datos = await respuesta.json();
+    if (!respuesta.ok) {
+      return { exito: false, datos: datos, error: (datos && datos.error) || "Error HTTP " + respuesta.status };
+    }
+    marcarConConexion();
     return { exito: true, datos: datos };
   } catch (error) {
     const conexion = esErrorDeConexion(error);
+    if (conexion) marcarSinConexion();
     console.error("API GET falló (" + recurso + "):", error.message);
     return { exito: false, datos: null, error: conexion ? "offline" : error.message, esConexion: conexion };
   }
@@ -199,16 +241,22 @@ async function apiPost(recurso, cuerpo) {
   try {
     const respuesta = await fetchApi(recurso, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: cabecerasApi(),
       body: JSON.stringify(cuerpo)
     });
-    const datos = await respuesta.json();
-    if (!respuesta.ok) {
-      return { exito: false, datos: datos, error: datos.error || "Error HTTP " + respuesta.status };
+    const datos = await respuesta.json().catch(function () { return null; });
+    if (respuesta.status === 401) {
+      manejarSesionVencida();
+      return { exito: false, datos: datos, error: (datos && datos.error) || "Sesión vencida", noAutorizado: true };
     }
+    if (!respuesta.ok) {
+      return { exito: false, datos: datos, error: (datos && datos.error) || "Error HTTP " + respuesta.status };
+    }
+    marcarConConexion();
     return { exito: true, datos: datos };
   } catch (error) {
     const conexion = esErrorDeConexion(error);
+    if (conexion) marcarSinConexion();
     console.error("API POST falló (" + recurso + "):", error.message);
     return { exito: false, datos: null, error: conexion ? "offline" : error.message, esConexion: conexion };
   }
@@ -218,17 +266,48 @@ async function apiPut(recurso, cuerpo) {
   try {
     const respuesta = await fetchApi(recurso, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: cabecerasApi(),
       body: JSON.stringify(cuerpo)
     });
-    const datos = await respuesta.json();
-    if (!respuesta.ok) {
-      return { exito: false, datos: datos, error: datos.error || "Error HTTP " + respuesta.status };
+    const datos = await respuesta.json().catch(function () { return null; });
+    if (respuesta.status === 401) {
+      manejarSesionVencida();
+      return { exito: false, datos: datos, error: (datos && datos.error) || "Sesión vencida", noAutorizado: true };
     }
+    if (!respuesta.ok) {
+      return { exito: false, datos: datos, error: (datos && datos.error) || "Error HTTP " + respuesta.status };
+    }
+    marcarConConexion();
     return { exito: true, datos: datos };
   } catch (error) {
     const conexion = esErrorDeConexion(error);
+    if (conexion) marcarSinConexion();
     console.error("API PUT falló (" + recurso + "):", error.message);
+    return { exito: false, datos: null, error: conexion ? "offline" : error.message, esConexion: conexion };
+  }
+}
+
+async function apiDelete(recurso, cuerpo) {
+  try {
+    const respuesta = await fetchApi(recurso, {
+      method: "DELETE",
+      headers: cabecerasApi(),
+      body: cuerpo ? JSON.stringify(cuerpo) : undefined
+    });
+    const datos = await respuesta.json().catch(function () { return null; });
+    if (respuesta.status === 401) {
+      manejarSesionVencida();
+      return { exito: false, datos: datos, error: (datos && datos.error) || "Sesión vencida", noAutorizado: true };
+    }
+    if (!respuesta.ok) {
+      return { exito: false, datos: datos, error: (datos && datos.error) || "Error HTTP " + respuesta.status };
+    }
+    marcarConConexion();
+    return { exito: true, datos: datos };
+  } catch (error) {
+    const conexion = esErrorDeConexion(error);
+    if (conexion) marcarSinConexion();
+    console.error("API DELETE falló (" + recurso + "):", error.message);
     return { exito: false, datos: null, error: conexion ? "offline" : error.message, esConexion: conexion };
   }
 }
@@ -250,6 +329,10 @@ function mostrarPantalla(idPantalla, opciones) {
     pantallaObjetivo.hidden = false;
     // Al saltar a una seccion del inicio, irASeccion controla el scroll.
     if (!evitarScroll) window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  if (idPantalla === "pantalla-ayuda") {
+    prepararAyuda();
   }
 
   // Actualiza las migas de pan segun la pantalla visible
@@ -531,14 +614,17 @@ function configurarSenalizacion(idFormulario, idGuia) {
 // GESTIÓN DE SESIÓN
 // ============================================
 
-function guardarSesion(usuario) {
+function guardarSesion(usuario, token) {
+  const anterior = leerLocal(CLAVE_SESION, null) || {};
   guardarLocal(CLAVE_SESION, {
     id: usuario.id,
     nombre: usuario.nombre,
     email: usuario.email,
     nivelDigital: usuario.nivel_digital,
     tamanoFuente: usuario.tamano_fuente || "normal",
-    temaPreferido: usuario.tema_preferido || "proteccion"
+    temaPreferido: usuario.tema_preferido || "proteccion",
+    rol: usuario.role_name || anterior.rol || null,
+    token: token || anterior.token || null
   });
 }
 
@@ -572,6 +658,7 @@ function cerrarSesion() {
   aplicarPreferencias("normal", "proteccion");
   refrescarInterfazSesion(null);
   mostrarPantalla("pantalla-inicio");
+  window.TAMI_SESION_VENCIDA_MOSTRADA = false;
 }
 
 function obtenerSesion() {
@@ -582,17 +669,20 @@ function obtenerSesion() {
 // AUTENTICACIÓN: REGISTRAR + LOGIN
 // ============================================
 
-async function registrarUsuario(nombre, email, password) {
+async function registrarUsuario(nombre, email, password, aceptaTerminos) {
   // Intenta registrar en la API
   const resultado = await apiPost("usuarios/registrar", {
     nombre: nombre,
     email: email,
-    password: password
+    password: password,
+    aceptaTerminos: aceptaTerminos === true
   });
 
   if (resultado.exito) {
-    guardarSesion(resultado.datos);
-    return { exito: true, usuario: resultado.datos };
+    const datos = resultado.datos || {};
+    const usuario = datos.usuario || datos;
+    guardarSesion(usuario, datos.token);
+    return { exito: true, usuario: usuario };
   }
 
   // Si la API no está disponible, usa localStorage como fallback
@@ -656,8 +746,10 @@ async function iniciarSesion(email, password) {
   });
 
   if (resultado.exito) {
-    guardarSesion(resultado.datos);
-    return { exito: true, usuario: resultado.datos };
+    const datos = resultado.datos || {};
+    const usuario = datos.usuario || datos;
+    guardarSesion(usuario, datos.token);
+    return { exito: true, usuario: usuario };
   }
 
   // Fallback a localStorage
@@ -879,6 +971,15 @@ async function enviarTest(usuarioId, respuestas, preguntas) {
   };
   guardarLocal(claveTestCache(usuarioId), datos);
 
+  if (!resultado.exito && resultado.esConexion) {
+    encolarPendiente("progreso/test", {
+      respuestas: respuestas,
+      nivel: nivel,
+      puntaje: puntaje,
+      totalPreguntas: preguntas.length
+    });
+  }
+
   if (resultado.exito) {
     return { exito: true, nivel: nivel, puntaje: puntaje, total: preguntas.length, desdeApi: true };
   }
@@ -961,12 +1062,15 @@ function renderizarPasoLeccion(indice) {
 async function guardarProgresoModulo(usuarioId, moduloId, paso, completado) {
   actualizarProgresoLocal(usuarioId, moduloId, paso, completado);
 
-  await apiPost("progreso/modulo", {
-    usuarioId: usuarioId,
+  const cuerpo = {
     moduloId: moduloId,
     pasoActual: paso,
     completado: completado
-  });
+  };
+  const resultado = await apiPost("progreso/modulo", cuerpo);
+  if (!resultado.exito && resultado.esConexion) {
+    encolarPendiente("progreso/modulo", cuerpo);
+  }
 }
 
 // ============================================
@@ -1435,6 +1539,170 @@ function renderizarFinRetosEscudo(contenedor) {
 }
 
 // ============================================
+// DEMO PUBLICA DEL ESCUDO (PANTALLA DE INICIO)
+// ============================================
+
+const CASOS_DEMO_ESCUDO = [
+  {
+    canal: "Mensaje de texto (SMS)",
+    remitente: "Banco · 011 5555-0000",
+    texto: "«Detectamos un movimiento sospechoso en tu cuenta. Verificá tus datos YA en banco-seguro-verificacion.com o bloquearemos tu cuenta.»",
+    esEstafa: true,
+    explicacion: "Es una estafa. El banco nunca te pide datos por un enlace ni te amenaza con bloquear la cuenta por mensaje.",
+    senales: ["Urgencia y amenaza", "Enlace que no es el sitio oficial", "Piden datos personales"]
+  },
+  {
+    canal: "Correo electrónico",
+    remitente: "ANSES Beneficios · reintegros@anses-gobierno.info",
+    texto: "«¡Felicitaciones! Tenés un reintegro de $45.000 sin cobrar. Completá tu número de tarjeta y DNI en el siguiente formulario para recibirlo.»",
+    esEstafa: true,
+    explicacion: "Es una estafa. Un organismo oficial nunca te pide el número de tarjeta por correo ni te apura con un premio.",
+    senales: ["Premio que no pediste", "Dirección de correo que no es oficial", "Piden datos de la tarjeta"]
+  },
+  {
+    canal: "Mensaje de WhatsApp",
+    remitente: "María (tu hija)",
+    texto: "«Hola mamá, estoy en el trabajo y no puedo hablar. Te escribo a la noche. Besos.»",
+    esEstafa: false,
+    explicacion: "Parece confiable. No pide datos, no pide dinero y no mete urgencia. Aun así, si algo te hace dudar, llamá a la persona por teléfono.",
+    senales: ["Remitente conocido", "No pide datos ni dinero", "No genera urgencia"]
+  }
+];
+
+let demoEscudoIndice = 0;
+let demoEscudoAciertos = 0;
+let demoEscudoRespondido = false;
+let demoEscudoTerminado = false;
+
+function iniciarDemoEscudo() {
+  demoEscudoIndice = 0;
+  demoEscudoAciertos = 0;
+  demoEscudoRespondido = false;
+  demoEscudoTerminado = false;
+  renderizarDemoEscudo();
+}
+
+function renderizarDemoEscudo() {
+  const caso = CASOS_DEMO_ESCUDO[demoEscudoIndice];
+  if (!caso) return;
+
+  demoEscudoRespondido = false;
+
+  asignarTexto("demo-progreso", "Caso " + (demoEscudoIndice + 1) + " de " + CASOS_DEMO_ESCUDO.length);
+  asignarTexto("demo-canal", caso.canal);
+  asignarTexto("demo-remitente", caso.remitente);
+  asignarTexto("demo-texto", caso.texto);
+
+  const resultado = document.getElementById("demo-resultado");
+  if (resultado) {
+    resultado.hidden = true;
+    resultado.textContent = "";
+    resultado.className = "demo-escudo__resultado";
+  }
+
+  const acciones = document.getElementById("demo-acciones");
+  if (acciones) acciones.hidden = false;
+
+  const siguiente = document.getElementById("btn-demo-siguiente");
+  if (siguiente) {
+    siguiente.hidden = true;
+    siguiente.textContent = "Siguiente caso";
+  }
+}
+
+function responderDemoEscudo(indicaEstafa) {
+  if (demoEscudoRespondido || demoEscudoTerminado) return;
+
+  const caso = CASOS_DEMO_ESCUDO[demoEscudoIndice];
+  const resultado = document.getElementById("demo-resultado");
+  if (!caso || !resultado) return;
+
+  demoEscudoRespondido = true;
+  const acerto = indicaEstafa === caso.esEstafa;
+  if (acerto) demoEscudoAciertos += 1;
+
+  resultado.className = "demo-escudo__resultado " +
+    (acerto ? "demo-escudo__resultado--bien" : "demo-escudo__resultado--error");
+  resultado.innerHTML = "";
+
+  const titulo = document.createElement("p");
+  titulo.className = "demo-escudo__veredicto";
+  titulo.textContent = acerto ? "✅ ¡Muy bien!" : "❌ No era esa opción";
+  resultado.appendChild(titulo);
+
+  const texto = document.createElement("p");
+  texto.className = "demo-escudo__explicacion";
+  texto.textContent = caso.explicacion;
+  resultado.appendChild(texto);
+
+  const subtitulo = document.createElement("p");
+  subtitulo.className = "demo-escudo__senales-titulo";
+  subtitulo.textContent = "Señales para recordar:";
+  resultado.appendChild(subtitulo);
+
+  const lista = document.createElement("ul");
+  lista.className = "demo-escudo__senales";
+  caso.senales.forEach(function (senal) {
+    const item = document.createElement("li");
+    item.textContent = senal;
+    lista.appendChild(item);
+  });
+  resultado.appendChild(lista);
+
+  resultado.hidden = false;
+  resultado.focus({ preventScroll: true });
+
+  const acciones = document.getElementById("demo-acciones");
+  if (acciones) acciones.hidden = true;
+
+  const siguiente = document.getElementById("btn-demo-siguiente");
+  if (siguiente) {
+    siguiente.hidden = false;
+    siguiente.textContent = demoEscudoIndice < CASOS_DEMO_ESCUDO.length - 1
+      ? "Siguiente caso"
+      : "Ver mi resultado";
+  }
+}
+
+function siguienteDemoEscudo() {
+  const siguiente = document.getElementById("btn-demo-siguiente");
+  const resultado = document.getElementById("demo-resultado");
+
+  if (demoEscudoTerminado) {
+    iniciarDemoEscudo();
+    return;
+  }
+
+  if (demoEscudoIndice < CASOS_DEMO_ESCUDO.length - 1 && demoEscudoRespondido) {
+    demoEscudoIndice += 1;
+    renderizarDemoEscudo();
+    return;
+  }
+
+  if (!demoEscudoRespondido || !resultado) return;
+
+  demoEscudoTerminado = true;
+  asignarTexto("demo-progreso", "Demo terminada");
+  resultado.className = "demo-escudo__resultado demo-escudo__resultado--bien";
+  resultado.innerHTML = "";
+
+  const titulo = document.createElement("p");
+  titulo.className = "demo-escudo__veredicto";
+  titulo.textContent = "🛡️ Acertaste " + demoEscudoAciertos + " de " + CASOS_DEMO_ESCUDO.length + " casos";
+  resultado.appendChild(titulo);
+
+  const texto = document.createElement("p");
+  texto.className = "demo-escudo__explicacion";
+  texto.textContent = "Ese es el hábito que más protege: parar, mirar las señales y consultar antes de hacer clic. En tu cuenta hay más casos y podés ganar la insignia del Escudo.";
+  resultado.appendChild(texto);
+
+  if (siguiente) {
+    siguiente.hidden = false;
+    siguiente.textContent = "Volver a probar";
+  }
+}
+
+// ============================================
 // EXAMEN RÁPIDO (AL FINAL DE CADA NIVEL)
 // ============================================
 
@@ -1492,14 +1760,17 @@ async function enviarExamen(usuarioId, respuestas) {
 
   let desdeApi = false;
   if (moduloId) {
-    const resultado = await apiPost("progreso/examen", {
-      usuarioId: usuarioId,
+    const cuerpoExamen = {
       moduloId: moduloId,
       respuestas: respuestas,
       puntaje: puntaje,
       totalPreguntas: preguntas.length
-    });
+    };
+    const resultado = await apiPost("progreso/examen", cuerpoExamen);
     desdeApi = Boolean(resultado.exito);
+    if (!resultado.exito && resultado.esConexion) {
+      encolarPendiente("progreso/examen", cuerpoExamen);
+    }
   }
 
   guardarLocal(claveExamenCache(usuarioId), datos);
@@ -1556,7 +1827,7 @@ async function renderizarProgreso() {
 
   const tituloCursos = document.createElement("h3");
   tituloCursos.className = "progreso__titulo-seccion";
-  tituloCursos.textContent = "Avance por curso";
+  tituloCursos.textContent = "🗺️ Tu camino de aprendizaje";
   seccionCursos.appendChild(tituloCursos);
 
   const nivelesCompletados = modulos.filter(function (fila) {
@@ -1571,24 +1842,7 @@ async function renderizarProgreso() {
   seccionCursos.appendChild(resumenCursos);
 
   CURSOS.forEach(function (curso) {
-    const completados = nivelesCompletadosDeCurso(curso.id);
-    const detalle = document.createElement("div");
-    detalle.className = "progreso__curso";
-
-    const nombre = document.createElement("p");
-    nombre.className = "progreso__curso-nombre";
-    nombre.textContent = curso.icono + " Curso " + curso.id + ": " + curso.titulo;
-    detalle.appendChild(nombre);
-
-    detalle.appendChild(crearBarraDeProgreso(
-      completados,
-      curso.modulos.length,
-      "progreso__barra--curso",
-      "",
-      "Niveles"
-    ));
-
-    seccionCursos.appendChild(detalle);
+    seccionCursos.appendChild(crearCaminoDeCurso(curso));
   });
 
   if (nivelesCompletados === 0) {
@@ -1625,8 +1879,15 @@ async function renderizarProgreso() {
   } else {
     const sinDatos = document.createElement("p");
     sinDatos.className = "progreso__mensaje";
-    sinDatos.textContent = "Aún no completaste el test de nivelación.";
+    sinDatos.textContent = "Aún no completaste el test de nivelación. Es corto y opcional: te ayuda a saber por dónde empezar.";
     seccionInicial.appendChild(sinDatos);
+
+    const botonTest = document.createElement("button");
+    botonTest.className = "btn btn--primario btn--masivo";
+    botonTest.type = "button";
+    botonTest.textContent = "Hacer el test de nivelación";
+    botonTest.addEventListener("click", iniciarTestDesdeProgreso);
+    seccionInicial.appendChild(botonTest);
   }
 
   contenedor.appendChild(seccionInicial);
@@ -1694,6 +1955,335 @@ async function renderizarProgreso() {
   }
 
   contenedor.appendChild(seccionExamen);
+
+  contenedor.appendChild(crearSeccionLogros());
+  contenedor.appendChild(crearWidgetFeedback());
+}
+
+// Muestra cada curso como un camino de 4 paradas, con su estado real.
+function crearCaminoDeCurso(curso) {
+  const bloque = document.createElement("div");
+  bloque.className = "camino-curso";
+
+  const cabecera = document.createElement("div");
+  cabecera.className = "camino-curso__cabecera";
+
+  const nombre = document.createElement("h4");
+  nombre.className = "camino-curso__nombre";
+  nombre.textContent = curso.icono + " Curso " + curso.id + ": " + curso.titulo;
+  cabecera.appendChild(nombre);
+
+  const completados = nivelesCompletadosDeCurso(curso.id);
+  const contador = document.createElement("span");
+  contador.className = "camino-curso__contador" + (completados === curso.modulos.length ? " camino-curso__contador--logrado" : "");
+  contador.textContent = completados + " de " + curso.modulos.length + " niveles";
+  cabecera.appendChild(contador);
+
+  bloque.appendChild(cabecera);
+
+  const camino = document.createElement("ol");
+  camino.className = "camino";
+  camino.setAttribute("aria-label", "Camino del Curso " + curso.id + ": " + curso.titulo);
+
+  curso.modulos.forEach(function (modulo) {
+    const idNivel = idNivelCurso(curso.id, modulo.numero);
+    const completado = nivelEstaCompletado(idNivel);
+    const desbloqueado = nivelDesbloqueado(curso.id, modulo.numero);
+    const fila = progresoModulosCache.find(function (registro) {
+      return Number(registro.modulo_id) === idNivel;
+    });
+    const totalTeorias = teoriasDelNivel(curso.id, modulo).length;
+    const leidas = fila ? Math.min(Number(fila.paso_actual) || 0, totalTeorias) : 0;
+
+    const item = document.createElement("li");
+    item.className = "camino__nodo" +
+      (completado ? " camino__nodo--hecho" : desbloqueado ? " camino__nodo--actual" : " camino__nodo--bloqueado");
+
+    const circulo = document.createElement("span");
+    circulo.className = "camino__circulo";
+    circulo.setAttribute("aria-hidden", "true");
+    circulo.textContent = completado ? "✓" : String(modulo.numero);
+    item.appendChild(circulo);
+
+    const datos = document.createElement("div");
+    datos.className = "camino__datos";
+
+    const titulo = document.createElement("p");
+    titulo.className = "camino__titulo";
+    titulo.textContent = "Nivel " + modulo.numero + " de " + curso.modulos.length + " · " + modulo.nivelComprension;
+    datos.appendChild(titulo);
+
+    const estado = document.createElement("p");
+    estado.className = "camino__estado";
+    if (completado) {
+      estado.textContent = "Completado: leíste las teorías y aprobaste el repaso.";
+    } else if (desbloqueado) {
+      estado.textContent = leidas >= totalTeorias
+        ? "Leíste las " + totalTeorias + " teorías. Falta el repaso del nivel."
+        : "Teorías leídas: " + leidas + " de " + totalTeorias + " · te faltan " + (totalTeorias - leidas) + ".";
+    } else {
+      estado.textContent = "Se abre cuando completes el Nivel " + (modulo.numero - 1) + ".";
+    }
+    datos.appendChild(estado);
+
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.className = "btn camino__accion " + (completado ? "btn--secundario" : "btn--primario");
+    boton.textContent = desbloqueado ? (completado ? "Repasar nivel" : "Seguir este nivel") : "Bloqueado";
+    boton.disabled = !desbloqueado;
+    if (!desbloqueado) {
+      boton.title = "Se abre al completar el Nivel " + (modulo.numero - 1) + ".";
+    } else {
+      boton.addEventListener("click", function () {
+        iniciarNivel(curso, modulo);
+      });
+    }
+    datos.appendChild(boton);
+
+    item.appendChild(datos);
+    camino.appendChild(item);
+  });
+
+  bloque.appendChild(camino);
+  return bloque;
+}
+
+function cursosCompletados() {
+  return CURSOS.filter(function (curso) {
+    return nivelesCompletadosDeCurso(curso.id) === curso.modulos.length;
+  });
+}
+
+function crearSeccionLogros() {
+  const seccion = document.createElement("div");
+  seccion.className = "progreso__seccion";
+
+  const titulo = document.createElement("h3");
+  titulo.className = "progreso__titulo-seccion";
+  titulo.textContent = "🏅 Mis logros y certificados";
+  seccion.appendChild(titulo);
+
+  const hechos = cursosCompletados();
+
+  if (hechos.length === 0) {
+    const mensaje = document.createElement("p");
+    mensaje.className = "progreso__mensaje";
+    mensaje.textContent = "Completá los 4 niveles de un curso para obtener su certificado. Se puede imprimir o guardar en PDF.";
+    seccion.appendChild(mensaje);
+    return seccion;
+  }
+
+  const campusCompleto = hechos.length === CURSOS.length;
+
+  if (campusCompleto) {
+    const destacado = document.createElement("div");
+    destacado.className = "logro-destacado";
+    const texto = document.createElement("p");
+    texto.className = "logro-destacado__texto";
+    texto.textContent = "¡Completaste los " + TOTAL_NIVELES_CAMPUS + " niveles del Campus TAMI! 🎉";
+    destacado.appendChild(texto);
+
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.className = "btn btn--primario btn--masivo";
+    boton.textContent = "📜 Ver mi certificado TAMI";
+    boton.addEventListener("click", function () {
+      abrirCertificado(null);
+    });
+    destacado.appendChild(boton);
+    seccion.appendChild(destacado);
+  }
+
+  const lista = document.createElement("ul");
+  lista.className = "logros-lista";
+
+  hechos.forEach(function (curso) {
+    const item = document.createElement("li");
+    item.className = "logro";
+
+    const texto = document.createElement("span");
+    texto.className = "logro__texto";
+    texto.textContent = "✔ Curso " + curso.id + ": " + curso.titulo;
+    item.appendChild(texto);
+
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.className = "btn btn--secundario logro__accion";
+    boton.textContent = "Ver certificado";
+    boton.addEventListener("click", function () {
+      abrirCertificado(curso.id);
+    });
+    item.appendChild(boton);
+
+    lista.appendChild(item);
+  });
+
+  seccion.appendChild(lista);
+  return seccion;
+}
+
+function abrirCertificado(cursoId) {
+  const sesion = obtenerSesion();
+  if (!sesion) return;
+
+  const nombre = document.getElementById("certificado-nombre");
+  const texto = document.getElementById("certificado-texto");
+  const detalle = document.getElementById("certificado-detalle");
+  const fecha = document.getElementById("certificado-fecha");
+
+  const curso = cursoId ? buscarCurso(cursoId) : null;
+
+  if (nombre) nombre.textContent = sesion.nombre;
+
+  if (texto) {
+    texto.textContent = curso
+      ? "completó el Curso " + curso.id + ": " + curso.titulo +
+        " del Campus Educativo TAMI, con " + curso.modulos.length + " niveles de comprensión."
+      : "completó los " + CURSOS.length + " cursos del Campus Educativo TAMI, con " +
+        TOTAL_NIVELES_CAMPUS + " niveles de comprensión en total.";
+  }
+
+  if (detalle) {
+    detalle.textContent = curso
+      ? "Niveles: " + curso.modulos.map(function (modulo) { return modulo.nivelComprension; }).join(" · ")
+      : "Cursos: " + CURSOS.map(function (c) { return "Curso " + c.id + " – " + c.titulo; }).join(" · ");
+  }
+
+  if (fecha) {
+    const hoy = new Date();
+    fecha.textContent = "Emitido el " + hoy.toLocaleDateString("es-AR", {
+      day: "numeric",
+      month: "long",
+      year: "numeric"
+    }) + " · TAMI · Tecnología Amigable para Mayores e Inclusiva";
+  }
+
+  MAPA_NAVEGACION["pantalla-certificado"][3].etiqueta = curso ? "Curso " + curso.id : "Campus completo";
+  mostrarPantalla("pantalla-certificado");
+}
+
+function crearWidgetFeedback() {
+  const seccion = document.createElement("div");
+  seccion.className = "progreso__seccion";
+
+  const titulo = document.createElement("h3");
+  titulo.className = "progreso__titulo-seccion";
+  titulo.textContent = "💬 ¿Qué te pareció TAMI?";
+  seccion.appendChild(titulo);
+
+  const ayuda = document.createElement("p");
+  ayuda.className = "progreso__mensaje";
+  ayuda.textContent = "Tu opinión nos ayuda a que el sitio sea más fácil para todos. La leemos solo para mejorar TAMI.";
+  seccion.appendChild(ayuda);
+
+  const formulario = document.createElement("form");
+  formulario.className = "feedback";
+  formulario.id = "formulario-feedback";
+  formulario.noValidate = true;
+
+  const grupo = document.createElement("div");
+  grupo.className = "feedback__estrellas";
+  grupo.setAttribute("role", "group");
+  grupo.setAttribute("aria-label", "Puntuación de 1 a 5 estrellas");
+
+  const estrellas = [];
+  let puntaje = 0;
+
+  for (let valor = 1; valor <= 5; valor += 1) {
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.className = "feedback__estrella";
+    boton.textContent = "★";
+    boton.setAttribute("aria-label", valor + (valor === 1 ? " estrella" : " estrellas"));
+    boton.setAttribute("aria-pressed", "false");
+    boton.addEventListener("click", function () {
+      puntaje = valor;
+      estrellas.forEach(function (estrella, indice) {
+        const activa = indice < valor;
+        estrella.classList.toggle("feedback__estrella--activa", activa);
+        estrella.setAttribute("aria-pressed", activa ? "true" : "false");
+      });
+    });
+    estrellas.push(boton);
+    grupo.appendChild(boton);
+  }
+
+  formulario.appendChild(grupo);
+
+  const comentario = document.createElement("div");
+  comentario.className = "campo";
+  const etiqueta = document.createElement("label");
+  etiqueta.className = "campo__etiqueta";
+  etiqueta.htmlFor = "campo-feedback-comentario";
+  etiqueta.textContent = "¿Querés contarnos algo más? (opcional)";
+  comentario.appendChild(etiqueta);
+
+  const area = document.createElement("textarea");
+  area.id = "campo-feedback-comentario";
+  area.className = "campo__input campo__input--textarea";
+  area.rows = 3;
+  area.maxLength = 1000;
+  area.placeholder = "Por ejemplo: lo que más me costó, lo que más me gustó…";
+  comentario.appendChild(area);
+  formulario.appendChild(comentario);
+
+  const estado = document.createElement("p");
+  estado.className = "feedback__estado";
+  estado.setAttribute("role", "status");
+  estado.setAttribute("aria-live", "polite");
+
+  const enviar = document.createElement("button");
+  enviar.type = "submit";
+  enviar.className = "btn btn--primario btn--masivo";
+  enviar.textContent = "Enviar mi opinión";
+
+  formulario.appendChild(enviar);
+  formulario.appendChild(estado);
+
+  formulario.addEventListener("submit", async function (evento) {
+    evento.preventDefault();
+    if (puntaje < 1) {
+      estado.textContent = "Primero elegí de 1 a 5 estrellas.";
+      return;
+    }
+
+    enviar.disabled = true;
+    enviar.textContent = "Enviando…";
+
+    const resultado = await apiPost("feedback", {
+      pantalla: "pantalla-progreso",
+      puntaje: puntaje,
+      comentario: area.value.trim()
+    });
+
+    if (resultado.exito) {
+      estado.textContent = "¡Gracias por tu opinión! Nos ayuda a mejorar. 💚";
+      enviar.textContent = "Opinión enviada";
+      area.disabled = true;
+      estrellas.forEach(function (estrella) { estrella.disabled = true; });
+    } else {
+      estado.textContent = resultado.error && resultado.error !== "offline"
+        ? resultado.error
+        : "No pudimos enviar tu opinión ahora. Probá de nuevo cuando vuelva la conexión.";
+      enviar.disabled = false;
+      enviar.textContent = "Enviar mi opinión";
+    }
+  });
+
+  seccion.appendChild(formulario);
+  return seccion;
+}
+
+function iniciarTestDesdeProgreso() {
+  const resultado = document.getElementById("test-resultado");
+  if (resultado) resultado.hidden = true;
+  const botonEnviar = document.getElementById("btn-enviar-test");
+  if (botonEnviar) {
+    botonEnviar.hidden = false;
+    botonEnviar.disabled = false;
+  }
+  renderizarPreguntasTest("contenedor-preguntas", preguntasTestInicial);
+  mostrarPantalla("pantalla-test");
 }
 
 function crearBarraDeProgreso(valor, total, claseColor, textoSuperior, etiqueta) {
@@ -1803,6 +2393,22 @@ const NIVELES_TRABAJO = [
 ];
 
 const COLORES_AVATAR = ["#0A4B5C", "#007A87", "#2E7D32", "#B45309", "#6D4C41", "#7B1FA2"];
+
+// Materiales gráficos propios (SVG livianos y accesibles).
+const PORTADAS_CURSOS = {
+  1: "../img/curso-1-smartphones.svg",
+  2: "../img/curso-2-redes.svg",
+  3: "../img/curso-3-tramites.svg",
+  4: "../img/curso-4-fraudes.svg",
+  5: "../img/curso-5-comunicacion.svg"
+};
+
+const ICONOS_NIVELES = {
+  1: "../img/nivel-1-descubrir.svg",
+  2: "../img/nivel-2-comprender.svg",
+  3: "../img/nivel-3-practicar.svg",
+  4: "../img/nivel-4-dominar.svg"
+};
 
 let filtroCampusNivel = false;
 let progresoModulosCache = [];
@@ -2073,7 +2679,19 @@ function renderizarListaCampus(cursos) {
     const icono = document.createElement("span");
     icono.className = "modulo__icono";
     icono.setAttribute("aria-hidden", "true");
-    icono.textContent = curso.icono || "📘";
+    const portada = PORTADAS_CURSOS[curso.id];
+    if (portada) {
+      const imagen = document.createElement("img");
+      imagen.className = "modulo__imagen";
+      imagen.src = portada;
+      imagen.alt = "";
+      imagen.width = 56;
+      imagen.height = 56;
+      imagen.loading = "lazy";
+      icono.appendChild(imagen);
+    } else {
+      icono.textContent = curso.icono || "📘";
+    }
     boton.appendChild(icono);
 
     const info = document.createElement("span");
@@ -2116,6 +2734,71 @@ function renderizarListaCampus(cursos) {
     item.appendChild(boton);
     lista.appendChild(item);
   });
+
+  renderizarContinuarCampus();
+}
+
+function renderizarContinuarCampus() {
+  const contenedor = document.getElementById("campus-continuar");
+  if (!contenedor) return;
+
+  contenedor.innerHTML = "";
+
+  if (!obtenerSesion()) {
+    contenedor.hidden = true;
+    return;
+  }
+
+  let objetivo = null;
+  for (let i = 0; i < CURSOS.length && !objetivo; i += 1) {
+    const curso = CURSOS[i];
+    const modulos = Array.isArray(curso.modulos) ? curso.modulos : [];
+    for (let j = 0; j < modulos.length; j += 1) {
+      if (!nivelEstaCompletado(idNivelCurso(curso.id, modulos[j].numero))) {
+        objetivo = { curso: curso, modulo: modulos[j] };
+        break;
+      }
+    }
+  }
+
+  const tarjeta = document.createElement("div");
+  tarjeta.className = "campus-continuar__tarjeta";
+
+  const etiqueta = document.createElement("p");
+  etiqueta.className = "campus-continuar__etiqueta";
+  tarjeta.appendChild(etiqueta);
+
+  const titulo = document.createElement("p");
+  titulo.className = "campus-continuar__titulo";
+  tarjeta.appendChild(titulo);
+
+  const boton = document.createElement("button");
+  boton.type = "button";
+  boton.className = "btn btn--primario campus-continuar__boton";
+
+  if (!objetivo) {
+    etiqueta.textContent = "CAMINO COMPLETO";
+    titulo.textContent = "¡Completaste los " + CURSOS.length + " cursos! Podés repasar cualquier nivel o mirar tu certificado.";
+    boton.textContent = "Ver mi Progreso";
+    boton.addEventListener("click", function () {
+      const botonProgreso = document.getElementById("btn-nav-progreso");
+      if (botonProgreso) botonProgreso.click();
+    });
+  } else {
+    const curso = objetivo.curso;
+    const modulo = objetivo.modulo;
+    etiqueta.textContent = "SEGUÍ DONDE QUEDASTE";
+    titulo.textContent = "Curso " + curso.id + ": " + curso.titulo +
+      " · Nivel " + modulo.numero + " (" + modulo.nivelComprension + ")";
+    boton.textContent = "Continuar el Nivel " + modulo.numero;
+    boton.addEventListener("click", function () {
+      iniciarNivel(curso, modulo);
+    });
+  }
+
+  tarjeta.appendChild(boton);
+  contenedor.appendChild(tarjeta);
+  contenedor.hidden = false;
 }
 
 async function abrirCurso(curso) {
@@ -2144,6 +2827,12 @@ function renderizarCurso(curso) {
   asignarTexto("curso-etiqueta", "Curso " + detalle.id);
   asignarTexto("curso-titulo", detalle.titulo);
   asignarTexto("curso-resumen", detalle.resumen || "");
+
+  const portada = document.getElementById("curso-portada");
+  if (portada) {
+    portada.src = PORTADAS_CURSOS[detalle.id] || "../img/icono.svg";
+    portada.alt = "";
+  }
 
   const meta = document.getElementById("curso-meta");
   if (meta) {
@@ -2174,10 +2863,27 @@ function renderizarCurso(curso) {
     guia.innerHTML = "";
     GUIA_NIVELES.forEach(function (nivel) {
       const item = document.createElement("li");
+      item.className = "curso__nivel-guia";
+
+      const icono = ICONOS_NIVELES[nivel.numero];
+      if (icono) {
+        const imagen = document.createElement("img");
+        imagen.className = "curso__nivel-icono";
+        imagen.src = icono;
+        imagen.alt = "";
+        imagen.width = 40;
+        imagen.height = 40;
+        imagen.loading = "lazy";
+        item.appendChild(imagen);
+      }
+
+      const texto = document.createElement("span");
       const titulo = document.createElement("strong");
       titulo.textContent = "Nivel " + nivel.numero + " · " + nivel.etiqueta + ": ";
-      item.appendChild(titulo);
-      item.appendChild(document.createTextNode(nivel.descripcion));
+      texto.appendChild(titulo);
+      texto.appendChild(document.createTextNode(nivel.descripcion));
+      item.appendChild(texto);
+
       guia.appendChild(item);
     });
   }
@@ -2467,6 +3173,14 @@ async function guardarMiniTrabajo(moduloId, nivel, completado) {
     completado: completado
   });
 
+  if (!resultado.exito && resultado.esConexion) {
+    encolarPendiente("progreso/mini-trabajo", {
+      moduloId: moduloId,
+      nivel: nivel,
+      completado: completado
+    });
+  }
+
   if (resultado.exito) {
     mostrarMensaje(completado ? "¡Trabajo guardado como hecho! 🎉" : "Trabajo marcado como pendiente.", 3000);
   } else {
@@ -2488,8 +3202,13 @@ function aplicarPreferencias(tamano, tema) {
   const temas = ["proteccion", "bosque", "calido"];
   const tamanoValido = tamanos.indexOf(tamano) >= 0 ? tamano : "normal";
   const temaValido = temas.indexOf(tema) >= 0 ? tema : "proteccion";
-  document.documentElement.setAttribute("data-tamano", tamanoValido);
   document.documentElement.setAttribute("data-tema", temaValido);
+
+  const estado = leerEstadoAccesibilidad();
+  if (estado.tamano !== tamanoValido) {
+    guardarLocal(CLAVE_ACCESIBILIDAD, Object.assign(estado, { tamano: tamanoValido }));
+  }
+  aplicarEstadoAccesibilidad(Object.assign(estado, { tamano: tamanoValido }));
 }
 
 function marcarPreferenciasEnFormulario(tamano, tema) {
@@ -2888,6 +3607,7 @@ const MAPA_NAV_ACTIVA = {
   "pantalla-leccion": "btn-nav-campus",
   "pantalla-trabajos": "btn-nav-trabajos",
   "pantalla-progreso": "btn-nav-progreso",
+  "pantalla-certificado": "btn-nav-progreso",
   "pantalla-examen": "btn-nav-progreso",
   "pantalla-escudo": "btn-nav-escudo",
   "pantalla-configuracion": "btn-nav-perfil"
@@ -3024,6 +3744,337 @@ function actualizarHeaderParaSesion(haIniciadoSesion) {
 }
 
 // ============================================
+// AYUDA, ACCESIBILIDAD, LECTURA EN VOZ ALTA Y TOUR
+// ============================================
+
+const CLAVE_ACCESIBILIDAD = "tami:accesibilidad";
+const CLAVE_PENDIENTES = "tami:pendientes";
+const TAMANOS_ACCESIBLES = ["normal", "grande", "xl"];
+
+let pasoActualTour = 0;
+let lecturaEnCurso = false;
+
+function leerEstadoAccesibilidad() {
+  const guardado = leerLocal(CLAVE_ACCESIBILIDAD, null) || {};
+  return {
+    tamano: TAMANOS_ACCESIBLES.indexOf(guardado.tamano) >= 0 ? guardado.tamano : "normal",
+    contraste: Boolean(guardado.contraste)
+  };
+}
+
+function aplicarEstadoAccesibilidad(estado) {
+  const seguro = estado || leerEstadoAccesibilidad();
+  document.documentElement.setAttribute("data-tamano", seguro.tamano);
+  document.documentElement.setAttribute("data-contraste", seguro.contraste ? "alto" : "normal");
+  const botonContraste = document.getElementById("btn-contraste");
+  if (botonContraste) {
+    botonContraste.setAttribute("aria-pressed", seguro.contraste ? "true" : "false");
+  }
+}
+
+function guardarEstadoAccesibilidad(cambios) {
+  const estado = Object.assign(leerEstadoAccesibilidad(), cambios || {});
+  guardarLocal(CLAVE_ACCESIBILIDAD, estado);
+  aplicarEstadoAccesibilidad(estado);
+  return estado;
+}
+
+function cambiarTamanoTexto(direccion) {
+  const estado = leerEstadoAccesibilidad();
+  const indice = TAMANOS_ACCESIBLES.indexOf(estado.tamano);
+  const nuevoIndice = Math.min(
+    TAMANOS_ACCESIBLES.length - 1,
+    Math.max(0, indice + direccion)
+  );
+  if (nuevoIndice === indice) {
+    mostrarMensaje(
+      direccion > 0 ? "Ya estás usando el tamaño de letra más grande." : "Ya estás usando el tamaño de letra más chico.",
+      3000
+    );
+    return;
+  }
+  const nuevo = TAMANOS_ACCESIBLES[nuevoIndice];
+  guardarEstadoAccesibilidad({ tamano: nuevo });
+  mostrarMensaje("Tamaño de letra: " + (nuevo === "normal" ? "normal" : nuevo === "grande" ? "grande" : "muy grande") + ".", 2500);
+
+  // Mantiene las preferencias de la cuenta alineadas (sin bloquear la interfaz).
+  const sesion = obtenerSesion();
+  if (sesion && sesion.token) {
+    apiPut("usuarios/" + sesion.id + "/perfil", { tamanoFuente: nuevo }).then(function (resultado) {
+      if (resultado.exito && resultado.datos) actualizarSesionDesdeUsuario(resultado.datos);
+    });
+  }
+}
+
+function alternarContraste() {
+  const estado = leerEstadoAccesibilidad();
+  const nuevo = guardarEstadoAccesibilidad({ contraste: !estado.contraste });
+  mostrarMensaje(
+    nuevo.contraste
+      ? "Alto contraste activado: fondo oscuro y letras claras."
+      : "Volviste a los colores originales.",
+    3000
+  );
+}
+
+function detenerLectura() {
+  if ("speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
+  }
+  lecturaEnCurso = false;
+  const btnDetener = document.getElementById("btn-detener-lectura");
+  if (btnDetener) btnDetener.hidden = true;
+}
+
+function leerTextoPantalla() {
+  if (!("speechSynthesis" in window)) {
+    mostrarMensaje("Tu navegador no puede leer en voz alta. Probá con Chrome, Edge o Safari.", 5000);
+    return;
+  }
+  detenerLectura();
+
+  const pantalla = document.querySelector(".pantalla:not([hidden])");
+  const fuente = pantalla || document.body;
+  const titulo = fuente.querySelector("h1, h2, h3");
+  const texto = (titulo ? titulo.innerText + ". " : "") + fuente.innerText;
+  const limpio = texto.replace(/\s+/g, " ").trim().slice(0, 6000);
+  if (!limpio) return;
+
+  const mensaje = new SpeechSynthesisUtterance(limpio);
+  mensaje.lang = "es-AR";
+  mensaje.rate = 0.92;
+  mensaje.pitch = 1;
+
+  const voces = window.speechSynthesis.getVoices();
+  const vozEspanol =
+    voces.find(function (voz) { return /es[-_]ar/i.test(voz.lang); }) ||
+    voces.find(function (voz) { return /^es/i.test(voz.lang); });
+  if (vozEspanol) mensaje.voice = vozEspanol;
+
+  mensaje.onend = detenerLectura;
+  mensaje.onerror = detenerLectura;
+
+  lecturaEnCurso = true;
+  const btnDetener = document.getElementById("btn-detener-lectura");
+  if (btnDetener) btnDetener.hidden = false;
+  window.speechSynthesis.speak(mensaje);
+}
+
+// ---------- Aviso de conexión ----------
+
+function actualizarAvisoConexion() {
+  const aviso = document.getElementById("aviso-conexion");
+  if (!aviso) return;
+  aviso.hidden = navigator.onLine !== false;
+}
+
+function marcarSinConexion() {
+  const aviso = document.getElementById("aviso-conexion");
+  if (aviso) aviso.hidden = false;
+}
+
+function marcarConConexion() {
+  actualizarAvisoConexion();
+}
+
+// ---------- Cola de avance pendiente ----------
+
+function encolarPendiente(recurso, cuerpo) {
+  const pendientes = leerLocal(CLAVE_PENDIENTES, []);
+  pendientes.push({ recurso: recurso, cuerpo: cuerpo, hora: new Date().toISOString() });
+  guardarLocal(CLAVE_PENDIENTES, pendientes.slice(-200));
+}
+
+async function sincronizarPendientes() {
+  const pendientes = leerLocal(CLAVE_PENDIENTES, []);
+  if (!pendientes.length || !navigator.onLine) return;
+  const sesion = obtenerSesion();
+  if (!sesion || !sesion.token) return;
+
+  const restantes = [];
+  for (let i = 0; i < pendientes.length; i++) {
+    const item = pendientes[i];
+    const resultado = await apiPost(item.recurso, item.cuerpo);
+    if (!resultado.exito && resultado.esConexion) {
+      restantes.push(item);
+    }
+  }
+  guardarLocal(CLAVE_PENDIENTES, restantes);
+  if (restantes.length < pendientes.length) {
+    mostrarMensaje("Se guardó en el servidor el avance que tenías pendiente.", 4000);
+  }
+}
+
+// ---------- Ayuda ----------
+
+function prepararAyuda() {
+  const sesion = obtenerSesion();
+  const campoNombre = document.getElementById("campo-ayuda-nombre");
+  const campoEmail = document.getElementById("campo-ayuda-email");
+  if (sesion) {
+    if (campoNombre && !campoNombre.value) campoNombre.value = sesion.nombre || "";
+    if (campoEmail && !campoEmail.value) campoEmail.value = sesion.email || "";
+  }
+}
+
+async function enviarSolicitudAyuda(evento) {
+  evento.preventDefault();
+  const nombre = (document.getElementById("campo-ayuda-nombre") || {}).value || "";
+  const email = (document.getElementById("campo-ayuda-email") || {}).value || "";
+  const categoria = (document.getElementById("campo-ayuda-categoria") || {}).value || "general";
+  const mensaje = (document.getElementById("campo-ayuda-mensaje") || {}).value || "";
+  const boton = document.getElementById("btn-enviar-ayuda");
+
+  if (nombre.trim().length < 2) {
+    mostrarMensaje("Escribí tu nombre para que sepamos cómo llamarte.", 4000);
+    return;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    mostrarMensaje("Revisá el correo: tiene que tener el símbolo @ y un punto.", 4500);
+    return;
+  }
+  if (mensaje.trim().length < 5) {
+    mostrarMensaje("Contanos un poco más: el mensaje es muy corto.", 4000);
+    return;
+  }
+
+  if (boton) {
+    boton.disabled = true;
+    boton.textContent = "Enviando…";
+  }
+
+  try {
+    const resultado = await apiPost("ayuda", {
+      nombre: nombre.trim(),
+      email: email.trim(),
+      categoria: categoria,
+      mensaje: mensaje.trim()
+    });
+
+    if (!resultado.exito) {
+      mostrarMensaje(
+        resultado.error || "No pudimos enviar tu mensaje. Revisá tu conexión e intentá de nuevo.",
+        6000
+      );
+      return;
+    }
+
+    mostrarMensaje(resultado.datos.mensaje || "Recibimos tu mensaje. Pronto te respondemos.", 7000);
+    const campoMensaje = document.getElementById("campo-ayuda-mensaje");
+    if (campoMensaje) campoMensaje.value = "";
+  } finally {
+    if (boton) {
+      boton.disabled = false;
+      boton.textContent = "Enviar mi mensaje";
+    }
+  }
+}
+
+// ---------- Recorrido guiado ----------
+
+function pasosDelTour() {
+  const sesion = obtenerSesion();
+  const pasos = [
+    {
+      titulo: "Te damos la bienvenida",
+      texto:
+        "TAMI te acompaña para que uses la tecnología con seguridad y sin apuro. Este recorrido te muestra dónde está cada cosa.",
+      selector: null
+    },
+    {
+      titulo: "El menú de arriba",
+      texto: sesion
+        ? "Desde acá llegás al Campus, a tus trabajos, a tu progreso, al Escudo de Seguridad y a tu perfil."
+        : "Desde acá podés volver al inicio, leer qué es TAMI, ver las lecciones o crear tu cuenta.",
+      selector: sesion ? "#nav-sesion" : "#nav-invitado"
+    },
+    {
+      titulo: sesion ? "Tu entorno seguro" : "Tu primer paso",
+      texto: sesion
+        ? "En el tablero encontrás tus cursos, tus tareas y un resumen de tu avance. Cada botón te dice qué hace."
+        : "Cuando crees tu cuenta vas a tener un tablero con tus cursos y tu avance. El test inicial es opcional.",
+      selector: sesion ? "#pantalla-dashboard" : "#pantalla-inicio"
+    },
+    {
+      titulo: "Letra y colores a tu medida",
+      texto:
+        "Abajo a la derecha están los botones A− y A+ para agrandar o achicar la letra, el botón de alto contraste y el de escuchar en voz alta.",
+      selector: ".barra-accesibilidad"
+    },
+    {
+      titulo: "Siempre hay ayuda",
+      texto:
+        "Con el botón ? abrís esta pantalla de ayuda. También podés escribirnos y te respondemos por correo.",
+      selector: "#btn-abrir-ayuda"
+    }
+  ];
+  return pasos;
+}
+
+function resaltarElementoTour(selector) {
+  document.querySelectorAll(".tour-destacado").forEach(function (elemento) {
+    elemento.classList.remove("tour-destacado");
+  });
+  if (!selector) return;
+  const elemento = document.querySelector(selector);
+  if (!elemento) return;
+  elemento.classList.add("tour-destacado");
+  try {
+    elemento.scrollIntoView({ behavior: "smooth", block: "center" });
+  } catch (error) {
+    elemento.scrollIntoView();
+  }
+}
+
+function mostrarPasoDelTour(indice) {
+  const pasos = pasosDelTour();
+  const paso = Math.min(pasos.length - 1, Math.max(0, indice));
+  pasoActualTour = paso;
+
+  const titulo = document.getElementById("tour-titulo");
+  const texto = document.getElementById("tour-texto");
+  const contador = document.getElementById("tour-paso");
+  const btnAnterior = document.getElementById("btn-tour-anterior");
+  const btnSiguiente = document.getElementById("btn-tour-siguiente");
+
+  if (titulo) titulo.textContent = pasos[paso].titulo;
+  if (texto) texto.textContent = pasos[paso].texto;
+  if (contador) contador.textContent = "Paso " + (paso + 1) + " de " + pasos.length;
+  if (btnAnterior) btnAnterior.disabled = paso === 0;
+  if (btnSiguiente) {
+    btnSiguiente.textContent = paso === pasos.length - 1 ? "Terminar" : "Siguiente →";
+  }
+
+  resaltarElementoTour(pasos[paso].selector);
+}
+
+function iniciarTour() {
+  const dialogo = document.getElementById("dialogo-tour");
+  if (!dialogo || typeof dialogo.showModal !== "function") {
+    mostrarMensaje("Tu navegador no permite el recorrido guiado. Podés leer las preguntas frecuentes.", 5000);
+    return;
+  }
+  mostrarPasoDelTour(0);
+  if (!dialogo.open) dialogo.showModal();
+}
+
+function cerrarTour() {
+  const dialogo = document.getElementById("dialogo-tour");
+  resaltarElementoTour(null);
+  if (dialogo && dialogo.open) dialogo.close();
+}
+
+function tourSiguiente() {
+  const total = pasosDelTour().length;
+  if (pasoActualTour >= total - 1) {
+    cerrarTour();
+    mostrarMensaje("Eso es todo. ¡Ya podés empezar a usar TAMI!", 4000);
+    return;
+  }
+  mostrarPasoDelTour(pasoActualTour + 1);
+}
+
+// ============================================
 // FLUJO PRINCIPAL DE NAVEGACIÓN
 // ============================================
 
@@ -3057,7 +4108,26 @@ function mostrarDashboard(sesion) {
 // INICIALIZACIÓN Y EVENTOS
 // ============================================
 
+function registrarServiceWorker() {
+  if (!("serviceWorker" in navigator) || window.location.protocol === "file:") return;
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("sw.js").catch(function (error) {
+      console.warn("No se pudo activar el modo sin conexión:", error.message);
+    });
+  });
+}
+
 function inicializar() {
+  // --- Preferencias de accesibilidad guardadas en este dispositivo ---
+  aplicarEstadoAccesibilidad();
+  actualizarAvisoConexion();
+  registrarServiceWorker();
+  window.addEventListener("online", function () {
+    actualizarAvisoConexion();
+    sincronizarPendientes();
+  });
+  window.addEventListener("offline", actualizarAvisoConexion);
+
   // --- Señalización de los formularios (guías de pasos) ---
   const senalizacionRegistro = configurarSenalizacion("formulario-registro", "guia-registro");
   const senalizacionLogin = configurarSenalizacion("formulario-login", "guia-login");
@@ -3166,6 +4236,35 @@ function inicializar() {
     });
   });
 
+  // --- Demo publica del Escudo en la pantalla de inicio ---
+  const demoEscudo = document.getElementById("demo-escudo");
+  if (demoEscudo) {
+    iniciarDemoEscudo();
+    const btnDemoEstafa = document.getElementById("btn-demo-estafa");
+    if (btnDemoEstafa) {
+      btnDemoEstafa.addEventListener("click", function () { responderDemoEscudo(true); });
+    }
+    const btnDemoConfiable = document.getElementById("btn-demo-confiable");
+    if (btnDemoConfiable) {
+      btnDemoConfiable.addEventListener("click", function () { responderDemoEscudo(false); });
+    }
+    const btnDemoSiguiente = document.getElementById("btn-demo-siguiente");
+    if (btnDemoSiguiente) {
+      btnDemoSiguiente.addEventListener("click", siguienteDemoEscudo);
+    }
+  }
+
+  const btnDemoCuenta = document.getElementById("btn-demo-cuenta");
+  if (btnDemoCuenta) btnDemoCuenta.addEventListener("click", irARegistro);
+
+  const enlaceDemo = document.querySelector("[data-ir-seccion-demo]");
+  if (enlaceDemo) {
+    enlaceDemo.addEventListener("click", function (evento) {
+      evento.preventDefault();
+      irASeccion("seccion-demo-escudo");
+    });
+  }
+
   // --- Menu movil ---
   const botonMenu = document.getElementById("btn-menu-movil");
   if (botonMenu) {
@@ -3271,6 +4370,7 @@ function inicializar() {
     const nombre = document.getElementById("campo-nombre").value;
     const email = document.getElementById("campo-email-registro").value;
     const password = document.getElementById("campo-password-registro").value;
+    const acepta = document.getElementById("campo-acepta-terminos");
 
     let hayErrores = false;
 
@@ -3292,9 +4392,21 @@ function inicializar() {
       hayErrores = true;
     }
 
+    const errorTerminos = document.getElementById("error-terminos");
+    if (!acepta || !acepta.checked) {
+      if (errorTerminos) {
+        errorTerminos.textContent =
+          "Para crear tu cuenta tenés que aceptar la Política de privacidad y los Términos de uso.";
+        errorTerminos.hidden = false;
+      }
+      hayErrores = true;
+    } else if (errorTerminos) {
+      errorTerminos.hidden = true;
+    }
+
     if (hayErrores) return;
 
-    const resultado = await registrarUsuario(nombre, email, password);
+    const resultado = await registrarUsuario(nombre, email, password, Boolean(acepta && acepta.checked));
     if (!resultado.exito) {
       mostrarError("error-email-registro", resultado.mensaje);
       return;
@@ -3491,6 +4603,34 @@ function inicializar() {
     if (sesion) mostrarDashboard(sesion);
   });
 
+  // --- Test: se puede hacer más tarde (es opcional) ---
+  const btnOmitirTest = document.getElementById("btn-omitir-test");
+  if (btnOmitirTest) {
+    btnOmitirTest.addEventListener("click", function () {
+      const sesion = obtenerSesion();
+      if (sesion) {
+        mostrarMensaje("Podés hacer el test cuando quieras desde Mi Progreso. ¡Empecemos!", 4000);
+        mostrarDashboard(sesion);
+      }
+    });
+  }
+
+  // --- Certificado: imprimir y volver ---
+  const btnImprimirCertificado = document.getElementById("btn-imprimir-certificado");
+  if (btnImprimirCertificado) {
+    btnImprimirCertificado.addEventListener("click", function () {
+      window.print();
+    });
+  }
+
+  const btnVolverCertificado = document.getElementById("btn-volver-certificado");
+  if (btnVolverCertificado) {
+    btnVolverCertificado.addEventListener("click", function () {
+      renderizarProgreso();
+      mostrarPantalla("pantalla-progreso");
+    });
+  }
+
   // --- Dashboard: accesos rapidos ---
   const btnCampus = document.getElementById("btn-campus");
   if (btnCampus) btnCampus.addEventListener("click", abrirCampus);
@@ -3644,8 +4784,223 @@ function inicializar() {
   const formularioFoto = document.getElementById("formulario-foto");
   if (formularioFoto) formularioFoto.addEventListener("submit", guardarFoto);
 
+  // --- Ayuda, accesibilidad y recorrido guiado ---
+  const formularioAyuda = document.getElementById("formulario-ayuda");
+  if (formularioAyuda) formularioAyuda.addEventListener("submit", enviarSolicitudAyuda);
+
+  const btnIniciarTour = document.getElementById("btn-iniciar-tour");
+  if (btnIniciarTour) btnIniciarTour.addEventListener("click", iniciarTour);
+
+  const btnTourAnterior = document.getElementById("btn-tour-anterior");
+  if (btnTourAnterior) {
+    btnTourAnterior.addEventListener("click", function () {
+      mostrarPasoDelTour(pasoActualTour - 1);
+    });
+  }
+
+  const btnTourSiguiente = document.getElementById("btn-tour-siguiente");
+  if (btnTourSiguiente) btnTourSiguiente.addEventListener("click", tourSiguiente);
+
+  const btnTourCerrar = document.getElementById("btn-tour-cerrar");
+  if (btnTourCerrar) btnTourCerrar.addEventListener("click", cerrarTour);
+
+  const dialogoTour = document.getElementById("dialogo-tour");
+  if (dialogoTour) {
+    dialogoTour.addEventListener("close", function () {
+      resaltarElementoTour(null);
+    });
+    dialogoTour.addEventListener("cancel", function () {
+      resaltarElementoTour(null);
+    });
+  }
+
+  const btnLeerPantalla = document.getElementById("btn-leer-pantalla");
+  if (btnLeerPantalla) btnLeerPantalla.addEventListener("click", leerTextoPantalla);
+
+  const btnLeerAyuda = document.getElementById("btn-leer-ayuda");
+  if (btnLeerAyuda) btnLeerAyuda.addEventListener("click", leerTextoPantalla);
+
+  // --- Instalación como aplicación (PWA) ---
+  let eventoInstalacion = null;
+  const btnInstalarApp = document.getElementById("btn-instalar-app");
+  window.addEventListener("beforeinstallprompt", function (evento) {
+    evento.preventDefault();
+    eventoInstalacion = evento;
+    if (btnInstalarApp) btnInstalarApp.hidden = false;
+  });
+  window.addEventListener("appinstalled", function () {
+    eventoInstalacion = null;
+    if (btnInstalarApp) btnInstalarApp.hidden = true;
+    mostrarMensaje("¡TAMI quedó instalada en tu celular! La vas a encontrar con el escudo.", 5000);
+  });
+  if (btnInstalarApp) {
+    btnInstalarApp.addEventListener("click", async function () {
+      if (!eventoInstalacion) {
+        mostrarMensaje("Para instalarla, abrí el menú del navegador y elegí «Agregar a la pantalla de inicio».", 6000);
+        return;
+      }
+      eventoInstalacion.prompt();
+      const eleccion = await eventoInstalacion.userChoice;
+      if (eleccion && eleccion.outcome === "accepted") {
+        btnInstalarApp.hidden = true;
+      }
+      eventoInstalacion = null;
+    });
+  }
+
+  const btnDetenerLectura = document.getElementById("btn-detener-lectura");
+  if (btnDetenerLectura) btnDetenerLectura.addEventListener("click", detenerLectura);
+
+  const btnReducirTexto = document.getElementById("btn-reducir-texto");
+  if (btnReducirTexto) {
+    btnReducirTexto.addEventListener("click", function () {
+      cambiarTamanoTexto(-1);
+    });
+  }
+
+  const btnAumentarTexto = document.getElementById("btn-aumentar-texto");
+  if (btnAumentarTexto) {
+    btnAumentarTexto.addEventListener("click", function () {
+      cambiarTamanoTexto(1);
+    });
+  }
+
+  const btnContraste = document.getElementById("btn-contraste");
+  if (btnContraste) btnContraste.addEventListener("click", alternarContraste);
+
+  const btnAbrirAyuda = document.getElementById("btn-abrir-ayuda");
+  if (btnAbrirAyuda) {
+    btnAbrirAyuda.addEventListener("click", function () {
+      mostrarPantalla("pantalla-ayuda");
+    });
+  }
+
+  const btnVolverAyuda = document.getElementById("btn-volver-ayuda");
+  if (btnVolverAyuda) {
+    btnVolverAyuda.addEventListener("click", function () {
+      const sesion = obtenerSesion();
+      if (sesion) {
+        mostrarDashboard(sesion);
+      } else {
+        mostrarPantalla("pantalla-inicio");
+      }
+    });
+  }
+
+  // --- Mis datos: descargar copia y eliminar cuenta ---
+  const btnExportarDatos = document.getElementById("btn-exportar-datos");
+  if (btnExportarDatos) {
+    btnExportarDatos.addEventListener("click", async function () {
+      const sesion = obtenerSesion();
+      if (!sesion) return;
+      btnExportarDatos.disabled = true;
+      const textoOriginal = btnExportarDatos.textContent;
+      btnExportarDatos.textContent = "Preparando tu copia…";
+      try {
+        const respuesta = await fetchApi("usuarios/" + sesion.id + "/datos", {
+          headers: cabecerasApi()
+        });
+        if (respuesta.status === 401) {
+          manejarSesionVencida();
+          return;
+        }
+        if (!respuesta.ok) {
+          throw new Error("No se pudo preparar la copia");
+        }
+        const blob = await respuesta.blob();
+        const url = URL.createObjectURL(blob);
+        const enlace = document.createElement("a");
+        enlace.href = url;
+        enlace.download = "tami-mis-datos.json";
+        document.body.appendChild(enlace);
+        enlace.click();
+        enlace.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+        mostrarMensaje("Tu copia se descargó. Buscala en la carpeta de Descargas.", 5000);
+      } catch (error) {
+        mostrarMensaje("No pudimos preparar tu copia. Revisá tu conexión e intentá de nuevo.", 5000);
+      } finally {
+        btnExportarDatos.disabled = false;
+        btnExportarDatos.textContent = textoOriginal;
+      }
+    });
+  }
+
+  const formularioEliminar = document.getElementById("formulario-eliminar-cuenta");
+  if (formularioEliminar) {
+    formularioEliminar.addEventListener("submit", async function (evento) {
+      evento.preventDefault();
+      const sesion = obtenerSesion();
+      if (!sesion) return;
+
+      const password = (document.getElementById("campo-eliminar-password") || {}).value || "";
+      const confirmar = (document.getElementById("campo-eliminar-confirmar") || {}).value || "";
+
+      if (confirmar.trim().toUpperCase() !== "ELIMINAR") {
+        mostrarMensaje("Para confirmar, escribí la palabra ELIMINAR en el campo.", 5000);
+        return;
+      }
+      if (!password) {
+        mostrarMensaje("Escribí tu contraseña actual para confirmar.", 5000);
+        return;
+      }
+      if (!window.confirm("¿Eliminar tu cuenta y todos tus datos? Esta acción no se puede deshacer.")) {
+        return;
+      }
+
+      const resultado = await apiDelete("usuarios/" + sesion.id, {
+        passwordActual: password,
+        confirmar: "ELIMINAR"
+      });
+
+      if (!resultado.exito) {
+        mostrarMensaje(resultado.error || "No se pudo eliminar la cuenta.", 6000);
+        return;
+      }
+
+      cerrarSesion();
+      mostrarPantalla("pantalla-inicio");
+      mostrarMensaje("Tu cuenta y tus datos fueron eliminados. Gracias por haber sido parte de TAMI.", 7000);
+    });
+  }
+
+  // --- Enlaces internos a Privacidad, Términos y Ayuda ---
+  document.addEventListener("click", function (evento) {
+    const enlace = evento.target.closest("[data-ir-pantalla]");
+    if (!enlace) return;
+    evento.preventDefault();
+    const destino = enlace.getAttribute("data-ir-pantalla");
+    mostrarPantalla(destino);
+    const seccion = enlace.getAttribute("data-seccion-legal");
+    if (seccion) {
+      const bloque = document.getElementById("legal-" + seccion);
+      if (bloque) {
+        setTimeout(function () {
+          bloque.scrollIntoView({ behavior: "smooth", block: "start" });
+          bloque.setAttribute("tabindex", "-1");
+          bloque.focus({ preventScroll: true });
+        }, 120);
+      }
+    }
+  });
+
+  const btnVolverLegal = document.getElementById("btn-volver-legal");
+  if (btnVolverLegal) {
+    btnVolverLegal.addEventListener("click", function () {
+      const sesion = obtenerSesion();
+      if (sesion) {
+        mostrarDashboard(sesion);
+      } else {
+        mostrarPantalla("pantalla-inicio");
+      }
+    });
+  }
+
   // --- Cerrar sesion (cabecera y configuracion) ---
   function salirDeLaCuenta() {
+    if (!window.confirm("¿Querés cerrar sesión? Tus datos y tu avance quedan guardados.")) {
+      return;
+    }
     cerrarSesion();
     mostrarMensaje("Sesión cerrada correctamente. Tus datos están guardados.", 3000);
   }

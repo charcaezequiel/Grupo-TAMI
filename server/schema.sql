@@ -34,6 +34,10 @@ CREATE TABLE IF NOT EXISTS usuarios (
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS tamano_fuente TEXT NOT NULL DEFAULT 'normal';
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS tema_preferido TEXT NOT NULL DEFAULT 'proteccion';
 
+-- Consentimiento informado (Ley 25.326): momento en que la persona aceptó
+-- la política de privacidad y los términos de uso al crear la cuenta.
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS consentimiento_en TIMESTAMP;
+
 -- Las restricciones de las preferencias se crean solo si no existen
 -- (PostgreSQL no admite "ADD CONSTRAINT IF NOT EXISTS").
 DO $$
@@ -260,3 +264,44 @@ ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS failed_login_count INTEGER NOT NUL
 
 CREATE INDEX IF NOT EXISTS idx_usuarios_role_id ON usuarios (role_id);
 CREATE INDEX IF NOT EXISTS idx_usuarios_is_active ON usuarios (is_active);
+
+-- ============================================
+-- AYUDA Y OPINIONES DE LA COMUNIDAD
+-- ============================================
+
+-- Pedidos de ayuda enviados desde la pantalla "Ayuda" o desde el formulario
+-- de contacto. Quedan disponibles para el equipo en el panel administrativo.
+CREATE TABLE IF NOT EXISTS solicitudes_ayuda (
+  id SERIAL PRIMARY KEY,
+  usuario_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+  nombre TEXT NOT NULL,
+  email TEXT NOT NULL,
+  categoria TEXT NOT NULL DEFAULT 'general',
+  mensaje TEXT NOT NULL,
+  estado TEXT NOT NULL DEFAULT 'pendiente',
+  creado_en TIMESTAMP NOT NULL DEFAULT NOW(),
+  atendido_en TIMESTAMP,
+  CONSTRAINT ayuda_estado_ck CHECK (lower(estado) IN ('pendiente','en_proceso','resuelto')),
+  CONSTRAINT ayuda_mensaje_len_ck CHECK (char_length(btrim(mensaje)) BETWEEN 5 AND 2000),
+  CONSTRAINT ayuda_nombre_len_ck CHECK (char_length(btrim(nombre)) BETWEEN 2 AND 100)
+);
+CREATE INDEX IF NOT EXISTS idx_ayuda_estado ON solicitudes_ayuda (lower(estado), creado_en DESC);
+CREATE INDEX IF NOT EXISTS idx_ayuda_usuario ON solicitudes_ayuda (usuario_id, creado_en DESC);
+
+-- Opinión de la experiencia: una calificación simple (1 a 5) y un comentario
+-- opcional. Sirve para mejorar la claridad de las pantallas.
+CREATE TABLE IF NOT EXISTS feedback_experiencia (
+  id SERIAL PRIMARY KEY,
+  usuario_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+  pantalla TEXT,
+  puntaje INTEGER NOT NULL,
+  comentario TEXT,
+  creado_en TIMESTAMP NOT NULL DEFAULT NOW(),
+  CONSTRAINT feedback_puntaje_ck CHECK (puntaje BETWEEN 1 AND 5),
+  CONSTRAINT feedback_comentario_len_ck CHECK (
+    comentario IS NULL OR char_length(comentario) <= 1000
+  )
+);
+CREATE INDEX IF NOT EXISTS idx_feedback_creado ON feedback_experiencia (creado_en DESC);
+CREATE INDEX IF NOT EXISTS idx_feedback_pantalla ON feedback_experiencia (pantalla, creado_en DESC);
+

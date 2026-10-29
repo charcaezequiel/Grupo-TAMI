@@ -22,18 +22,17 @@ Un espacio digital donde ninguna persona mayor quede afuera: aprender, protegers
 
 1. Sistema de registro y login accesible (frontend + backend + PostgreSQL).
 2. Test de nivelacion digital inicial.
-3. Dashboard de entorno seguro con 3 accesos.
-4. Campus educativo con el Modulo 4 (Fraudes Digitales / Phishing) activo.
-5. Escudo de Seguridad con alertas de fraude.
-6. Examen post-leccion y visualizacion de progreso.
-7. Fallback offline con LocalStorage.
+3. Dashboard de entorno seguro con 4 accesos (Campus, Escudo, Trabajos, Progreso).
+4. Campus educativo con los 5 cursos activos y 4 niveles desbloqueables por curso.
+5. Escudo de Seguridad con 15 retos antiestafa y demo publica en el inicio.
+6. Examen por nivel, mini trabajos, certificado imprimible y visualizacion de progreso.
+7. Fallback offline con LocalStorage, PWA instalable y boton de ayuda.
 
 ### Fuera del alcance (v1.0)
 
-- Los modulos 1, 2, 3 y 5 del Campus (quedan "Proximamente").
 - Pagos, compras ni transacciones.
-- Panel administrativo de gestion de contenido.
 - Notificaciones push o SMS.
+- Contenido generado por los usuarios (foros, comentarios publicos).
 
 ## 4. Equipo y Roles (Scrum)
 

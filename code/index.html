@@ -7,6 +7,18 @@
   <meta name="theme-color" content="#0A4B5C">
   <title>TAMI | Tecnologia Amigable para Mayores</title>
   <link rel="icon" type="image/svg+xml" href="../img/icono.svg">
+  <link rel="apple-touch-icon" href="../img/apple-touch-icon.png">
+  <link rel="manifest" href="manifest.json">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="TAMI">
+  <meta property="og:title" content="TAMI | Tecnología Amigable para Mayores e Inclusiva">
+  <meta property="og:description" content="Aprendé a usar tu celular y a protegerte de las estafas a tu ritmo, con letras grandes, ayuda y lectura en voz alta.">
+  <meta property="og:image" content="../img/og-image.png">
+  <meta property="og:locale" content="es_AR">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="TAMI | Tecnología Amigable para Mayores e Inclusiva">
+  <meta name="twitter:description" content="Aprendé a usar tu celular y a protegerte de las estafas a tu ritmo.">
+  <meta name="twitter:image" content="../img/og-image.png">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -64,18 +76,23 @@
             </button>
           </li>
           <li>
-            <button class="header__nav-item" type="button" data-seccion="seccion-lecciones">
-              Lecciones
-            </button>
-          </li>
-          <li>
             <button class="header__nav-item" type="button" data-seccion="seccion-como-funciona">
               C&oacute;mo funciona
             </button>
           </li>
           <li>
+            <button class="header__nav-item" type="button" data-seccion="seccion-lecciones">
+              Lecciones
+            </button>
+          </li>
+          <li>
             <button class="header__nav-item" type="button" data-seccion="seccion-impacto">
               Impacto
+            </button>
+          </li>
+          <li>
+            <button class="header__nav-item" type="button" data-seccion="seccion-preguntas">
+              Preguntas
             </button>
           </li>
         </ul>
@@ -93,12 +110,6 @@
             </button>
           </li>
           <li>
-            <button class="header__nav-item" id="btn-nav-trabajos" type="button">
-              <span class="header__nav-icono" aria-hidden="true">&#x1F6E0;&#xFE0F;</span>
-              <span>Trabajos</span>
-            </button>
-          </li>
-          <li>
             <button class="header__nav-item" id="btn-nav-progreso" type="button">
               <span class="header__nav-icono" aria-hidden="true">&#x1F4CA;</span>
               <span>Progreso</span>
@@ -108,6 +119,12 @@
             <button class="header__nav-item" id="btn-nav-escudo" type="button">
               <span class="header__nav-icono" aria-hidden="true">&#x1F512;</span>
               <span>Escudo</span>
+            </button>
+          </li>
+          <li>
+            <button class="header__nav-item" id="btn-nav-trabajos" type="button">
+              <span class="header__nav-icono" aria-hidden="true">&#x1F6E0;&#xFE0F;</span>
+              <span>Trabajos</span>
             </button>
           </li>
           <li>
@@ -184,11 +201,11 @@
       <!-- ---------- HERO / BIENVENIDA ---------- -->
       <div class="hero">
         <img
-          class="hero__logo"
-          src="../img/logo.svg"
-          alt="Logo de TAMI: Tecnología Amigable para Mayores e Inclusiva"
-          width="500"
-          height="140"
+          class="hero__ilustracion"
+          src="../img/hero-ilustracion.svg"
+          alt="Dos personas mayores conversan sonrientes con una tableta que muestra el escudo de TAMI"
+          width="720"
+          height="420"
         >
         <h2 id="inicio-titulo" class="hero__titulo">Bienvenido a TAMI</h2>
         <p class="hero__texto">
@@ -289,6 +306,101 @@
             una lección <strong>sin ayuda de otra persona</strong>.
           </p>
         </div>
+      </section>
+
+      <!-- ---------- CÓMO FUNCIONA ---------- -->
+      <section class="panel" id="seccion-como-funciona" aria-labelledby="recorrido-titulo">
+        <div class="panel__encabezado">
+          <span class="panel__icono" aria-hidden="true">&#x1F9ED;</span>
+          <h2 id="recorrido-titulo" class="panel__titulo">Cómo funciona el aprendizaje</h2>
+        </div>
+        <p class="panel__texto">
+          El recorrido está pensado para que siempre sepas dónde estás y qué sigue:
+        </p>
+        <ol class="recorrido" role="list">
+          <li class="recorrido__paso">
+            <span class="recorrido__num" aria-hidden="true">1</span>
+            <h3 class="recorrido__titulo">Test de nivelación</h3>
+            <p class="recorrido__texto">
+              3 preguntas sencillas, sin respuestas buenas ni malas. Sirven para conocer
+              tu punto de partida y adaptar el contenido a tu nivel digital.
+            </p>
+          </li>
+          <li class="recorrido__paso">
+            <span class="recorrido__num" aria-hidden="true">2</span>
+            <h3 class="recorrido__titulo">Lección paso a paso</h3>
+            <p class="recorrido__texto">
+              Diez teorías por nivel, una por pantalla, con ejemplos concretos y un consejo final en cada una.
+              Podés avanzar y retroceder tantas veces como quieras.
+            </p>
+          </li>
+          <li class="recorrido__paso">
+            <span class="recorrido__num" aria-hidden="true">3</span>
+            <h3 class="recorrido__titulo">Examen rápido</h3>
+            <p class="recorrido__texto">
+              6 preguntas al final de la lección para comprobar lo aprendido y reforzar
+              las ideas más importantes antes de seguir.
+            </p>
+          </li>
+          <li class="recorrido__paso">
+            <span class="recorrido__num" aria-hidden="true">4</span>
+            <h3 class="recorrido__titulo">Mi Progreso</h3>
+            <p class="recorrido__texto">
+              Barras de avance, nivel alcanzado y resultados guardados. Todo lo que vas
+              aprendiendo queda registrado para que veas cuánto avanzaste.
+            </p>
+          </li>
+          <li class="recorrido__paso">
+            <span class="recorrido__num" aria-hidden="true">5</span>
+            <h3 class="recorrido__titulo">Escudo de Seguridad</h3>
+            <p class="recorrido__texto">
+              Mini retos con correos, mensajes y llamadas falsas: practicá cómo detectar
+              una estafa y reconocer de qué tipo de engaño se trata.
+            </p>
+          </li>
+        </ol>
+        <p class="panel__texto">
+          <strong>Tus datos están seguros:</strong> se guardan en la nube (Supabase),
+          las contraseñas se almacenan cifradas con bcrypt y nunca en texto plano. Si
+          no tenés internet, la aplicación funciona igualmente con una copia local
+          guardada en tu dispositivo.
+        </p>
+      </section>
+
+      <!-- ---------- DEMO INTERACTIVA DEL ESCUDO ---------- -->
+      <section class="panel panel--demo" id="seccion-demo-escudo" aria-labelledby="demo-titulo">
+        <div class="panel__encabezado">
+          <span class="panel__icono" aria-hidden="true">&#x1F6E1;&#xFE0F;</span>
+          <h2 id="demo-titulo" class="panel__titulo">Probalo vos: ¿es estafa o es confiable?</h2>
+        </div>
+        <p class="panel__texto">
+          Así se practica en el <strong>Escudo de Seguridad</strong>. Leé el mensaje y elegí
+          una opción: no hay nota ni apuro, y cada respuesta te explica qué señales mirar.
+        </p>
+        <div class="demo-escudo" id="demo-escudo">
+          <p class="demo-escudo__progreso" id="demo-progreso">Caso 1 de 3</p>
+          <div class="demo-escudo__mensaje">
+            <p class="demo-escudo__canal" id="demo-canal"></p>
+            <p class="demo-escudo__remitente" id="demo-remitente"></p>
+            <p class="demo-escudo__texto" id="demo-texto"></p>
+          </div>
+          <div class="demo-escudo__acciones" id="demo-acciones">
+            <button class="btn btn--masivo demo-escudo__boton demo-escudo__boton--estafa" id="btn-demo-estafa" type="button">
+              <span aria-hidden="true">&#x1F6A8;</span> Es una estafa
+            </button>
+            <button class="btn btn--masivo demo-escudo__boton demo-escudo__boton--confiable" id="btn-demo-confiable" type="button">
+              <span aria-hidden="true">&#x2705;</span> Parece confiable
+            </button>
+          </div>
+          <div class="demo-escudo__resultado" id="demo-resultado" role="status" aria-live="polite" tabindex="-1" hidden></div>
+          <button class="btn btn--primario demo-escudo__siguiente" id="btn-demo-siguiente" type="button" hidden>
+            Siguiente caso
+          </button>
+        </div>
+        <p class="demo-escudo__nota">
+          ¿Querés practicar con muchos más casos y ganar la insignia del Escudo?
+          <button class="enlace-en-linea" id="btn-demo-cuenta" type="button">Creá tu cuenta gratis</button>.
+        </p>
       </section>
 
       <!-- ---------- LAS LECCIONES ---------- -->
@@ -485,65 +597,6 @@
         </ol>
       </section>
 
-      <!-- ---------- CÓMO FUNCIONA ---------- -->
-      <section class="panel" id="seccion-como-funciona" aria-labelledby="recorrido-titulo">
-        <div class="panel__encabezado">
-          <span class="panel__icono" aria-hidden="true">&#x1F9ED;</span>
-          <h2 id="recorrido-titulo" class="panel__titulo">Cómo funciona el aprendizaje</h2>
-        </div>
-        <p class="panel__texto">
-          El recorrido está pensado para que siempre sepas dónde estás y qué sigue:
-        </p>
-        <ol class="recorrido" role="list">
-          <li class="recorrido__paso">
-            <span class="recorrido__num" aria-hidden="true">1</span>
-            <h3 class="recorrido__titulo">Test de nivelación</h3>
-            <p class="recorrido__texto">
-              3 preguntas sencillas, sin respuestas buenas ni malas. Sirven para conocer
-              tu punto de partida y adaptar el contenido a tu nivel digital.
-            </p>
-          </li>
-          <li class="recorrido__paso">
-            <span class="recorrido__num" aria-hidden="true">2</span>
-            <h3 class="recorrido__titulo">Lección paso a paso</h3>
-            <p class="recorrido__texto">
-              Diez teorías por nivel, una por pantalla, con ejemplos concretos y un consejo final en cada una.
-              Podés avanzar y retroceder tantas veces como quieras.
-            </p>
-          </li>
-          <li class="recorrido__paso">
-            <span class="recorrido__num" aria-hidden="true">3</span>
-            <h3 class="recorrido__titulo">Examen rápido</h3>
-            <p class="recorrido__texto">
-              6 preguntas al final de la lección para comprobar lo aprendido y reforzar
-              las ideas más importantes antes de seguir.
-            </p>
-          </li>
-          <li class="recorrido__paso">
-            <span class="recorrido__num" aria-hidden="true">4</span>
-            <h3 class="recorrido__titulo">Mi Progreso</h3>
-            <p class="recorrido__texto">
-              Barras de avance, nivel alcanzado y resultados guardados. Todo lo que vas
-              aprendiendo queda registrado para que veas cuánto avanzaste.
-            </p>
-          </li>
-          <li class="recorrido__paso">
-            <span class="recorrido__num" aria-hidden="true">5</span>
-            <h3 class="recorrido__titulo">Escudo de Seguridad</h3>
-            <p class="recorrido__texto">
-              Mini retos con correos, mensajes y llamadas falsas: practicá cómo detectar
-              una estafa y reconocer de qué tipo de engaño se trata.
-            </p>
-          </li>
-        </ol>
-        <p class="panel__texto">
-          <strong>Tus datos están seguros:</strong> se guardan en la nube (Supabase),
-          las contraseñas se almacenan cifradas con bcrypt y nunca en texto plano. Si
-          no tenés internet, la aplicación funciona igualmente con una copia local
-          guardada en tu dispositivo.
-        </p>
-      </section>
-
       <!-- ---------- IMPACTO ---------- -->
       <section class="panel panel--impacto" id="seccion-impacto" aria-labelledby="impacto-titulo">
         <div class="panel__encabezado">
@@ -595,6 +648,62 @@
         </blockquote>
       </section>
 
+      <!-- ---------- PREGUNTAS FRECUENTES ---------- -->
+      <section class="panel" id="seccion-preguntas" aria-labelledby="preguntas-titulo">
+        <div class="panel__encabezado">
+          <span class="panel__icono" aria-hidden="true">&#x2753;</span>
+          <h2 id="preguntas-titulo" class="panel__titulo">Preguntas frecuentes</h2>
+        </div>
+        <p class="panel__texto">
+          Las dudas que más nos cuentan las personas antes de empezar. Tocá una pregunta
+          para ver la respuesta.
+        </p>
+        <div class="faq">
+          <details class="faq__item">
+            <summary class="faq__pregunta">¿TAMI es gratis?</summary>
+            <div class="faq__respuesta">
+              <p>Sí, es totalmente gratuito y no tiene publicidad. Es un proyecto integrador de la Escuela Técnica N°20, pensado como servicio para la comunidad.</p>
+            </div>
+          </details>
+          <details class="faq__item">
+            <summary class="faq__pregunta">¿Necesito saber usar una computadora o un celular?</summary>
+            <div class="faq__respuesta">
+              <p>No. Empezás desde cero: el test inicial de 3 preguntas nos dice tu punto de partida y los cursos avanzan paso a paso, con letras grandes y explicaciones simples.</p>
+            </div>
+          </details>
+          <details class="faq__item">
+            <summary class="faq__pregunta">¿Qué pasa con mis datos personales?</summary>
+            <div class="faq__respuesta">
+              <p>Pedimos tu consentimiento al registrarte, guardamos solo lo necesario para tu progreso y nunca compartimos tus datos. Podés descargar una copia o eliminar tu cuenta cuando quieras desde <strong>Mi perfil</strong>. Está detallado en la <a class="enlace-en-linea" href="#" data-ir-pantalla="pantalla-legal" data-seccion-legal="privacidad">política de privacidad</a>.</p>
+            </div>
+          </details>
+          <details class="faq__item">
+            <summary class="faq__pregunta">¿Puedo usarlo si se corta internet?</summary>
+            <div class="faq__respuesta">
+              <p>Sí. La aplicación guarda una copia en tu dispositivo y sigue funcionando sin conexión. Cuando vuelve internet, tu avance se sincroniza con tu cuenta.</p>
+            </div>
+          </details>
+          <details class="faq__item">
+            <summary class="faq__pregunta">¿Cuánto tiempo me lleva cada lección?</summary>
+            <div class="faq__respuesta">
+              <p>Cada nivel dura entre 15 y 25 minutos y podés dejarlo y retomarlo cuando quieras. No hay fechas límite: el ritmo lo ponés vos.</p>
+            </div>
+          </details>
+          <details class="faq__item">
+            <summary class="faq__pregunta">¿Qué hago si me trabé o no entiendo algo?</summary>
+            <div class="faq__respuesta">
+              <p>En todas las pantallas tenés el botón <strong>Leer en voz alta</strong> y el botón de <strong>Ayuda</strong>. Desde ahí podés pedir acompañamiento y te respondemos. También podés agrandar las letras con A+ o activar el alto contraste.</p>
+            </div>
+          </details>
+          <details class="faq__item">
+            <summary class="faq__pregunta">¿Puedo practicar antes de crear una cuenta?</summary>
+            <div class="faq__respuesta">
+              <p>Sí. Probá la demo del <a class="enlace-en-linea" href="#seccion-demo-escudo" data-ir-seccion-demo="1">Escudo de Seguridad</a> que está más arriba y mirá cómo son los ejercicios. Para guardar tu progreso y obtener tu certificado necesitás una cuenta.</p>
+            </div>
+          </details>
+        </div>
+      </section>
+
       <!-- ---------- LLAMADA A LA ACCIÓN ---------- -->
       <div class="cta-final">
         <span class="cta-final__icono" aria-hidden="true">&#x1F44B;</span>
@@ -635,13 +744,14 @@
           Crear mi cuenta
         </h2>
         <p class="contenedor-formulario__subtitulo">
-          Tus datos quedan guardados solo en este dispositivo. Estás en un entorno seguro.
+          Creamos tu cuenta para guardar tu avance. Tus datos se guardan de forma segura
+          y solo se usan para tu aprendizaje.
         </p>
 
         <!-- Señalización paso a paso para completar el registro -->
         <div class="guia" id="guia-registro" role="group" aria-labelledby="guia-registro-titulo">
           <p class="guia__titulo" id="guia-registro-titulo">
-            <span aria-hidden="true">📋</span> Cómo crear tu cuenta: 4 pasos sencillos
+            <span aria-hidden="true">📋</span> Cómo crear tu cuenta: 5 pasos sencillos
           </p>
           <ol class="guia__pasos">
             <li class="guia__paso" data-campo="campo-nombre">
@@ -656,8 +766,12 @@
               <span class="guia__num" aria-hidden="true">3</span>
               <span class="guia__texto">Creá una <strong>contraseña</strong> de 6 caracteres o más.</span>
             </li>
-            <li class="guia__paso guia__paso--final" data-final>
+            <li class="guia__paso" data-campo="campo-acepta-terminos">
               <span class="guia__num" aria-hidden="true">4</span>
+              <span class="guia__texto">Leé y <strong>aceptá las condiciones</strong>.</span>
+            </li>
+            <li class="guia__paso guia__paso--final" data-final>
+              <span class="guia__num" aria-hidden="true">5</span>
               <span class="guia__texto">Tocá el botón <strong>Registrar mi cuenta</strong>.</span>
             </li>
           </ol>
@@ -719,11 +833,30 @@
             >
             <span id="error-password-registro" class="campo__error" role="alert" hidden></span>
           </div>
+          <div class="campo campo--checkbox">
+            <label for="campo-acepta-terminos" class="campo__etiqueta-checkbox">
+              <input
+                type="checkbox"
+                id="campo-acepta-terminos"
+                required
+                aria-required="true"
+                aria-describedby="error-terminos"
+              >
+              <span>
+                Leí y acepto la
+                <a href="#" class="enlace-en-linea" data-ir-pantalla="pantalla-legal" data-seccion-legal="privacidad">Política de privacidad</a>
+                y los
+                <a href="#" class="enlace-en-linea" data-ir-pantalla="pantalla-legal" data-seccion-legal="terminos">Términos de uso</a>.
+              </span>
+            </label>
+            <span id="error-terminos" class="campo__error" role="alert" hidden></span>
+          </div>
           <button type="submit" class="btn btn--primario btn--masivo">
-            <span aria-hidden="true">✅</span> Paso 4: Registrar mi cuenta
+            <span aria-hidden="true">✅</span> Paso 5: Registrar mi cuenta
           </button>
           <p class="campo__nota">
-            <span aria-hidden="true">🔒</span> Al tocar el botón, tu cuenta queda creada al instante y tus datos se guardan solo en este dispositivo.
+            <span aria-hidden="true">🔒</span> Tu cuenta se crea al instante. Los datos se guardan
+            de forma segura en el servidor de TAMI y solo se usan para tu aprendizaje.
           </p>
           <button type="button" class="btn btn--secundario btn--alternativa" id="btn-ir-login-desde-registro">
             ¿Ya tenés cuenta? Ingresar con la mía
@@ -1008,6 +1141,13 @@
           Responde estas 3 preguntas para que TAMI conozca tu nivel actual. No hay respuestas buenas ni malas.
         </p>
 
+        <button class="btn btn--fantasma test__omitir" id="btn-omitir-test" type="button">
+          Hacer el test m&aacute;s tarde
+        </button>
+        <p class="test__nota">
+          No es obligatorio. Pod&eacute;s hacerlo cuando quieras desde &quot;Mi Progreso&quot;.
+        </p>
+
         <div id="contenedor-preguntas" class="test" aria-live="polite">
         </div>
 
@@ -1108,6 +1248,8 @@
         <h2 id="campus-titulo" class="contenedor-lista__titulo">&#x1F4DA; Campus Educativo</h2>
         <p class="contenedor-lista__subtitulo">Eleg&iacute; un curso. Cada curso tiene 4 niveles de comprensi&oacute;n: Descubrir, Comprender, Practicar y Dominar y proteger.</p>
 
+        <div id="campus-continuar" class="campus-continuar" hidden></div>
+
         <div class="campus__filtros" role="group" aria-label="Filtrar los cursos del campus">
           <button class="chip-filtro chip-filtro--activo" id="btn-filtro-todos" type="button" aria-pressed="true">
             Todos
@@ -1136,6 +1278,7 @@
       hidden
     >
       <div class="contenedor-lista">
+        <img id="curso-portada" class="curso__portada" src="../img/curso-1-smartphones.svg" alt="" width="96" height="96">
         <p class="curso__etiqueta" id="curso-etiqueta">Curso</p>
         <h2 id="curso-titulo" class="contenedor-lista__titulo">Curso</h2>
         <p id="curso-resumen" class="contenedor-lista__subtitulo"></p>
@@ -1246,6 +1389,41 @@
         <button class="btn btn--fantasma btn--volver" id="btn-volver-progreso" type="button">
           &#x2190; Volver al menu
         </button>
+      </div>
+    </section>
+
+    <!-- ============================================
+         PANTALLA: CERTIFICADO (para imprimir o guardar en PDF)
+         ============================================ -->
+    <section
+      id="pantalla-certificado"
+      class="pantalla"
+      aria-labelledby="certificado-titulo"
+      hidden
+    >
+      <div class="certificado-contenedor">
+        <div id="certificado-hoja" class="certificado">
+          <p class="certificado__escuela">Escuela T&eacute;cnica N&deg;20 &quot;Carolina Muzilli&quot; &middot; Proyecto Integrador III</p>
+          <h2 id="certificado-titulo" class="certificado__titulo">Certificado de finalizaci&oacute;n</h2>
+          <p class="certificado__intro">Se certifica que</p>
+          <p id="certificado-nombre" class="certificado__nombre">Nombre y apellido</p>
+          <p id="certificado-texto" class="certificado__texto"></p>
+          <p id="certificado-detalle" class="certificado__detalle"></p>
+          <div class="certificado__firma">
+            <span class="certificado__firma-linea" aria-hidden="true"></span>
+            <span class="certificado__firma-texto">Equipo TAMI &middot; Tecnolog&iacute;a Amigable para Mayores e Inclusiva</span>
+          </div>
+          <p id="certificado-fecha" class="certificado__fecha"></p>
+        </div>
+
+        <div class="certificado__acciones no-imprimir">
+          <button class="btn btn--primario btn--masivo" id="btn-imprimir-certificado" type="button">
+            <span aria-hidden="true">&#x1F5A8;&#xFE0F;</span> Imprimir o guardar en PDF
+          </button>
+          <button class="btn btn--fantasma btn--volver" id="btn-volver-certificado" type="button">
+            &#x2190; Volver a Mi Progreso
+          </button>
+        </div>
       </div>
     </section>
 
@@ -1508,6 +1686,67 @@
           </button>
         </form>
 
+        <!-- ---------- MIS DATOS Y PRIVACIDAD ---------- -->
+        <div class="config__bloque config__bloque--datos">
+          <h3 class="config__titulo-bloque">
+            <span aria-hidden="true">&#x1F512;</span> Mis datos y privacidad
+          </h3>
+          <p class="config__texto">
+            Vos sos dueño/a de tus datos. Pod&eacute;s descargar una copia de todo lo que guardamos
+            o pedir que eliminemos tu cuenta.
+          </p>
+          <div class="config__acciones-datos">
+            <button type="button" class="btn btn--secundario" id="btn-exportar-datos">
+              <span aria-hidden="true">&#x1F4E5;</span> Descargar una copia de mis datos
+            </button>
+            <a
+              href="#"
+              class="btn btn--fantasma"
+              data-ir-pantalla="pantalla-legal"
+              data-seccion-legal="privacidad"
+            >
+              <span aria-hidden="true">&#x1F4D6;</span> Leer la Pol&iacute;tica de privacidad
+            </a>
+          </div>
+
+          <details class="config__peligro">
+            <summary>Eliminar mi cuenta</summary>
+            <p class="config__texto">
+              Esta acci&oacute;n borra tu cuenta, tu avance y tus resultados. No se puede deshacer.
+              Si solo quer&eacute;s dejar de usar TAMI por un tiempo, alcanza con cerrar sesi&oacute;n.
+            </p>
+            <form id="formulario-eliminar-cuenta" novalidate>
+              <div class="campo">
+                <label for="campo-eliminar-password" class="campo__etiqueta">
+                  Escrib&iacute; tu contrase&ntilde;a actual
+                </label>
+                <input
+                  type="password"
+                  id="campo-eliminar-password"
+                  class="campo__input"
+                  placeholder="Tu contraseña actual"
+                  autocomplete="current-password"
+                >
+              </div>
+              <div class="campo">
+                <label for="campo-eliminar-confirmar" class="campo__etiqueta">
+                  Para confirmar, escrib&iacute; la palabra ELIMINAR
+                </label>
+                <input
+                  type="text"
+                  id="campo-eliminar-confirmar"
+                  class="campo__input"
+                  placeholder="ELIMINAR"
+                  autocomplete="off"
+                >
+              </div>
+              <button type="submit" class="btn btn--peligro" id="btn-eliminar-cuenta">
+                &#x1F5D1;&#xFE0F; Eliminar mi cuenta definitivamente
+              </button>
+            </form>
+          </details>
+        </div>
+
         <!-- ---------- ZONA DE PELIGRO ---------- -->
         <div class="config__zona-salir">
           <h3 class="config__titulo-bloque">
@@ -1518,6 +1757,125 @@
             &#x1F6AA; Cerrar mi sesi&oacute;n
           </button>
         </div>
+      </div>
+    </section>
+
+    <!-- ============================================
+         PANTALLA: INFORMACIÓN LEGAL Y ACCESIBILIDAD
+         ============================================ -->
+    <section
+      id="pantalla-legal"
+      class="pantalla"
+      aria-labelledby="legal-titulo"
+      hidden
+    >
+      <div class="contenedor-formulario contenedor-formulario--ancho">
+        <h2 id="legal-titulo" class="contenedor-formulario__titulo">
+          &#x1F4D6; Privacidad, términos y accesibilidad
+        </h2>
+        <p class="contenedor-formulario__subtitulo">
+          Información clara sobre qué hacemos con tus datos y cómo podés usar TAMI.
+        </p>
+
+        <nav class="legal__indice" aria-label="Secciones de información legal">
+          <a href="#legal-privacidad" class="enlace-en-linea">Política de privacidad</a>
+          <a href="#legal-terminos" class="enlace-en-linea">Términos de uso</a>
+          <a href="#legal-accesibilidad" class="enlace-en-linea">Accesibilidad</a>
+        </nav>
+
+        <article class="legal__bloque" id="legal-privacidad" aria-labelledby="legal-privacidad-titulo">
+          <h3 id="legal-privacidad-titulo">&#x1F512; Política de privacidad</h3>
+          <p>
+            TAMI es un proyecto educativo de la ET N°20 «Carolina Muzilli» (6° 2°, Proyecto
+            Integrador III). Usamos tus datos solamente para que puedas aprender y guardar tu avance.
+          </p>
+          <h4>Qué datos guardamos</h4>
+          <ul>
+            <li>Tu nombre y apellido, para saludarte y personalizar la pantalla.</li>
+            <li>Tu correo electrónico, para ingresar a tu cuenta y recuperar tu contraseña.</li>
+            <li>Tu contraseña, siempre cifrada. Nadie del proyecto puede leerla.</li>
+            <li>Tu avance: niveles leídos, repasos, trabajos prácticos y resultados.</li>
+            <li>Tu nivel de aprendizaje y tus preferencias de lectura y color.</li>
+          </ul>
+          <h4>Para qué los usamos</h4>
+          <p>
+            Solo para brindarte el curso, mostrarte tu progreso y enviarte el enlace de
+            recuperación de contraseña cuando lo pedís. No vendemos ni compartimos tus datos con
+            fines publicitarios.
+          </p>
+          <h4>Dónde se guardan</h4>
+          <p>
+            En una base de datos PostgreSQL alojada en Supabase (servidores en Estados Unidos) y
+            los correos se envían mediante Brevo. Ambos proveedores trabajan con conexiones
+            cifradas.
+          </p>
+          <h4>Tus derechos (Ley 25.326)</h4>
+          <p>
+            Podés pedir acceso, corrección o eliminación de tus datos en cualquier momento.
+            Desde <strong>Mi Perfil</strong> podés descargar una copia completa o eliminar tu
+            cuenta. Si tenés dudas, escribinos a
+            <a class="enlace-en-linea" href="mailto:tami.et20@gmail.com">tami.et20@gmail.com</a>.
+          </p>
+          <h4>Cuánto tiempo los conservamos</h4>
+          <p>
+            Mientras tu cuenta esté activa. Si pedís eliminarla, borramos tus datos personales y
+            tu avance. Los registros de seguridad se conservan hasta 30 días para poder investigar
+            accesos indebidos.
+          </p>
+          <h4>Consentimiento</h4>
+          <p>
+            Al crear tu cuenta aceptás esta política. Podés retirar tu consentimiento eliminando
+            tu cuenta desde Mi Perfil.
+          </p>
+        </article>
+
+        <article class="legal__bloque" id="legal-terminos" aria-labelledby="legal-terminos-titulo">
+          <h3 id="legal-terminos-titulo">&#x1F4CB; Términos de uso</h3>
+          <p>
+            TAMI es un espacio educativo y gratuito para aprender a usar la tecnología con
+            seguridad. Al crear una cuenta te comprometés a:
+          </p>
+          <ul>
+            <li>Usar tu propia cuenta y no compartir tu contraseña.</li>
+            <li>Tratar con respeto a las demás personas.</li>
+            <li>No usar el sitio para enviar mensajes falsos ni para perjudicar a otras personas.</li>
+            <li>Contarnos si ves algo raro, para poder ayudarte.</li>
+          </ul>
+          <p>
+            El contenido tiene fines educativos. Las situaciones y ejemplos son ficticios y no
+            reemplazan el asesoramiento de tu banco ni de un profesional. Si recibís un mensaje
+            sospechoso, verificá siempre por un canal oficial.
+          </p>
+          <p>
+            Podemos actualizar los contenidos para mejorarlos. Si cambiamos estos términos de
+            forma importante, te lo vamos a avisar dentro del sitio.
+          </p>
+        </article>
+
+        <article class="legal__bloque" id="legal-accesibilidad" aria-labelledby="legal-accesibilidad-titulo">
+          <h3 id="legal-accesibilidad-titulo">&#x267F; Accesibilidad</h3>
+          <p>
+            Diseñamos TAMI siguiendo las pautas WCAG 2.1 nivel AA y la Ley 26.653 de
+            accesibilidad web. Eso significa:
+          </p>
+          <ul>
+            <li>Se puede usar todo con el teclado, sin necesidad del mouse.</li>
+            <li>Los botones son grandes y tienen buen contraste.</li>
+            <li>Podés agrandar la letra y elegir colores más cómodos desde Mi Perfil.</li>
+            <li>Los lectores de pantalla anuncian cada cambio de sección.</li>
+            <li>Los mensajes de error explican qué corregir, sin apuro.</li>
+            <li>Podés escuchar los textos con el botón «Escuchar».</li>
+          </ul>
+          <p>
+            Si encontrás una barrera que te impide usar el sitio, contanoslo:
+            <a class="enlace-en-linea" href="mailto:tami.et20@gmail.com">tami.et20@gmail.com</a>.
+            Vamos a corregirlo.
+          </p>
+        </article>
+
+        <button type="button" class="btn btn--fantasma btn--volver" id="btn-volver-legal">
+          &#x2190; Volver
+        </button>
       </div>
     </section>
 
@@ -1551,6 +1909,183 @@
       </div>
     </section>
 
+    <!-- ============================================
+         PANTALLA: AYUDA
+         ============================================ -->
+    <section
+      id="pantalla-ayuda"
+      class="pantalla"
+      aria-labelledby="ayuda-titulo"
+      hidden
+    >
+      <div class="contenedor-formulario contenedor-formulario--ancho">
+        <h2 id="ayuda-titulo" class="contenedor-formulario__titulo">
+          &#x1F198; ¿Necesitás ayuda?
+        </h2>
+        <p class="contenedor-formulario__subtitulo">
+          Estamos para acompañarte. Podés leer las preguntas frecuentes, hacer el recorrido
+          guiado o escribirnos.
+        </p>
+
+        <div class="ayuda__acciones">
+          <button type="button" class="btn btn--primario" id="btn-iniciar-tour">
+            <span aria-hidden="true">&#x1F9ED;</span> Hacer el recorrido guiado
+          </button>
+          <button type="button" class="btn btn--secundario" id="btn-leer-ayuda">
+            <span aria-hidden="true">&#x1F50A;</span> Escuchar esta página
+          </button>
+          <button type="button" class="btn btn--secundario" id="btn-instalar-app" hidden>
+            <span aria-hidden="true">&#x1F4F2;</span> Instalar TAMI en mi celular
+          </button>
+          <a class="btn btn--fantasma" href="mailto:tami.et20@gmail.com">
+            <span aria-hidden="true">&#x2709;&#xFE0F;</span> Escribir por correo
+          </a>
+        </div>
+
+        <h3 class="ayuda__subtitulo">Preguntas frecuentes</h3>
+
+        <details class="ayuda__faq">
+          <summary>¿Cómo creo mi cuenta?</summary>
+          <p>
+            Tocá «Crear mi cuenta» en la pantalla de inicio. Completá tu nombre, tu correo y una
+            contraseña de 6 caracteres o más. Después aceptá las condiciones y tocá el botón
+            «Registrar mi cuenta».
+          </p>
+        </details>
+
+        <details class="ayuda__faq">
+          <summary>¿El test inicial es obligatorio?</summary>
+          <p>
+            No. El test nos ayuda a recomendarte un punto de partida, pero podés saltearlo y
+            empezar por el nivel que quieras. Siempre podés volver a hacerlo desde Mi Progreso.
+          </p>
+        </details>
+
+        <details class="ayuda__faq">
+          <summary>¿Cómo avanzo de nivel?</summary>
+          <p>
+            Dentro de cada curso hay cuatro niveles. Leé las teorías y respondé el repaso del
+            final. Cuando lo completás, se desbloquea el nivel siguiente. Vas a ver tu avance en
+            la pantalla Campus y en Mi Progreso.
+          </p>
+        </details>
+
+        <details class="ayuda__faq">
+          <summary>¿Qué es el Escudo de Seguridad?</summary>
+          <p>
+            Son situaciones reales para practicar: un mensaje sospechoso, una llamada extraña o
+            una página falsa. Elegís qué harías y recibís una explicación al instante. No hay
+            respuestas que te hagan perder nada: es un espacio para practicar sin riesgo.
+          </p>
+        </details>
+
+        <details class="ayuda__faq">
+          <summary>Olvidé mi contraseña. ¿Qué hago?</summary>
+          <p>
+            En la pantalla de ingreso tocá «¿Olvidaste tu contraseña?». Escribí tu correo y te
+            enviamos un enlace para elegir una nueva. El enlace vence en 30 minutos y se puede
+            usar una sola vez.
+          </p>
+        </details>
+
+        <details class="ayuda__faq">
+          <summary>¿Puedo usar TAMI en el celular o en una tablet?</summary>
+          <p>
+            Sí. El sitio se adapta a pantallas chicas y también se puede instalar como aplicación
+            desde el navegador. Los botones siguen siendo grandes y fáciles de tocar.
+          </p>
+        </details>
+
+        <details class="ayuda__faq">
+          <summary>¿Cómo agrando la letra o cambio los colores?</summary>
+          <p>
+            Usá los botones «A−» y «A+» que están siempre abajo a la derecha. También podés
+            entrar a Mi Perfil y elegir «Grande» o «Muy grande», y un tema de colores más cómodo.
+          </p>
+        </details>
+
+        <details class="ayuda__faq">
+          <summary>Recibí un mensaje sospechoso. ¿Qué hago?</summary>
+          <p>
+            No respondas, no toques enlaces y no envíes datos. Si dice ser tu banco, llamá al
+            número que figura en tu tarjeta. En la sección Escudo de Seguridad podés practicar
+            cómo reconocer estos mensajes.
+          </p>
+        </details>
+
+        <h3 class="ayuda__subtitulo" id="ayuda-contacto-titulo">Escribinos</h3>
+        <form id="formulario-ayuda" class="ayuda__formulario" novalidate aria-labelledby="ayuda-contacto-titulo">
+          <div class="campo">
+            <label for="campo-ayuda-nombre" class="campo__etiqueta">Tu nombre</label>
+            <input type="text" id="campo-ayuda-nombre" class="campo__input" placeholder="Ej: María López" autocomplete="name" maxlength="100" required>
+          </div>
+          <div class="campo">
+            <label for="campo-ayuda-email" class="campo__etiqueta">Tu correo electrónico</label>
+            <p class="campo__pista"><span aria-hidden="true">&#x1F449;</span> Ahí te vamos a responder.</p>
+            <input type="email" id="campo-ayuda-email" class="campo__input" placeholder="Ej: maria@correo.com" autocomplete="email" maxlength="254" required>
+          </div>
+          <div class="campo">
+            <label for="campo-ayuda-categoria" class="campo__etiqueta">¿Sobre qué necesitás ayuda?</label>
+            <select id="campo-ayuda-categoria" class="campo__input">
+              <option value="general">Una consulta general</option>
+              <option value="cuenta">Mi cuenta o mi contraseña</option>
+              <option value="curso">Los cursos y niveles</option>
+              <option value="accesibilidad">Accesibilidad: letra, colores, lectura</option>
+              <option value="seguridad">Un mensaje o llamado sospechoso</option>
+            </select>
+          </div>
+          <div class="campo">
+            <label for="campo-ayuda-mensaje" class="campo__etiqueta">Contanos qué te pasa</label>
+            <textarea id="campo-ayuda-mensaje" class="campo__input campo__input--textarea" rows="5" maxlength="2000" placeholder="Escribí con tus palabras. No hay apuro." required></textarea>
+          </div>
+          <button type="submit" class="btn btn--primario" id="btn-enviar-ayuda">
+            <span aria-hidden="true">&#x1F4E8;</span> Enviar mi mensaje
+          </button>
+          <p class="campo__nota">
+            <span aria-hidden="true">&#x1F512;</span> Usamos tus datos solo para responderte.
+          </p>
+        </form>
+
+        <button type="button" class="btn btn--fantasma btn--volver" id="btn-volver-ayuda">
+          &#x2190; Volver
+        </button>
+      </div>
+    </section>
+
+    <!-- ============================================
+         BARRA DE ACCESIBILIDAD SIEMPRE VISIBLE
+         ============================================ -->
+    <div class="barra-accesibilidad" role="group" aria-label="Herramientas de accesibilidad">
+      <button type="button" class="barra-accesibilidad__boton" id="btn-reducir-texto" aria-label="Reducir el tamaño de la letra" title="Letra más chica">A−</button>
+      <button type="button" class="barra-accesibilidad__boton" id="btn-aumentar-texto" aria-label="Aumentar el tamaño de la letra" title="Letra más grande">A+</button>
+      <button type="button" class="barra-accesibilidad__boton" id="btn-contraste" aria-label="Activar o desactivar el alto contraste" aria-pressed="false" title="Alto contraste">◐</button>
+      <button type="button" class="barra-accesibilidad__boton" id="btn-leer-pantalla" aria-label="Escuchar el contenido de esta pantalla" title="Escuchar">🔊</button>
+      <button type="button" class="barra-accesibilidad__boton" id="btn-detener-lectura" aria-label="Detener la lectura en voz alta" title="Detener" hidden>⏹</button>
+      <button type="button" class="barra-accesibilidad__boton" id="btn-abrir-ayuda" aria-label="Abrir la ayuda" title="Ayuda">?</button>
+    </div>
+
+    <div id="aviso-conexion" class="aviso-conexion" role="status" hidden>
+      <span aria-hidden="true">&#x1F4F6;</span>
+      Estás sin conexión. Podés seguir leyendo, pero tu avance se guardará en este dispositivo
+      y se enviará cuando vuelva internet.
+    </div>
+
+    <!-- ============================================
+         RECORRIDO GUIADO
+         ============================================ -->
+    <dialog id="dialogo-tour" class="tour" aria-labelledby="tour-titulo">
+      <div class="tour__cabecera">
+        <p class="tour__paso" id="tour-paso">Paso 1 de 4</p>
+        <h2 class="tour__titulo" id="tour-titulo">Te damos la bienvenida</h2>
+      </div>
+      <p class="tour__texto" id="tour-texto"></p>
+      <div class="tour__acciones">
+        <button type="button" class="btn btn--fantasma" id="btn-tour-anterior">&#x2190; Anterior</button>
+        <button type="button" class="btn btn--primario" id="btn-tour-siguiente">Siguiente &#x2192;</button>
+        <button type="button" class="btn btn--secundario" id="btn-tour-cerrar">Terminar</button>
+      </div>
+    </dialog>
+
   </main>
 
   <!-- ============================================
@@ -1566,8 +2101,16 @@
       aria-hidden="true"
     >
     <p class="footer__texto">&copy; 2026 TAMI - ET N&deg;20 "Carolina Muzilli". Todos los derechos reservados.</p>
+    <nav class="footer__enlaces" aria-label="Información del sitio">
+      <a href="#" class="footer__enlace" data-ir-pantalla="pantalla-legal" data-seccion-legal="privacidad">Privacidad</a>
+      <a href="#" class="footer__enlace" data-ir-pantalla="pantalla-legal" data-seccion-legal="terminos">Términos</a>
+      <a href="#" class="footer__enlace" data-ir-pantalla="pantalla-legal" data-seccion-legal="accesibilidad">Accesibilidad</a>
+      <a href="#" class="footer__enlace" data-ir-pantalla="pantalla-ayuda">Ayuda</a>
+      <a href="mailto:tami.et20@gmail.com" class="footer__enlace">Contacto</a>
+    </nav>
   </footer>
 
+  <script src="config.js"></script>
   <script src="contenido-cursos.js"></script>
   <script src="contenido-teorias.js"></script>
   <script src="contenido-repaso.js"></script>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96" role="img" aria-label="Curso de comunicación digital">
+  <rect width="96" height="96" rx="22" fill="#6D4C41"/>
+  <circle cx="20" cy="20" r="14" fill="#4E342E" opacity="0.5"/>
+  <path d="M20 26 H60 A8 8 0 0 1 68 34 V54 A8 8 0 0 1 60 62 H40 L28 72 V62 H20 A8 8 0 0 1 12 54 V34 A8 8 0 0 1 20 26 Z" fill="#FFFFFF"/>
+  <circle cx="28" cy="44" r="4" fill="#6D4C41"/>
+  <circle cx="40" cy="44" r="4" fill="#6D4C41"/>
+  <circle cx="52" cy="44" r="4" fill="#6D4C41"/>
+  <rect x="52" y="52" width="32" height="24" rx="6" fill="#DEF2F8" stroke="#FFFFFF" stroke-width="3"/>
+  <path d="M84 58 L92 54 V74 L84 70 Z" fill="#DEF2F8" stroke="#FFFFFF" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M60 76 Q66 84 74 80" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+</svg>

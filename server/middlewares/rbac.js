@@ -2,29 +2,20 @@
  * Middlewares RBAC - TAMI
  * --------------------------------
  * Autenticación y autorización basada en roles/permisos.
- * - requireAuth: verifica que el usuario esté autenticado (por ahora basado en cabecera o sesión futura).
+ * - requireAuth: exige un token JWT válido en `Authorization: Bearer`.
  * - requireRole: verifica que el usuario tenga uno de los roles permitidos.
  * - requirePermission: verifica permisos granulares por código.
+ * - requirePropioOAdmin: permite acceder solo a los datos de la propia cuenta
+ *   (o a cualquier cuenta si el rol es superadmin).
+ *
+ * La identidad sale SIEMPRE del token firmado: no se acepta `x-usuario-id`
+ * ni un id enviado por el cliente.
  */
 
 const pool = require("../db");
+const { extraerToken, verificarToken } = require("./auth");
 
-function obtenerUsuarioId(req) {
-  // Soporta múltiples formas para facilitar la transición
-  if (req.usuario && (req.usuario.id || req.usuario.usuario_id)) {
-    return req.usuario.id || req.usuario.usuario_id;
-  }
-  if (req.user && (req.user.id || req.user.usuario_id)) {
-    return req.user.id || req.user.usuario_id;
-  }
-  if (req.headers["x-usuario-id"]) {
-    return req.headers["x-usuario-id"];
-  }
-  if (req.query && req.query.usuarioId) {
-    return req.query.usuarioId;
-  }
-  return null;
-}
+const ROLES_ADMINISTRADORES = ["superadmin"];
 
 async function cargarUsuarioConRol(usuarioId) {
   const { rows } = await pool.query(
@@ -37,27 +28,57 @@ async function cargarUsuarioConRol(usuarioId) {
   return rows[0] || null;
 }
 
+async function cargarUsuarioDesdeToken(req) {
+  const token = extraerToken(req);
+  if (!token) {
+    return { error: "No autenticado. Iniciá sesión para continuar.", status: 401 };
+  }
+  const datos = verificarToken(token);
+  if (!datos || !datos.sub) {
+    return { error: "La sesión venció o no es válida. Volvé a iniciar sesión.", status: 401 };
+  }
+  const usuario = await cargarUsuarioConRol(datos.sub);
+  if (!usuario) {
+    return { error: "La cuenta ya no existe. Volvé a iniciar sesión.", status: 401 };
+  }
+  if (usuario.is_active === false) {
+    return { error: "Cuenta desactivada. Contactá al administrador.", status: 403 };
+  }
+  return { usuario };
+}
+
 function requireAuth() {
   return async function (req, res, next) {
     try {
-      const usuarioId = obtenerUsuarioId(req);
-      if (!usuarioId) {
-        return res.status(401).json({ error: "No autenticado. Se requiere iniciar sesión." });
+      const resultado = await cargarUsuarioDesdeToken(req);
+      if (resultado.error) {
+        return res.status(resultado.status).json({ error: resultado.error });
       }
-      const usuario = await cargarUsuarioConRol(usuarioId);
-      if (!usuario) {
-        return res.status(401).json({ error: "Usuario no encontrado o sesión inválida." });
-      }
-      if (usuario.is_active === false) {
-        return res.status(403).json({ error: "Cuenta desactivada. Contactá al administrador." });
-      }
-      req.usuario = usuario;
-      req.user = usuario;
+      req.usuario = resultado.usuario;
+      req.user = resultado.usuario;
       next();
     } catch (error) {
       console.error("[RBAC] Error en requireAuth:", error.message);
       res.status(500).json({ error: "Error interno de autorización." });
     }
+  };
+}
+
+// Adjunta el usuario si viene un token válido, pero no bloquea el pedido.
+// Se usa en formularios públicos (ayuda, opiniones) que también aceptan
+// personas que todavía no tienen cuenta.
+function autenticacionOpcional() {
+  return async function (req, res, next) {
+    try {
+      const resultado = await cargarUsuarioDesdeToken(req);
+      if (!resultado.error) {
+        req.usuario = resultado.usuario;
+        req.user = resultado.usuario;
+      }
+    } catch (error) {
+      console.warn("[RBAC] Token opcional inválido:", error.message);
+    }
+    next();
   };
 }
 
@@ -67,19 +88,12 @@ function requireRole(rolesPermitidos = []) {
   return async function (req, res, next) {
     try {
       if (!req.usuario) {
-        const usuarioId = obtenerUsuarioId(req);
-        if (!usuarioId) {
-          return res.status(401).json({ error: "No autenticado. Se requiere iniciar sesión." });
+        const resultado = await cargarUsuarioDesdeToken(req);
+        if (resultado.error) {
+          return res.status(resultado.status).json({ error: resultado.error });
         }
-        const usuario = await cargarUsuarioConRol(usuarioId);
-        if (!usuario) {
-          return res.status(401).json({ error: "Usuario no encontrado o sesión inválida." });
-        }
-        if (usuario.is_active === false) {
-          return res.status(403).json({ error: "Cuenta desactivada. Contactá al administrador." });
-        }
-        req.usuario = usuario;
-        req.user = usuario;
+        req.usuario = resultado.usuario;
+        req.user = resultado.usuario;
       }
       const rolUsuario = req.usuario.role_name ? String(req.usuario.role_name).toLowerCase() : null;
       if (!rolUsuario || !rolesLower.includes(rolUsuario)) {
@@ -98,19 +112,12 @@ function requirePermission(codigosPermitidos = []) {
   return async function (req, res, next) {
     try {
       if (!req.usuario) {
-        const usuarioId = obtenerUsuarioId(req);
-        if (!usuarioId) {
-          return res.status(401).json({ error: "No autenticado. Se requiere iniciar sesión." });
+        const resultado = await cargarUsuarioDesdeToken(req);
+        if (resultado.error) {
+          return res.status(resultado.status).json({ error: resultado.error });
         }
-        const usuario = await cargarUsuarioConRol(usuarioId);
-        if (!usuario) {
-          return res.status(401).json({ error: "Usuario no encontrado o sesión inválida." });
-        }
-        if (usuario.is_active === false) {
-          return res.status(403).json({ error: "Cuenta desactivada. Contactá al administrador." });
-        }
-        req.usuario = usuario;
-        req.user = usuario;
+        req.usuario = resultado.usuario;
+        req.user = resultado.usuario;
       }
       if (!req.usuario.role_id) {
         return res.status(403).json({ error: "Acceso denegado. No tenés permisos para esta acción." });
@@ -135,10 +142,31 @@ function requirePermission(codigosPermitidos = []) {
   };
 }
 
+// Permite el acceso cuando el id de la ruta es el del usuario autenticado.
+// Los superadmins pueden consultar cualquier cuenta (soporte y auditoría).
+function requirePropioOAdmin(parametro = "id") {
+  return function (req, res, next) {
+    const objetivo = Number(req.params[parametro]);
+    if (!Number.isInteger(objetivo) || objetivo <= 0) {
+      return res.status(400).json({ error: "El id debe ser un número entero positivo" });
+    }
+    if (!req.usuario) {
+      return res.status(401).json({ error: "No autenticado. Iniciá sesión para continuar." });
+    }
+    const propio = Number(req.usuario.id);
+    if (objetivo === propio) return next();
+    const rol = req.usuario.role_name ? String(req.usuario.role_name).toLowerCase() : "";
+    if (ROLES_ADMINISTRADORES.includes(rol)) return next();
+    return res.status(403).json({ error: "No podés acceder a los datos de otra cuenta." });
+  };
+}
+
 module.exports = {
   requireAuth,
   requireRole,
   requirePermission,
+  requirePropioOAdmin,
+  autenticacionOpcional,
   cargarUsuarioConRol,
-  obtenerUsuarioId
+  ROLES_ADMINISTRADORES
 };

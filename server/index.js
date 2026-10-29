@@ -1,4 +1,5 @@
 require("dotenv").config();
+const path = require("path");
 const express = require("express");
 const cors = require("cors");
 
@@ -13,9 +14,12 @@ const cursosRoutes = require("./routes/cursos");
 const alertasRoutes = require("./routes/alertas");
 const progresoRoutes = require("./routes/progreso");
 const adminRoutes = require("./routes/admin");
+const ayudaRoutes = require("./routes/ayuda");
+const feedbackRoutes = require("./routes/feedback");
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
+const RAIZ = path.join(__dirname, "..");
 
 // ============================================
 // ENDURECIMIENTO BÁSICO DEL SERVIDOR
@@ -37,8 +41,8 @@ app.use(encabezadosSeguridad);
 app.use(
   cors({
     origin: origenPermitido,
-    methods: ["GET", "POST", "PUT", "OPTIONS"],
-    allowedHeaders: ["Content-Type"]
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-api-key"]
   })
 );
 
@@ -69,8 +73,26 @@ app.use(express.json({ limit: "100kb" }));
 // RUTAS
 // ============================================
 
+// El frontend se sirve desde el mismo servidor: así la API queda en el
+// mismo origen y no hace falta configurar CORS en producción.
+app.use(express.static(path.join(RAIZ, "code")));
+app.use("/img", express.static(path.join(RAIZ, "img")));
+
 app.get("/", (req, res) => {
-  res.json({ nombre: "TAMI API", estado: "ok", version: "1.0.0" });
+  res.sendFile(path.join(RAIZ, "code", "index.html"));
+});
+
+app.get("/api/salud", async (req, res) => {
+  const baseDeDatos = await verificarConexion();
+  res.status(baseDeDatos ? 200 : 503).json({
+    estado: baseDeDatos ? "ok" : "degradado",
+    baseDeDatos: baseDeDatos ? "ok" : "sin conexión",
+    hora: new Date().toISOString()
+  });
+});
+
+app.get("/api", (req, res) => {
+  res.json({ nombre: "TAMI API", estado: "ok", version: "1.1.0", autenticacion: "JWT Bearer" });
 });
 
 app.use("/api/usuarios", usuariosRoutes);
@@ -78,6 +100,8 @@ app.use("/api/cursos", cursosRoutes);
 app.use("/api/alertas", alertasRoutes);
 app.use("/api/progreso", progresoRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/ayuda", ayudaRoutes);
+app.use("/api/feedback", feedbackRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ error: "Ruta no encontrada" });
@@ -97,5 +121,9 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, () => {
   console.log(`Servidor TAMI escuchando en http://localhost:${PORT}`);
+  console.log(`Frontend: http://localhost:${PORT}/  ·  Panel: http://localhost:${PORT}/admin.html`);
+  if (String(process.env.JWT_SECRET || "").trim().length < 32) {
+    console.warn("[Seguridad] JWT_SECRET no configurado o demasiado corto: los inicios de sesión fallarán.");
+  }
   verificarConexion();
 });

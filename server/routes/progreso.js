@@ -1,7 +1,11 @@
 const express = require("express");
 const pool = require("../db");
+const { requireAuth, requirePropioOAdmin } = require("../middlewares/rbac");
 
 const router = express.Router();
+
+// Todo el progreso es datos personales: exige sesión con token válido.
+router.use(requireAuth());
 
 // Niveles digitales aceptados en la base (evita enviar valores arbitrarios)
 const NIVELES_VALIDOS = ["principiante", "intermedio", "avanzado", "protegido"];
@@ -50,13 +54,13 @@ async function obtenerMiniTrabajos(usuarioId) {
 // ============================================
 
 router.post("/test", async (req, res) => {
-  const { usuarioId, respuestas, nivel, puntaje, totalPreguntas } = req.body;
+  const { respuestas, nivel, puntaje, totalPreguntas } = req.body;
 
-  if (!usuarioId || !respuestas || !nivel || puntaje === undefined || !totalPreguntas) {
-    return res.status(400).json({ error: "Faltan campos obligatorios: usuarioId, respuestas, nivel, puntaje, totalPreguntas" });
-  }
-  if (!esEnteroPositivo(usuarioId)) {
-    return res.status(400).json({ error: "usuarioId debe ser un numero entero positivo" });
+  // El usuario sale del token firmado: no se acepta un id del cliente.
+  const usuarioId = req.usuario.id;
+
+  if (!respuestas || !nivel || puntaje === undefined || !totalPreguntas) {
+    return res.status(400).json({ error: "Faltan campos obligatorios: respuestas, nivel, puntaje, totalPreguntas" });
   }
   if (!Array.isArray(respuestas)) {
     return res.status(400).json({ error: "respuestas debe ser una lista" });
@@ -99,13 +103,12 @@ router.post("/test", async (req, res) => {
 // ============================================
 
 router.post("/examen", async (req, res) => {
-  const { usuarioId, moduloId, respuestas, puntaje, totalPreguntas } = req.body;
+  const { moduloId, respuestas, puntaje, totalPreguntas } = req.body;
 
-  if (!usuarioId || !respuestas || puntaje === undefined || !totalPreguntas) {
-    return res.status(400).json({ error: "Faltan campos obligatorios: usuarioId, respuestas, puntaje, totalPreguntas" });
-  }
-  if (!esEnteroPositivo(usuarioId)) {
-    return res.status(400).json({ error: "usuarioId debe ser un numero entero positivo" });
+  const usuarioId = req.usuario.id;
+
+  if (!respuestas || puntaje === undefined || !totalPreguntas) {
+    return res.status(400).json({ error: "Faltan campos obligatorios: respuestas, puntaje, totalPreguntas" });
   }
   if (moduloId !== undefined && moduloId !== null && !esEnteroPositivo(moduloId)) {
     return res.status(400).json({ error: "moduloId debe ser un numero entero positivo" });
@@ -141,13 +144,15 @@ router.post("/examen", async (req, res) => {
 // ============================================
 
 router.post("/modulo", async (req, res) => {
-  const { usuarioId, moduloId, pasoActual, completado } = req.body;
+  const { moduloId, pasoActual, completado } = req.body;
 
-  if (!usuarioId || !moduloId) {
-    return res.status(400).json({ error: "Faltan campos obligatorios: usuarioId, moduloId" });
+  const usuarioId = req.usuario.id;
+
+  if (!moduloId) {
+    return res.status(400).json({ error: "Faltan campos obligatorios: moduloId" });
   }
-  if (!esEnteroPositivo(usuarioId) || !esEnteroPositivo(moduloId)) {
-    return res.status(400).json({ error: "usuarioId y moduloId deben ser numeros enteros positivos" });
+  if (!esEnteroPositivo(moduloId)) {
+    return res.status(400).json({ error: "moduloId debe ser un numero entero positivo" });
   }
   if (pasoActual !== undefined && !esEnteroNoNegativo(pasoActual)) {
     return res.status(400).json({ error: "pasoActual debe ser un numero entero no negativo" });
@@ -183,13 +188,15 @@ router.post("/modulo", async (req, res) => {
 // ============================================
 
 router.post("/mini-trabajo", async (req, res) => {
-  const { usuarioId, moduloId, nivel, completado } = req.body;
+  const { moduloId, nivel, completado } = req.body;
 
-  if (!usuarioId || !moduloId || !nivel) {
-    return res.status(400).json({ error: "Faltan campos obligatorios: usuarioId, moduloId, nivel" });
+  const usuarioId = req.usuario.id;
+
+  if (!moduloId || !nivel) {
+    return res.status(400).json({ error: "Faltan campos obligatorios: moduloId, nivel" });
   }
-  if (!esEnteroPositivo(usuarioId) || !esEnteroPositivo(moduloId)) {
-    return res.status(400).json({ error: "usuarioId y moduloId deben ser numeros enteros positivos" });
+  if (!esEnteroPositivo(moduloId)) {
+    return res.status(400).json({ error: "moduloId debe ser un numero entero positivo" });
   }
   if (typeof nivel !== "string" || !NIVELES_MINI_TRABAJO.includes(nivel.trim().toLowerCase())) {
     return res.status(400).json({ error: "El nivel enviado no es valido" });
@@ -222,7 +229,7 @@ router.post("/mini-trabajo", async (req, res) => {
 // Obtiene todo el progreso de un usuario
 // ============================================
 
-router.get("/:usuarioId", async (req, res) => {
+router.get("/:usuarioId", requirePropioOAdmin("usuarioId"), async (req, res) => {
   const usuarioId = req.params.usuarioId;
 
   if (!esEnteroPositivo(usuarioId)) {

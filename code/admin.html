@@ -39,6 +39,18 @@
     .form-group { margin-bottom: 20px; }
     .form-group label { display: block; margin-bottom: 8px; color: #0A4B5C; font-weight: 600; }
     .form-group input { width: 100%; padding: 12px; border: 1px solid #D6E4E7; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
+    .admin-section__cabecera { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+    .admin-section__cabecera h2 { margin: 0; }
+    .admin-mensaje { white-space: pre-line; max-width: 420px; }
+    .admin-acciones { display: flex; flex-wrap: wrap; gap: 6px; }
+    .admin-acciones .btn { padding: 6px 10px; font-size: 12px; }
+    .admin-nota { margin: -8px 0 16px; color: #55666D; font-size: 14px; }
+    .admin-vacio { padding: 18px; color: #55666D; text-align: center; }
+    .badge-estado-pendiente { background: #FFF3E0; color: #F57C00; }
+    .badge-estado-en_proceso { background: #E3F2FD; color: #1976D2; }
+    .badge-estado-resuelto { background: #E8F5E9; color: #388E3C; }
+    .admin-estrellas { color: #E6A700; letter-spacing: 2px; }
+    [hidden] { display: none !important; }
   </style>
 </head>
 <body style="background: #F4F8F9; margin: 0; font-family: Arial, Helvetica, sans-serif;">
@@ -78,16 +90,65 @@
         >
         <div>
           <h1>🛡️ Panel de Administración TAMI</h1>
-          <p style="margin: 5px 0 0 0; opacity: 0.9;">Control de Acceso Basado en Roles (RBAC)</p>
+          <p id="adminRol" style="margin: 5px 0 0 0; opacity: 0.9;">Control de Acceso Basado en Roles (RBAC)</p>
         </div>
       </div>
       <button class="btn" style="background: white; color: #0A4B5C;" onclick="logoutAdmin()">Cerrar Sesión</button>
     </header>
 
     <div class="admin-container">
-      <div class="admin-grid" id="statsGrid"></div>
+      <div class="admin-grid" id="statsGrid" data-solo-superadmin></div>
 
-      <section class="admin-section">
+      <section class="admin-section" id="seccionAyuda">
+        <div class="admin-section__cabecera">
+          <h2>🆘 Solicitudes de ayuda</h2>
+          <span class="badge badge-moderador" id="ayudaPendientes">0 pendientes</span>
+        </div>
+        <p class="admin-nota">
+          Mensajes enviados desde la pantalla de ayuda. Respondé siempre al correo de la persona.
+        </p>
+        <div style="overflow-x: auto;">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Persona</th>
+                <th>Categoría</th>
+                <th>Mensaje</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="ayudaTable"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="admin-section" id="seccionFeedback">
+        <div class="admin-section__cabecera">
+          <h2>💬 Opiniones de la experiencia</h2>
+          <span class="badge badge-analista" id="feedbackTotal">0 opiniones</span>
+        </div>
+        <p class="admin-nota">
+          Puntajes de 1 a 5 estrellas que dejan las personas en “Mi Progreso”.
+        </p>
+        <div style="overflow-x: auto;">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Persona</th>
+                <th>Pantalla</th>
+                <th>Puntaje</th>
+                <th>Comentario</th>
+              </tr>
+            </thead>
+            <tbody id="feedbackTable"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="admin-section" data-solo-superadmin>
         <h2>👥 Gestión de Usuarios</h2>
         <div style="overflow-x: auto;">
           <table class="admin-table">
@@ -107,7 +168,7 @@
         </div>
       </section>
 
-      <section class="admin-section">
+      <section class="admin-section" data-solo-superadmin>
         <h2>📋 Logs de Auditoría (Últimos 50)</h2>
         <div style="overflow-x: auto;">
           <table class="admin-table">
@@ -127,9 +188,24 @@
     </div>
   </div>
 
+  <script src="config.js"></script>
   <script>
-    const API = "http://localhost:3000/api";
+    const API = window.TAMI_API_URL || "http://localhost:3000/api";
     let currentUser = null;
+    let tokenActual = null;
+
+    function escaparHtml(valor) {
+      return String(valor === null || valor === undefined ? "" : valor).replace(/[&<>"']/g, function (c) {
+        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+      });
+    }
+
+    function cabecerasAdmin(extra) {
+      return Object.assign(
+        { "Content-Type": "application/json", Authorization: "Bearer " + (tokenActual || "") },
+        extra || {}
+      );
+    }
 
     document.getElementById("loginAdminForm").addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -145,12 +221,31 @@
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Error al iniciar sesión");
-        currentUser = data;
+        const usuario = data.usuario || data;
+        if (!data.token) throw new Error("El servidor no devolvió una sesión válida.");
+        const rol = String(usuario.role_name || "").toLowerCase();
+        if (["superadmin", "moderador", "analista"].indexOf(rol) === -1) {
+          throw new Error("Esta cuenta no tiene permisos para entrar al panel.");
+        }
+        currentUser = usuario;
+        tokenActual = data.token;
         document.getElementById("loginView").style.display = "none";
         document.getElementById("adminView").style.display = "block";
-        cargarDashboard();
-        cargarUsuarios();
-        cargarAuditoria();
+        document.getElementById("adminRol").textContent =
+          "Sesión: " + (usuario.nombre || usuario.email || "administrador") + " · Rol " + rol;
+
+        const soloSuperadmin = rol === "superadmin";
+        document.querySelectorAll("[data-solo-superadmin]").forEach(function (elemento) {
+          elemento.hidden = !soloSuperadmin;
+        });
+
+        if (soloSuperadmin) {
+          cargarDashboard();
+          cargarUsuarios();
+          cargarAuditoria();
+        }
+        cargarAyuda();
+        cargarFeedback();
       } catch (err) {
         msg.textContent = err.message;
       }
@@ -158,15 +253,15 @@
 
     async function cargarDashboard() {
       try {
-        const res = await fetch(API + "/admin/dashboard", { headers: { "x-usuario-id": currentUser.id } });
+        const res = await fetch(API + "/admin/dashboard", { headers: cabecerasAdmin() });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error);
         const grid = document.getElementById("statsGrid");
         grid.innerHTML = `
-          <div class="admin-card"><h3>Usuarios</h3><div class="numero">${data.resumen.usuarios}</div></div>
-          <div class="admin-card"><h3>Cursos</h3><div class="numero">${data.resumen.cursos}</div></div>
-          <div class="admin-card"><h3>Alertas</h3><div class="numero">${data.resumen.alertas}</div></div>
-          <div class="admin-card"><h3>Auditoría 24h</h3><div class="numero">${data.resumen.auditoria_24h}</div></div>
+          <div class="admin-card"><h3>Usuarios</h3><div class="numero">${Number(data.resumen.usuarios) || 0}</div></div>
+          <div class="admin-card"><h3>Cursos</h3><div class="numero">${Number(data.resumen.cursos) || 0}</div></div>
+          <div class="admin-card"><h3>Alertas</h3><div class="numero">${Number(data.resumen.alertas) || 0}</div></div>
+          <div class="admin-card"><h3>Auditoría 24h</h3><div class="numero">${Number(data.resumen.auditoria_24h) || 0}</div></div>
         `;
       } catch (err) {
         alert(err.message);
@@ -175,20 +270,30 @@
 
     async function cargarUsuarios() {
       try {
-        const res = await fetch(API + "/admin/usuarios", { headers: { "x-usuario-id": currentUser.id } });
+        const res = await fetch(API + "/admin/usuarios", { headers: cabecerasAdmin() });
         const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "No se pudieron cargar los usuarios");
         const tbody = document.getElementById("usuariosTable");
-        tbody.innerHTML = data.map(u => `
+        tbody.innerHTML = data.map(function (u) {
+          const rol = escaparHtml(u.role_name || "usuario");
+          const clase = String(u.role_name || "usuario").replace(/[^a-z0-9_-]/gi, "");
+          return `
           <tr>
-            <td>${u.id}</td>
-            <td>${u.nombre}</td>
-            <td>${u.email}</td>
-            <td><span class="badge badge-${u.role_name || 'usuario'}">${u.role_name || 'sin rol'}</span></td>
+            <td>${Number(u.id)}</td>
+            <td>${escaparHtml(u.nombre)}</td>
+            <td>${escaparHtml(u.email)}</td>
+            <td><span class="badge badge-${clase}">${rol}</span></td>
             <td>${u.is_active ? '✅ Activo' : '❌ Inactivo'}</td>
             <td>${u.twofa_enabled ? 'Sí' : 'No'}</td>
-            <td><button class="btn btn-primary" onclick="cambiarEstado(${u.id}, ${!u.is_active})">${u.is_active ? 'Desactivar' : 'Activar'}</button></td>
+            <td><button class="btn btn-primary" data-accion="estado" data-id="${Number(u.id)}" data-estado="${u.is_active ? "false" : "true"}">${u.is_active ? 'Desactivar' : 'Activar'}</button></td>
           </tr>
-        `).join("");
+        `;
+        }).join("");
+        tbody.querySelectorAll('button[data-accion="estado"]').forEach(function (boton) {
+          boton.addEventListener("click", function () {
+            cambiarEstado(Number(boton.dataset.id), boton.dataset.estado === "true");
+          });
+        });
       } catch (err) {
         console.error(err);
       }
@@ -198,7 +303,7 @@
       try {
         const res = await fetch(API + "/admin/usuarios/" + id + "/estado", {
           method: "PUT",
-          headers: { "Content-Type": "application/json", "x-usuario-id": currentUser.id },
+          headers: cabecerasAdmin(),
           body: JSON.stringify({ is_active: estado })
         });
         const data = await res.json();
@@ -212,27 +317,144 @@
 
     async function cargarAuditoria() {
       try {
-        const res = await fetch(API + "/admin/auditoria?limite=50", { headers: { "x-usuario-id": currentUser.id } });
+        const res = await fetch(API + "/admin/auditoria?limite=50", { headers: cabecerasAdmin() });
         const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "No se pudo cargar la auditoría");
         const tbody = document.getElementById("auditoriaTable");
-        tbody.innerHTML = data.map(a => `
+        tbody.innerHTML = data.map(function (a) {
+          return `
           <tr>
-            <td>${new Date(a.creado_en).toLocaleString('es-AR')}</td>
-            <td>${a.nombre || 'N/A'} (${a.email || '-'})</td>
-            <td><strong>${a.accion}</strong></td>
-            <td>${a.detalle || '-'}</td>
-            <td>${a.ip || '-'}</td>
+            <td>${escaparHtml(new Date(a.creado_en).toLocaleString('es-AR'))}</td>
+            <td>${escaparHtml(a.nombre || 'N/A')} (${escaparHtml(a.email || '-')})</td>
+            <td><strong>${escaparHtml(a.accion)}</strong></td>
+            <td>${escaparHtml(a.detalle || '-')}</td>
+            <td>${escaparHtml(a.ip || '-')}</td>
           </tr>
-        `).join("");
+        `;
+        }).join("");
       } catch (err) {
         console.error(err);
       }
     }
 
+    const CATEGORIAS_AYUDA = {
+      general: "Consulta general",
+      cuenta: "Mi cuenta",
+      curso: "Cursos y niveles",
+      accesibilidad: "Accesibilidad",
+      seguridad: "Seguridad y estafas"
+    };
+
+    function rolActual() {
+      return String((currentUser && currentUser.role_name) || "").toLowerCase();
+    }
+
+    function puedeAtenderAyuda() {
+      return rolActual() === "superadmin" || rolActual() === "moderador";
+    }
+
+    async function cargarAyuda() {
+      const tbody = document.getElementById("ayudaTable");
+      try {
+        const res = await fetch(API + "/ayuda", { headers: cabecerasAdmin() });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "No se pudieron cargar las solicitudes");
+
+        const pendientes = data.filter(function (s) { return s.estado === "pendiente"; }).length;
+        document.getElementById("ayudaPendientes").textContent = pendientes + (pendientes === 1 ? " pendiente" : " pendientes");
+
+        if (data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="admin-vacio">Todavía no hay solicitudes de ayuda.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = data.map(function (s) {
+          const categoria = CATEGORIAS_AYUDA[s.categoria] || s.categoria || "Consulta general";
+          const estado = String(s.estado || "pendiente");
+          const acciones = puedeAtenderAyuda()
+            ? '<div class="admin-acciones">' +
+                '<button class="btn btn-primary" data-ayuda-id="' + Number(s.id) + '" data-estado="en_proceso">En proceso</button>' +
+                '<button class="btn btn-success" data-ayuda-id="' + Number(s.id) + '" data-estado="resuelto">Resuelto</button>' +
+                '<button class="btn" style="background:#ECEFF1;color:#37474F" data-ayuda-id="' + Number(s.id) + '" data-estado="pendiente">Pendiente</button>' +
+              '</div>'
+            : "—";
+          return `
+          <tr>
+            <td>${escaparHtml(new Date(s.creado_en).toLocaleString("es-AR"))}</td>
+            <td>${escaparHtml(s.usuario_nombre || s.nombre)}<br><small>${escaparHtml(s.email)}</small></td>
+            <td>${escaparHtml(categoria)}</td>
+            <td class="admin-mensaje">${escaparHtml(s.mensaje)}</td>
+            <td><span class="badge badge-estado-${escaparHtml(estado)}">${escaparHtml(estado)}</span></td>
+            <td>${acciones}</td>
+          </tr>`;
+        }).join("");
+
+        tbody.querySelectorAll("button[data-ayuda-id]").forEach(function (boton) {
+          boton.addEventListener("click", function () {
+            cambiarEstadoAyuda(Number(boton.dataset.ayudaId), boton.dataset.estado);
+          });
+        });
+      } catch (err) {
+        tbody.innerHTML = '<tr><td colspan="6" class="admin-vacio">' + escaparHtml(err.message) + '</td></tr>';
+      }
+    }
+
+    async function cambiarEstadoAyuda(id, estado) {
+      try {
+        const res = await fetch(API + "/ayuda/" + id + "/estado", {
+          method: "PUT",
+          headers: cabecerasAdmin(),
+          body: JSON.stringify({ estado: estado })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "No se pudo actualizar");
+        cargarAyuda();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function cargarFeedback() {
+      const tbody = document.getElementById("feedbackTable");
+      try {
+        const res = await fetch(API + "/feedback", { headers: cabecerasAdmin() });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "No se pudieron cargar las opiniones");
+
+        document.getElementById("feedbackTotal").textContent =
+          data.length + (data.length === 1 ? " opinión" : " opiniones");
+
+        if (data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="admin-vacio">Todavía no hay opiniones.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = data.map(function (f) {
+          const puntaje = Math.max(1, Math.min(5, Number(f.puntaje) || 0));
+          const estrellas = "★".repeat(puntaje) + "☆".repeat(5 - puntaje);
+          return `
+          <tr>
+            <td>${escaparHtml(new Date(f.creado_en).toLocaleString("es-AR"))}</td>
+            <td>${escaparHtml(f.usuario_nombre || "Persona sin cuenta")}</td>
+            <td>${escaparHtml(f.pantalla || "-")}</td>
+            <td><span class="admin-estrellas" title="${puntaje} de 5">${estrellas}</span></td>
+            <td class="admin-mensaje">${escaparHtml(f.comentario || "—")}</td>
+          </tr>`;
+        }).join("");
+      } catch (err) {
+        tbody.innerHTML = '<tr><td colspan="5" class="admin-vacio">' + escaparHtml(err.message) + '</td></tr>';
+      }
+    }
+
     function logoutAdmin() {
       currentUser = null;
+      tokenActual = null;
       document.getElementById("adminView").style.display = "none";
       document.getElementById("loginView").style.display = "block";
+      document.getElementById("adminRol").textContent = "Control de Acceso Basado en Roles (RBAC)";
+      document.querySelectorAll("[data-solo-superadmin]").forEach(function (elemento) {
+        elemento.hidden = false;
+      });
       document.getElementById("loginAdminForm").reset();
     }
   </script>

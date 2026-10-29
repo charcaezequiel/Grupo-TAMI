@@ -1,0 +1,35 @@
+{
+  "id": "/",
+  "name": "TAMI - Tecnología Amigable para Mayores e Inclusiva",
+  "short_name": "TAMI",
+  "description": "Aprendé a usar tu celular, hacer trámites y protegerte de las estafas a tu ritmo, con letras grandes y ayuda paso a paso.",
+  "lang": "es-AR",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#EBF8FA",
+  "theme_color": "#0A4B5C",
+  "categories": ["education", "accessibility"],
+  "icons": [
+    {
+      "src": "/img/icono-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/img/icono-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/img/icono-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
