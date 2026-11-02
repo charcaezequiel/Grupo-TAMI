@@ -105,31 +105,31 @@
         <ul class="header__nav-lista">
           <li>
             <button class="header__nav-item" id="btn-nav-campus" type="button">
-              <span class="header__nav-icono" aria-hidden="true">&#x1F4DA;</span>
+
               <span>Campus</span>
             </button>
           </li>
           <li>
             <button class="header__nav-item" id="btn-nav-progreso" type="button">
-              <span class="header__nav-icono" aria-hidden="true">&#x1F4CA;</span>
+
               <span>Progreso</span>
             </button>
           </li>
           <li>
             <button class="header__nav-item" id="btn-nav-escudo" type="button">
-              <span class="header__nav-icono" aria-hidden="true">&#x1F512;</span>
+
               <span>Escudo</span>
             </button>
           </li>
           <li>
             <button class="header__nav-item" id="btn-nav-trabajos" type="button">
-              <span class="header__nav-icono" aria-hidden="true">&#x1F6E0;&#xFE0F;</span>
+
               <span>Trabajos</span>
             </button>
           </li>
           <li>
             <button class="header__nav-item" id="btn-nav-perfil" type="button">
-              <span class="header__nav-icono" aria-hidden="true">&#x1F464;</span>
+
               <span>Perfil</span>
             </button>
           </li>
@@ -168,7 +168,7 @@
           id="btn-cerrar-sesion"
           type="button"
           aria-label="Cerrar sesion y volver al inicio"
-        ><span aria-hidden="true">&#x1F6AA;</span> Salir</button>
+        >Salir</button>
       </div>
     </div>
   </header>
@@ -200,31 +200,36 @@
     >
       <!-- ---------- HERO / BIENVENIDA ---------- -->
       <div class="hero">
+        <div class="hero__contenido">
+          <p class="hero__etiqueta">Inclusión digital para personas mayores</p>
+          <h2 id="inicio-titulo" class="hero__titulo">Bienvenido a TAMI</h2>
+          <p class="hero__texto">
+            Tecnología Amigable para Mayores e Inclusiva: un espacio para aprender a usar
+            tus dispositivos con confianza, a tu ritmo y sin miedo, y para protegerte de
+            las estafas en línea.
+          </p>
+          <div class="hero__acciones">
+            <button class="btn btn--primario btn--masivo" id="btn-registrarse" type="button">
+              Crear mi cuenta
+            </button>
+            <button class="btn btn--secundario btn--masivo" id="btn-ir-login" type="button">
+              Ya tengo cuenta, ingresar
+            </button>
+          </div>
+        </div>
         <img
           class="hero__ilustracion"
-          src="../img/hero-ilustracion.svg"
-          alt="Dos personas mayores conversan sonrientes con una tableta que muestra el escudo de TAMI"
-          width="720"
-          height="420"
+          src="../img/hero-ilustracion-formal.jpg"
+          alt="Dos personas mayores consultan juntas una tableta en un ambiente tranquilo"
+          width="1200"
+          height="800"
         >
-        <h2 id="inicio-titulo" class="hero__titulo">Bienvenido a TAMI</h2>
-        <p class="hero__texto">
-          Tecnología Amigable para Mayores e Inclusiva: un espacio para aprender a usar
-          tus dispositivos con confianza, a tu ritmo y sin miedo, y para protegerte de
-          las estafas en línea.
-        </p>
-        <button class="btn btn--primario btn--masivo" id="btn-registrarse" type="button">
-          Crear mi cuenta
-        </button>
-        <button class="btn btn--secundario btn--masivo" id="btn-ir-login" type="button">
-          Ya tengo cuenta, ingresar
-        </button>
       </div>
 
       <!-- ---------- QUÉ QUEREMOS TRANSMITIR ---------- -->
       <section class="panel" id="seccion-que-es" aria-labelledby="propo-titulo">
         <div class="panel__encabezado">
-          <span class="panel__icono" aria-hidden="true">&#x1F3AF;</span>
+
           <h2 id="propo-titulo" class="panel__titulo">Qué queremos transmitir</h2>
         </div>
         <p class="panel__texto">
@@ -239,7 +244,7 @@
         </p>
         <ul class="pilares" role="list">
           <li class="pilar">
-            <span class="pilar__icono" aria-hidden="true">&#x1F91D;</span>
+
             <h3 class="pilar__titulo">La tecnología es una aliada</h3>
             <p class="pilar__texto">
               No un enemigo ni un motivo de angustia. Sirve para hacer trámites sin
@@ -248,7 +253,7 @@
             </p>
           </li>
           <li class="pilar">
-            <span class="pilar__icono" aria-hidden="true">&#x1F31F;</span>
+
             <h3 class="pilar__titulo">Aprender a tu propio ritmo</h3>
             <p class="pilar__texto">
               Letras grandes, botones grandes, pasos cortos y navegación lineal.
@@ -257,7 +262,7 @@
             </p>
           </li>
           <li class="pilar">
-            <span class="pilar__icono" aria-hidden="true">&#x26D4;&#xFE0F;</span>
+
             <h3 class="pilar__titulo">Prevenir es mejor que curar</h3>
             <p class="pilar__texto">
               Ante la duda, no actúes: <strong>pará, pensá y consultá</strong>.
@@ -266,7 +271,7 @@
             </p>
           </li>
           <li class="pilar">
-            <span class="pilar__icono" aria-hidden="true">&#x1F465;</span>
+
             <h3 class="pilar__titulo">Nadie queda afuera</h3>
             <p class="pilar__texto">
               La inclusión digital es un derecho, no un lujo. Si una persona mayor
@@ -279,7 +284,7 @@
       <!-- ---------- EL PROBLEMA QUE QUEREMOS RESOLVER ---------- -->
       <section class="panel" aria-labelledby="contexto-titulo">
         <div class="panel__encabezado">
-          <span class="panel__icono" aria-hidden="true">&#x26A0;&#xFE0F;</span>
+
           <h2 id="contexto-titulo" class="panel__titulo">El problema que queremos resolver</h2>
         </div>
         <p class="panel__texto">
@@ -311,7 +316,7 @@
       <!-- ---------- CÓMO FUNCIONA ---------- -->
       <section class="panel" id="seccion-como-funciona" aria-labelledby="recorrido-titulo">
         <div class="panel__encabezado">
-          <span class="panel__icono" aria-hidden="true">&#x1F9ED;</span>
+
           <h2 id="recorrido-titulo" class="panel__titulo">Cómo funciona el aprendizaje</h2>
         </div>
         <p class="panel__texto">
@@ -370,8 +375,8 @@
       <!-- ---------- DEMO INTERACTIVA DEL ESCUDO ---------- -->
       <section class="panel panel--demo" id="seccion-demo-escudo" aria-labelledby="demo-titulo">
         <div class="panel__encabezado">
-          <span class="panel__icono" aria-hidden="true">&#x1F6E1;&#xFE0F;</span>
-          <h2 id="demo-titulo" class="panel__titulo">Probalo vos: ¿es estafa o es confiable?</h2>
+
+          <h2 id="demo-titulo" class="panel__titulo">Ejemplo práctico: estafa o sitio confiable</h2>
         </div>
         <p class="panel__texto">
           Así se practica en el <strong>Escudo de Seguridad</strong>. Leé el mensaje y elegí
@@ -386,10 +391,10 @@
           </div>
           <div class="demo-escudo__acciones" id="demo-acciones">
             <button class="btn btn--masivo demo-escudo__boton demo-escudo__boton--estafa" id="btn-demo-estafa" type="button">
-              <span aria-hidden="true">&#x1F6A8;</span> Es una estafa
+              Es una estafa
             </button>
             <button class="btn btn--masivo demo-escudo__boton demo-escudo__boton--confiable" id="btn-demo-confiable" type="button">
-              <span aria-hidden="true">&#x2705;</span> Parece confiable
+              Parece confiable
             </button>
           </div>
           <div class="demo-escudo__resultado" id="demo-resultado" role="status" aria-live="polite" tabindex="-1" hidden></div>
@@ -398,23 +403,23 @@
           </button>
         </div>
         <p class="demo-escudo__nota">
-          ¿Querés practicar con muchos más casos y ganar la insignia del Escudo?
-          <button class="enlace-en-linea" id="btn-demo-cuenta" type="button">Creá tu cuenta gratis</button>.
+          Para practicar con más casos y obtener la insignia del Escudo,
+          <button class="enlace-en-linea" id="btn-demo-cuenta" type="button">creá una cuenta gratuita</button>.
         </p>
       </section>
 
       <!-- ---------- LAS LECCIONES ---------- -->
       <section class="panel" id="seccion-lecciones" aria-labelledby="lecciones-titulo">
         <div class="panel__encabezado">
-          <span class="panel__icono" aria-hidden="true">&#x1F4DA;</span>
-          <h2 id="lecciones-titulo" class="panel__titulo">Las lecciones: qué vas a aprender</h2>
+
+          <h2 id="lecciones-titulo" class="panel__titulo">Contenidos de los cursos</h2>
         </div>
         <p class="panel__texto">
           El Campus Educativo está pensado como <strong>5 cursos</strong> y cada uno tiene
           <strong>4 niveles de comprensión</strong>: Descubrir, Comprender, Practicar y
           Dominar y proteger. Se pueden hacer en el orden que quieras, entre 15 y 25
-          minutos por nivel, y siempre podés volver atrás. Estos son todos, con lo que
-          vas a aprender en cada uno:
+          minutos por nivel, y siempre podés volver atrás. Estos son todos los cursos,
+          con los contenidos de cada uno:
         </p>
 
         <ol class="modulos-detalle" role="list">
@@ -600,7 +605,7 @@
       <!-- ---------- IMPACTO ---------- -->
       <section class="panel panel--impacto" id="seccion-impacto" aria-labelledby="impacto-titulo">
         <div class="panel__encabezado">
-          <span class="panel__icono" aria-hidden="true">&#x1F331;</span>
+
           <h2 id="impacto-titulo" class="panel__titulo">El impacto que queremos generar</h2>
         </div>
         <p class="panel__texto">
@@ -609,7 +614,7 @@
         </p>
         <ul class="impacto" role="list">
           <li class="impacto__item">
-            <h3 class="impacto__titulo">&#x1F475; En cada persona mayor</h3>
+            <h3 class="impacto__titulo">En cada persona mayor</h3>
             <p class="impacto__texto">
               Autonomía para hacer sus propios trámites, autostima digital («yo puedo
               con esto»), dinero y datos protegidos, y sobre todo menos miedo a
@@ -617,7 +622,7 @@
             </p>
           </li>
           <li class="impacto__item">
-            <h3 class="impacto__titulo">&#x1F46A; En las familias</h3>
+            <h3 class="impacto__titulo">En las familias</h3>
             <p class="impacto__texto">
               Menos angustia y más conversación: la tecnología deja de ser un tema
               tabú o de discusión y pasa a ser un puente entre generaciones, donde
@@ -625,7 +630,7 @@
             </p>
           </li>
           <li class="impacto__item">
-            <h3 class="impacto__titulo">&#x1F3E0; En la comunidad</h3>
+            <h3 class="impacto__titulo">En la comunidad</h3>
             <p class="impacto__texto">
               Una cultura de prevención: personas que revisan un mensaje antes de hacer
               clic, que avisan a sus vecinos, que ayudan en el club o en el centro de
@@ -633,7 +638,7 @@
             </p>
           </li>
           <li class="impacto__item">
-            <h3 class="impacto__titulo">&#x1F30D; En el mundo</h3>
+            <h3 class="impacto__titulo">En el mundo</h3>
             <p class="impacto__texto">
               Un modelo replicable: la prueba de que desde una escuela pública se puede
               construir una solución real que reduzca la brecha digital y el fraude,
@@ -651,7 +656,7 @@
       <!-- ---------- PREGUNTAS FRECUENTES ---------- -->
       <section class="panel" id="seccion-preguntas" aria-labelledby="preguntas-titulo">
         <div class="panel__encabezado">
-          <span class="panel__icono" aria-hidden="true">&#x2753;</span>
+
           <h2 id="preguntas-titulo" class="panel__titulo">Preguntas frecuentes</h2>
         </div>
         <p class="panel__texto">
@@ -692,7 +697,7 @@
           <details class="faq__item">
             <summary class="faq__pregunta">¿Qué hago si me trabé o no entiendo algo?</summary>
             <div class="faq__respuesta">
-              <p>En todas las pantallas tenés el botón <strong>Leer en voz alta</strong> y el botón de <strong>Ayuda</strong>. Desde ahí podés pedir acompañamiento y te respondemos. También podés agrandar las letras con A+ o activar el alto contraste.</p>
+              <p>En todas las pantallas tenés el botón <strong>Escuchar</strong> y el botón de <strong>Ayuda</strong>. Desde ahí podés pedir acompañamiento y te respondemos. También podés agrandar las letras con A+.</p>
             </div>
           </details>
           <details class="faq__item">
@@ -706,11 +711,11 @@
 
       <!-- ---------- LLAMADA A LA ACCIÓN ---------- -->
       <div class="cta-final">
-        <span class="cta-final__icono" aria-hidden="true">&#x1F44B;</span>
-        <h2 class="cta-final__titulo">¿Te animás a empezar?</h2>
+
+        <h2 class="cta-final__titulo">Comenzá tu recorrido</h2>
         <p class="cta-final__texto">
-          Creá tu cuenta, hacé el test de nivelación y comprobá en diez minutos que
-          podés aprender esto vos mismo. Es gratuito, es seguro y está pensado para vos.
+          Creá tu cuenta, realicá el test de nivelación y comprobá en diez minutos que
+          podés aprenderlo. Es gratuito, seguro y está pensado para vos.
         </p>
         <div class="cta-final__botones">
           <button class="btn btn--primario btn--masivo" id="btn-registrarse-final" type="button">
@@ -751,7 +756,7 @@
         <!-- Señalización paso a paso para completar el registro -->
         <div class="guia" id="guia-registro" role="group" aria-labelledby="guia-registro-titulo">
           <p class="guia__titulo" id="guia-registro-titulo">
-            <span aria-hidden="true">📋</span> Cómo crear tu cuenta: 5 pasos sencillos
+            Cómo crear tu cuenta: 5 pasos sencillos
           </p>
           <ol class="guia__pasos">
             <li class="guia__paso" data-campo="campo-nombre">
@@ -785,7 +790,7 @@
             <label for="campo-nombre" class="campo__etiqueta">
               <span class="campo__paso">Paso 1</span> Nombre completo
             </label>
-            <p class="campo__pista"><span aria-hidden="true">👉</span> Escribí tu nombre y apellido, como te decís en el día a día.</p>
+            <p class="campo__pista">Escribí tu nombre y apellido, como te decís en el día a día.</p>
             <input
               type="text"
               id="campo-nombre"
@@ -802,7 +807,7 @@
             <label for="campo-email-registro" class="campo__etiqueta">
               <span class="campo__paso">Paso 2</span> Correo electrónico
             </label>
-            <p class="campo__pista"><span aria-hidden="true">👉</span> Escribí tu correo usando el símbolo <strong>@</strong> (arroba).</p>
+            <p class="campo__pista">Escribí tu correo usando el símbolo <strong>@</strong> (arroba).</p>
             <input
               type="email"
               id="campo-email-registro"
@@ -819,7 +824,7 @@
             <label for="campo-password-registro" class="campo__etiqueta">
               <span class="campo__paso">Paso 3</span> Contraseña
             </label>
-            <p class="campo__pista"><span aria-hidden="true">👉</span> Inventá una clave de 6 caracteres o más, sin espacios. La vas a usar para entrar después.</p>
+            <p class="campo__pista">Inventá una clave de 6 caracteres o más, sin espacios. La vas a usar para entrar después.</p>
             <input
               type="password"
               id="campo-password-registro"
@@ -852,17 +857,17 @@
             <span id="error-terminos" class="campo__error" role="alert" hidden></span>
           </div>
           <button type="submit" class="btn btn--primario btn--masivo">
-            <span aria-hidden="true">✅</span> Paso 5: Registrar mi cuenta
+            Paso 5: Registrar mi cuenta
           </button>
           <p class="campo__nota">
-            <span aria-hidden="true">🔒</span> Tu cuenta se crea al instante. Los datos se guardan
+            Tu cuenta se crea al instante. Los datos se guardan
             de forma segura en el servidor de TAMI y solo se usan para tu aprendizaje.
           </p>
           <button type="button" class="btn btn--secundario btn--alternativa" id="btn-ir-login-desde-registro">
             ¿Ya tenés cuenta? Ingresar con la mía
           </button>
           <button type="button" class="btn btn--fantasma btn--volver" id="btn-volver-registro">
-            &#x2190; Volver al inicio
+            Volver al inicio
           </button>
         </form>
       </div>
@@ -895,7 +900,7 @@
         <!-- Señalización paso a paso para iniciar sesión -->
         <div class="guia" id="guia-login" role="group" aria-labelledby="guia-login-titulo">
           <p class="guia__titulo" id="guia-login-titulo">
-            <span aria-hidden="true">📋</span> Cómo ingresar: 3 pasos sencillos
+            Cómo ingresar: 3 pasos sencillos
           </p>
           <ol class="guia__pasos">
             <li class="guia__paso" data-campo="campo-email-login">
@@ -918,7 +923,7 @@
             <label for="campo-email-login" class="campo__etiqueta">
               <span class="campo__paso">Paso 1</span> Correo electrónico
             </label>
-            <p class="campo__pista"><span aria-hidden="true">👉</span> Escribí el mismo correo con el que te registraste.</p>
+            <p class="campo__pista">Escribí el mismo correo con el que te registraste.</p>
             <input
               type="email"
               id="campo-email-login"
@@ -935,7 +940,7 @@
             <label for="campo-password-login" class="campo__etiqueta">
               <span class="campo__paso">Paso 2</span> Contraseña
             </label>
-            <p class="campo__pista"><span aria-hidden="true">👉</span> Escribí la misma contraseña que creaste al registrarte.</p>
+            <p class="campo__pista">Escribí la misma contraseña que creaste al registrarte.</p>
             <input
               type="password"
               id="campo-password-login"
@@ -954,16 +959,16 @@
             </button>
           </div>
           <button type="submit" class="btn btn--primario btn--masivo">
-            <span aria-hidden="true">🔓</span> Paso 3: Ingresar
+            Paso 3: Ingresar
           </button>
           <p class="campo__nota">
-            <span aria-hidden="true">🔒</span> Al tocar el botón entrás a tu cuenta. Tus datos quedan solo en este dispositivo.
+            Al tocar el botón entrás a tu cuenta. Tus datos quedan solo en este dispositivo.
           </p>
           <button type="button" class="btn btn--secundario btn--alternativa" id="btn-registrarse-desde-login">
             ¿No tenés cuenta? Crear mi cuenta
           </button>
           <button type="button" class="btn btn--fantasma btn--volver" id="btn-volver-login">
-            &#x2190; Volver al inicio
+            Volver al inicio
           </button>
         </form>
       </div>
@@ -1000,7 +1005,7 @@
               Correo electrónico de tu cuenta
             </label>
             <p class="campo__pista">
-              <span aria-hidden="true">👉</span> Revisá también la carpeta de spam o correo no deseado.
+              Revisá también la carpeta de spam o correo no deseado.
             </p>
             <input
               type="email"
@@ -1015,7 +1020,7 @@
             <span id="error-email-recuperar" class="campo__error" role="alert" hidden></span>
           </div>
           <button type="submit" class="btn btn--primario btn--masivo" id="btn-enviar-recuperacion">
-            <span aria-hidden="true">📧</span> Enviar enlace de recuperación
+            Enviar enlace de recuperación
           </button>
         </form>
 
@@ -1028,7 +1033,7 @@
             href="#"
             hidden
           >
-            <span aria-hidden="true">🧪</span> Abrir enlace de prueba
+            Abrir enlace de prueba
           </a>
           <p id="recuperar-aviso-dev" class="campo__nota" hidden>
             Este enlace se muestra solo en desarrollo porque el servidor no tiene
@@ -1037,7 +1042,7 @@
         </div>
 
         <button type="button" class="btn btn--fantasma btn--volver" id="btn-volver-recuperar">
-          &#x2190; Volver a iniciar sesión
+          Volver a iniciar sesión
         </button>
       </div>
     </section>
@@ -1074,7 +1079,7 @@
               Contraseña nueva
             </label>
             <p class="campo__pista">
-              <span aria-hidden="true">🔐</span> No uses tu nombre ni una contraseña que ya uses en otro sitio.
+              No uses tu nombre ni una contraseña que ya uses en otro sitio.
             </p>
             <input
               type="password"
@@ -1106,20 +1111,20 @@
           </div>
           <span id="error-restablecer" class="campo__error" role="alert" hidden></span>
           <button type="submit" class="btn btn--primario btn--masivo" id="btn-guardar-password-restablecer">
-            <span aria-hidden="true">🔐</span> Guardar mi contraseña nueva
+            Guardar mi contraseña nueva
           </button>
         </form>
 
         <div id="restablecer-resultado" class="recuperacion__resultado" role="status" aria-live="polite" hidden>
-          <h3 class="recuperacion__titulo">¡Contraseña actualizada!</h3>
+          <h3 class="recuperacion__titulo">Contraseña actualizada</h3>
           <p id="restablecer-resultado-texto" class="recuperacion__texto"></p>
           <button type="button" class="btn btn--primario btn--masivo" id="btn-ir-login-desde-restablecer">
-            <span aria-hidden="true">🔓</span> Iniciar sesión con mi contraseña nueva
+            Iniciar sesión con mi contraseña nueva
           </button>
         </div>
 
         <button type="button" class="btn btn--fantasma btn--volver" id="btn-volver-restablecer">
-          &#x2190; Volver a iniciar sesión
+          Volver a iniciar sesión
         </button>
       </div>
     </section>
@@ -1174,9 +1179,9 @@
         <!-- ---------- SALUDO ---------- -->
         <div class="dashboard__cabecera">
           <p class="dashboard__seguridad">
-            <span aria-hidden="true">&#x1F512;</span> Est&aacute;s en un entorno totalmente seguro
+            Est&aacute;s en un entorno totalmente seguro
           </p>
-          <h2 id="dashboard-titulo" class="dashboard__saludo" aria-live="polite">&iexcl;Hola!</h2>
+          <h2 id="dashboard-titulo" class="dashboard__saludo" aria-live="polite">Hola</h2>
         </div>
 
         <!-- ---------- FICHA DEL USUARIO (clic = configuracion) ---------- -->
@@ -1187,7 +1192,7 @@
             <span class="perfil-tarjeta__nivel" id="dashboard-nivel">Nivel Principiante</span>
           </span>
           <span class="perfil-tarjeta__accion">
-            <span aria-hidden="true">&#x2699;</span>
+
             <span>Configurar mi cuenta</span>
           </span>
         </button>
@@ -1196,30 +1201,30 @@
         <div class="dashboard__resumen" id="dashboard-resumen" aria-live="polite"></div>
 
         <!-- ---------- ACCESOS ---------- -->
-        <h3 class="dashboard__titulo-seccion">Eleg&iacute; d&oacute;nde quer&eacute;s seguir</h3>
-        <p class="dashboard__subtitulo">Todo est&aacute; a un toque, sin meterte en redejas.</p>
+        <h3 class="dashboard__titulo-seccion">Seleccion&aacute; una secci&oacute;n</h3>
+        <p class="dashboard__subtitulo">Acced&eacute; a cada secci&oacute;n desde este men&uacute;.</p>
 
         <div class="dashboard__grid">
           <button class="tarjeta-acceso tarjeta-acceso--movil" id="btn-campus" type="button" aria-describedby="desc-campus">
-            <span class="tarjeta-acceso__icono" aria-hidden="true">&#x1F4DA;</span>
+
             <span class="tarjeta-acceso__titulo">Campus Educativo</span>
             <span class="tarjeta-acceso__desc" id="desc-campus">5 cursos con 4 niveles cada uno</span>
           </button>
 
           <button class="tarjeta-acceso tarjeta-acceso--trabajos" id="btn-trabajos" type="button" aria-describedby="desc-trabajos">
-            <span class="tarjeta-acceso__icono" aria-hidden="true">&#x1F6E0;&#xFE0F;</span>
+
             <span class="tarjeta-acceso__titulo">Trabajos Pr&aacute;cticos</span>
             <span class="tarjeta-acceso__desc" id="desc-trabajos">Mini trabajos para tu nivel</span>
           </button>
 
           <button class="tarjeta-acceso tarjeta-acceso--escudo" id="btn-escudo" type="button" aria-describedby="desc-escudo">
-            <span class="tarjeta-acceso__icono" aria-hidden="true">&#x1F512;</span>
+
             <span class="tarjeta-acceso__titulo">Escudo de Seguridad</span>
             <span class="tarjeta-acceso__desc" id="desc-escudo">Mini retos para detectar estafas</span>
           </button>
 
           <button class="tarjeta-acceso tarjeta-acceso--progreso" id="btn-progreso" type="button" aria-describedby="desc-progreso">
-            <span class="tarjeta-acceso__icono" aria-hidden="true">&#x1F4CA;</span>
+
             <span class="tarjeta-acceso__titulo">Mi Progreso</span>
             <span class="tarjeta-acceso__desc" id="desc-progreso">Mira cu&aacute;nto aprendiste</span>
           </button>
@@ -1227,7 +1232,7 @@
 
         <!-- ---------- CONSEJO DEL DÍA ---------- -->
         <div class="dashboard__consejo">
-          <span class="dashboard__consejo-icono" aria-hidden="true">&#x1F4A1;</span>
+
           <p class="dashboard__consejo-texto" id="dashboard-consejo">
             Ante la duda: par&aacute;, pens&aacute; y consult&aacute;.
           </p>
@@ -1245,7 +1250,7 @@
       hidden
     >
       <div class="contenedor-lista">
-        <h2 id="campus-titulo" class="contenedor-lista__titulo">&#x1F4DA; Campus Educativo</h2>
+        <h2 id="campus-titulo" class="contenedor-lista__titulo">Campus Educativo</h2>
         <p class="contenedor-lista__subtitulo">Eleg&iacute; un curso. Cada curso tiene 4 niveles de comprensi&oacute;n: Descubrir, Comprender, Practicar y Dominar y proteger.</p>
 
         <div id="campus-continuar" class="campus-continuar" hidden></div>
@@ -1263,7 +1268,7 @@
         </ul>
 
         <button class="btn btn--fantasma btn--volver" id="btn-volver-campus" type="button">
-          &#x2190; Volver al menu
+          Volver al menu
         </button>
       </div>
     </section>
@@ -1286,7 +1291,7 @@
         <div class="curso__meta" id="curso-meta"></div>
 
         <div class="curso__explicacion">
-          <h3 class="curso__subtitulo">&#x1F9ED; C&oacute;mo est&aacute; organizado este curso</h3>
+          <h3 class="curso__subtitulo">C&oacute;mo est&aacute; organizado este curso</h3>
           <p class="curso__texto">
             El curso avanza en cuatro niveles de comprensi&oacute;n, uno por vez: para entrar
             al siguiente ten&eacute;s que completar el repaso del anterior. Cada nivel tiene
@@ -1295,11 +1300,11 @@
           <ol class="curso__niveles-guia" id="curso-niveles-guia"></ol>
         </div>
 
-        <h3 class="curso__subtitulo">&#x1F4D6; Niveles del curso</h3>
+        <h3 class="curso__subtitulo">Niveles del curso</h3>
         <div id="lista-niveles-curso" class="lista-niveles" aria-live="polite"></div>
 
         <button class="btn btn--fantasma btn--volver" id="btn-volver-curso" type="button">
-          &#x2190; Volver al Campus
+          Volver al Campus
         </button>
       </div>
     </section>
@@ -1335,11 +1340,10 @@
 
         <div class="leccion__navegacion">
           <button class="btn btn--secundario btn--masivo" id="btn-leccion-anterior" type="button">
-            &#x2190; Anterior
+            Anterior
           </button>
           <button class="btn btn--primario btn--masivo" id="btn-leccion-siguiente" type="button">
-            Siguiente &#x2192;
-          </button>
+            Siguiente          </button>
         </div>
       </div>
     </section>
@@ -1354,7 +1358,7 @@
       hidden
     >
       <div class="contenedor-lista">
-        <h2 id="escudo-titulo" class="contenedor-lista__titulo">&#x1F512; Escudo de Seguridad</h2>
+        <h2 id="escudo-titulo" class="contenedor-lista__titulo">Escudo de Seguridad</h2>
         <p class="contenedor-lista__subtitulo">
           Mini retos de ciberataques: mirá cada mensaje y decidí si es una estafa.
           Si lo es, elegí de qué tipo de engaño se trata.
@@ -1363,7 +1367,7 @@
         <div id="escudo-retos" class="escudo-retos" aria-live="polite"></div>
 
         <button class="btn btn--fantasma btn--volver" id="btn-volver-escudo" type="button">
-          &#x2190; Volver al menu
+          Volver al menu
         </button>
       </div>
     </section>
@@ -1378,7 +1382,7 @@
       hidden
     >
       <div class="contenedor-formulario">
-        <h2 id="progreso-titulo" class="contenedor-formulario__titulo">&#x1F4CA; Mi Progreso</h2>
+        <h2 id="progreso-titulo" class="contenedor-formulario__titulo">Mi Progreso</h2>
         <p class="contenedor-formulario__subtitulo">
           Todo lo que aprendiste, ordenado: tu nivel, los m&oacute;dulos, los trabajos pr&aacute;cticos y tus logros.
         </p>
@@ -1387,7 +1391,7 @@
         </div>
 
         <button class="btn btn--fantasma btn--volver" id="btn-volver-progreso" type="button">
-          &#x2190; Volver al menu
+          Volver al menu
         </button>
       </div>
     </section>
@@ -1418,10 +1422,10 @@
 
         <div class="certificado__acciones no-imprimir">
           <button class="btn btn--primario btn--masivo" id="btn-imprimir-certificado" type="button">
-            <span aria-hidden="true">&#x1F5A8;&#xFE0F;</span> Imprimir o guardar en PDF
+            Imprimir o guardar en PDF
           </button>
           <button class="btn btn--fantasma btn--volver" id="btn-volver-certificado" type="button">
-            &#x2190; Volver a Mi Progreso
+            Volver a Mi Progreso
           </button>
         </div>
       </div>
@@ -1437,7 +1441,7 @@
       hidden
     >
       <div class="contenedor-lista">
-        <h2 id="trabajos-titulo" class="contenedor-lista__titulo">&#x1F6E0;&#xFE0F; Trabajos Pr&aacute;cticos</h2>
+        <h2 id="trabajos-titulo" class="contenedor-lista__titulo">Trabajos Pr&aacute;cticos</h2>
         <p class="contenedor-lista__subtitulo">
           Cada m&oacute;dulo tiene un mini trabajo distinto seg&uacute;n tu nivel de aprendizaje.
           Marc&aacute; el que ya terminaste para que quede guardado.
@@ -1450,7 +1454,7 @@
         </div>
 
         <button class="btn btn--fantasma btn--volver" id="btn-volver-trabajos" type="button">
-          &#x2190; Volver al menu
+          Volver al menu
         </button>
       </div>
     </section>
@@ -1465,7 +1469,7 @@
       hidden
     >
       <div class="contenedor-formulario">
-        <h2 id="config-titulo" class="contenedor-formulario__titulo">&#x2699; Mi Configuraci&oacute;n</h2>
+        <h2 id="config-titulo" class="contenedor-formulario__titulo">Mi Configuraci&oacute;n</h2>
         <p class="contenedor-formulario__subtitulo">
           Ac&aacute; cambi&aacute; tu foto, tu nombre, tu correo o tu contraseña, y ajust&aacute; la lectura a tu medida.
         </p>
@@ -1483,7 +1487,7 @@
         <!-- ---------- FOTO DE PERFIL ---------- -->
         <form id="formulario-foto" class="config__bloque" novalidate>
           <h3 class="config__titulo-bloque">
-            <span aria-hidden="true">&#x1F5BC;&#xFE0F;</span> Tu foto
+            Tu foto
           </h3>
           <p class="config__texto">
             Eleg&iacute; una foto de tu galer&iacute;a o un color con tu inicial. Queda guardada solo en este dispositivo.
@@ -1494,18 +1498,18 @@
           </div>
           <div class="config__avatares" id="opciones-avatar" role="group" aria-label="Elegir un color para tu foto"></div>
           <button type="submit" class="btn btn--secundario">
-            <span aria-hidden="true">&#x1F4BE;</span> Guardar mi foto
+            Guardar mi foto
           </button>
         </form>
 
         <!-- ---------- NOMBRE Y NIVEL ---------- -->
         <form id="formulario-perfil" class="config__bloque" novalidate>
           <h3 class="config__titulo-bloque">
-            <span aria-hidden="true">&#x1F464;</span> Nombre de usuario y nivel
+            Nombre de usuario y nivel
           </h3>
           <div class="campo">
             <label for="campo-config-nombre" class="campo__etiqueta">Nombre de usuario</label>
-            <p class="campo__pista"><span aria-hidden="true">&#x1F449;</span> Es el nombre que te muestran en TAMI.</p>
+            <p class="campo__pista">Es el nombre que te muestran en TAMI.</p>
             <input
               type="text"
               id="campo-config-nombre"
@@ -1519,7 +1523,7 @@
           </div>
           <div class="campo">
             <label for="campo-config-nivel" class="campo__etiqueta">Tu nivel de aprendizaje</label>
-            <p class="campo__pista"><span aria-hidden="true">&#x1F449;</span> Decide qu&eacute; mini trabajo te toca.</p>
+            <p class="campo__pista">Decide qu&eacute; mini trabajo te toca.</p>
             <select id="campo-config-nivel" class="campo__input">
               <option value="principiante">Principiante &mdash; todav&iacute;a estoy aprendiendo lo b&aacute;sico</option>
               <option value="intermedio">Intermedio &mdash; ya manejo lo b&aacute;sico, quiero m&aacute;s</option>
@@ -1529,7 +1533,7 @@
           </div>
           <div class="campo">
             <label for="campo-config-password-actual" class="campo__etiqueta">Confirm&aacute; con tu contrase&ntilde;a actual</label>
-            <p class="campo__pista"><span aria-hidden="true">&#x1F510;</span> Solo la pedimos para cambiar tu nombre.</p>
+            <p class="campo__pista">Solo la pedimos para cambiar tu nombre.</p>
             <input
               type="password"
               id="campo-config-password-actual"
@@ -1540,18 +1544,18 @@
             <span id="error-config-password-actual" class="campo__error" role="alert" hidden></span>
           </div>
           <button type="submit" class="btn btn--primario">
-            <span aria-hidden="true">&#x1F4DD;</span> Guardar mis datos
+            Guardar mis datos
           </button>
         </form>
 
         <!-- ---------- CORREO ELECTRONICO ---------- -->
         <form id="formulario-email" class="config__bloque" novalidate>
           <h3 class="config__titulo-bloque">
-            <span aria-hidden="true">&#x1F4E7;</span> Correo electr&oacute;nico
+            Correo electr&oacute;nico
           </h3>
           <div class="campo">
             <label for="campo-config-email" class="campo__etiqueta">Nuevo correo electr&oacute;nico</label>
-            <p class="campo__pista"><span aria-hidden="true">&#x1F449;</span> Es el correo con el que ingres&aacute;s a tu cuenta.</p>
+            <p class="campo__pista">Es el correo con el que ingres&aacute;s a tu cuenta.</p>
             <input
               type="email"
               id="campo-config-email"
@@ -1575,14 +1579,14 @@
             <span id="error-config-email-password" class="campo__error" role="alert" hidden></span>
           </div>
           <button type="submit" class="btn btn--primario">
-            <span aria-hidden="true">&#x1F4E7;</span> Cambiar mi correo
+            Cambiar mi correo
           </button>
         </form>
 
         <!-- ---------- CONTRASENA ---------- -->
         <form id="formulario-password" class="config__bloque" novalidate>
           <h3 class="config__titulo-bloque">
-            <span aria-hidden="true">&#x1F510;</span> Cambiar tu contraseña
+            Cambiar tu contraseña
           </h3>
           <div class="campo">
             <label for="campo-config-password-old" class="campo__etiqueta">Tu contraseña actual</label>
@@ -1598,7 +1602,7 @@
           </div>
           <div class="campo">
             <label for="campo-config-password-nueva" class="campo__etiqueta">Contrase&ntilde;a nueva</label>
-            <p class="campo__pista"><span aria-hidden="true">&#x1F449;</span> M&iacute;nimo 6 caracteres. No uses tu nombre.</p>
+            <p class="campo__pista">M&iacute;nimo 6 caracteres. No uses tu nombre.</p>
             <input
               type="password"
               id="campo-config-password-nueva"
@@ -1622,15 +1626,13 @@
             <span id="error-config-password-repetir" class="campo__error" role="alert" hidden></span>
           </div>
           <button type="submit" class="btn btn--primario">
-            <span aria-hidden="true">&#x1F510;</span> Guardar mi nueva contraseña
+            Guardar mi nueva contraseña
           </button>
         </form>
 
         <!-- ---------- LECTURA Y COLORES ---------- -->
         <form id="formulario-preferencias" class="config__bloque" novalidate>
-          <h3 class="config__titulo-bloque">
-            <span aria-hidden="true">&#x1F50D;</span> Lectura y colores
-          </h3>
+          <h3 class="config__titulo-bloque">Lectura</h3>
           <fieldset class="grupo-opciones">
             <legend class="grupo-opciones__titulo">Tama&ntilde;o de la letra</legend>
             <label class="opcion-radio">
@@ -1656,40 +1658,15 @@
             </label>
           </fieldset>
 
-          <fieldset class="grupo-opciones">
-            <legend class="grupo-opciones__titulo">Tema de colores</legend>
-            <label class="opcion-radio">
-              <input type="radio" name="tema" value="proteccion">
-              <span class="opcion-radio__texto">
-                <span class="opcion-radio__nombre">Protecci&oacute;n Proactiva</span>
-                <span class="opcion-radio__detalle">Celeste y verdeazulado (el original)</span>
-              </span>
-            </label>
-            <label class="opcion-radio">
-              <input type="radio" name="tema" value="bosque">
-              <span class="opcion-radio__texto">
-                <span class="opcion-radio__nombre">Bosque</span>
-                <span class="opcion-radio__detalle">Verde suave, descansa la vista</span>
-              </span>
-            </label>
-            <label class="opcion-radio">
-              <input type="radio" name="tema" value="calido">
-              <span class="opcion-radio__texto">
-                <span class="opcion-radio__nombre">C&aacute;lido</span>
-                <span class="opcion-radio__detalle">Naranja y tierra, muy legible</span>
-              </span>
-            </label>
-          </fieldset>
-
           <button type="submit" class="btn btn--secundario">
-            <span aria-hidden="true">&#x1F3AF;</span> Guardar mis preferencias
+            Guardar mis preferencias
           </button>
         </form>
 
         <!-- ---------- MIS DATOS Y PRIVACIDAD ---------- -->
         <div class="config__bloque config__bloque--datos">
           <h3 class="config__titulo-bloque">
-            <span aria-hidden="true">&#x1F512;</span> Mis datos y privacidad
+            Mis datos y privacidad
           </h3>
           <p class="config__texto">
             Vos sos dueño/a de tus datos. Pod&eacute;s descargar una copia de todo lo que guardamos
@@ -1697,7 +1674,7 @@
           </p>
           <div class="config__acciones-datos">
             <button type="button" class="btn btn--secundario" id="btn-exportar-datos">
-              <span aria-hidden="true">&#x1F4E5;</span> Descargar una copia de mis datos
+              Descargar una copia de mis datos
             </button>
             <a
               href="#"
@@ -1705,7 +1682,7 @@
               data-ir-pantalla="pantalla-legal"
               data-seccion-legal="privacidad"
             >
-              <span aria-hidden="true">&#x1F4D6;</span> Leer la Pol&iacute;tica de privacidad
+              Leer la Pol&iacute;tica de privacidad
             </a>
           </div>
 
@@ -1741,7 +1718,7 @@
                 >
               </div>
               <button type="submit" class="btn btn--peligro" id="btn-eliminar-cuenta">
-                &#x1F5D1;&#xFE0F; Eliminar mi cuenta definitivamente
+                Eliminar mi cuenta definitivamente
               </button>
             </form>
           </details>
@@ -1750,11 +1727,11 @@
         <!-- ---------- ZONA DE PELIGRO ---------- -->
         <div class="config__zona-salir">
           <h3 class="config__titulo-bloque">
-            <span aria-hidden="true">&#x1F6AA;</span> Cerrar sesi&oacute;n
+            Cerrar sesi&oacute;n
           </h3>
           <p class="config__texto">Pod&eacute;s volver a entrar en cualquier momento con tu correo y tu contraseña.</p>
           <button type="button" class="btn btn--fantasma" id="btn-cerrar-sesion-config">
-            &#x1F6AA; Cerrar mi sesi&oacute;n
+            Cerrar mi sesi&oacute;n
           </button>
         </div>
       </div>
@@ -1771,7 +1748,7 @@
     >
       <div class="contenedor-formulario contenedor-formulario--ancho">
         <h2 id="legal-titulo" class="contenedor-formulario__titulo">
-          &#x1F4D6; Privacidad, términos y accesibilidad
+          Privacidad, términos y accesibilidad
         </h2>
         <p class="contenedor-formulario__subtitulo">
           Información clara sobre qué hacemos con tus datos y cómo podés usar TAMI.
@@ -1784,7 +1761,7 @@
         </nav>
 
         <article class="legal__bloque" id="legal-privacidad" aria-labelledby="legal-privacidad-titulo">
-          <h3 id="legal-privacidad-titulo">&#x1F512; Política de privacidad</h3>
+          <h3 id="legal-privacidad-titulo">Política de privacidad</h3>
           <p>
             TAMI es un proyecto educativo de la ET N°20 «Carolina Muzilli» (6° 2°, Proyecto
             Integrador III). Usamos tus datos solamente para que puedas aprender y guardar tu avance.
@@ -1830,7 +1807,7 @@
         </article>
 
         <article class="legal__bloque" id="legal-terminos" aria-labelledby="legal-terminos-titulo">
-          <h3 id="legal-terminos-titulo">&#x1F4CB; Términos de uso</h3>
+          <h3 id="legal-terminos-titulo">Términos de uso</h3>
           <p>
             TAMI es un espacio educativo y gratuito para aprender a usar la tecnología con
             seguridad. Al crear una cuenta te comprometés a:
@@ -1853,7 +1830,7 @@
         </article>
 
         <article class="legal__bloque" id="legal-accesibilidad" aria-labelledby="legal-accesibilidad-titulo">
-          <h3 id="legal-accesibilidad-titulo">&#x267F; Accesibilidad</h3>
+          <h3 id="legal-accesibilidad-titulo">Accesibilidad</h3>
           <p>
             Diseñamos TAMI siguiendo las pautas WCAG 2.1 nivel AA y la Ley 26.653 de
             accesibilidad web. Eso significa:
@@ -1874,7 +1851,7 @@
         </article>
 
         <button type="button" class="btn btn--fantasma btn--volver" id="btn-volver-legal">
-          &#x2190; Volver
+          Volver
         </button>
       </div>
     </section>
@@ -1920,7 +1897,7 @@
     >
       <div class="contenedor-formulario contenedor-formulario--ancho">
         <h2 id="ayuda-titulo" class="contenedor-formulario__titulo">
-          &#x1F198; ¿Necesitás ayuda?
+          ¿Necesitás ayuda?
         </h2>
         <p class="contenedor-formulario__subtitulo">
           Estamos para acompañarte. Podés leer las preguntas frecuentes, hacer el recorrido
@@ -1929,16 +1906,16 @@
 
         <div class="ayuda__acciones">
           <button type="button" class="btn btn--primario" id="btn-iniciar-tour">
-            <span aria-hidden="true">&#x1F9ED;</span> Hacer el recorrido guiado
+            Hacer el recorrido guiado
           </button>
           <button type="button" class="btn btn--secundario" id="btn-leer-ayuda">
-            <span aria-hidden="true">&#x1F50A;</span> Escuchar esta página
+            Escuchar esta página
           </button>
           <button type="button" class="btn btn--secundario" id="btn-instalar-app" hidden>
-            <span aria-hidden="true">&#x1F4F2;</span> Instalar TAMI en mi celular
+            Instalar TAMI en mi celular
           </button>
           <a class="btn btn--fantasma" href="mailto:tami.et20@gmail.com">
-            <span aria-hidden="true">&#x2709;&#xFE0F;</span> Escribir por correo
+            Escribir por correo
           </a>
         </div>
 
@@ -1997,10 +1974,10 @@
         </details>
 
         <details class="ayuda__faq">
-          <summary>¿Cómo agrando la letra o cambio los colores?</summary>
+          <summary>¿Cómo agrando la letra?</summary>
           <p>
             Usá los botones «A−» y «A+» que están siempre abajo a la derecha. También podés
-            entrar a Mi Perfil y elegir «Grande» o «Muy grande», y un tema de colores más cómodo.
+            entrar a Mi Perfil y elegir «Grande» o «Muy grande».
           </p>
         </details>
 
@@ -2021,7 +1998,7 @@
           </div>
           <div class="campo">
             <label for="campo-ayuda-email" class="campo__etiqueta">Tu correo electrónico</label>
-            <p class="campo__pista"><span aria-hidden="true">&#x1F449;</span> Ahí te vamos a responder.</p>
+            <p class="campo__pista">Ahí te vamos a responder.</p>
             <input type="email" id="campo-ayuda-email" class="campo__input" placeholder="Ej: maria@correo.com" autocomplete="email" maxlength="254" required>
           </div>
           <div class="campo">
@@ -2039,15 +2016,15 @@
             <textarea id="campo-ayuda-mensaje" class="campo__input campo__input--textarea" rows="5" maxlength="2000" placeholder="Escribí con tus palabras. No hay apuro." required></textarea>
           </div>
           <button type="submit" class="btn btn--primario" id="btn-enviar-ayuda">
-            <span aria-hidden="true">&#x1F4E8;</span> Enviar mi mensaje
+            Enviar mi mensaje
           </button>
           <p class="campo__nota">
-            <span aria-hidden="true">&#x1F512;</span> Usamos tus datos solo para responderte.
+            Usamos tus datos solo para responderte.
           </p>
         </form>
 
         <button type="button" class="btn btn--fantasma btn--volver" id="btn-volver-ayuda">
-          &#x2190; Volver
+          Volver
         </button>
       </div>
     </section>
@@ -2058,14 +2035,12 @@
     <div class="barra-accesibilidad" role="group" aria-label="Herramientas de accesibilidad">
       <button type="button" class="barra-accesibilidad__boton" id="btn-reducir-texto" aria-label="Reducir el tamaño de la letra" title="Letra más chica">A−</button>
       <button type="button" class="barra-accesibilidad__boton" id="btn-aumentar-texto" aria-label="Aumentar el tamaño de la letra" title="Letra más grande">A+</button>
-      <button type="button" class="barra-accesibilidad__boton" id="btn-contraste" aria-label="Activar o desactivar el alto contraste" aria-pressed="false" title="Alto contraste">◐</button>
-      <button type="button" class="barra-accesibilidad__boton" id="btn-leer-pantalla" aria-label="Escuchar el contenido de esta pantalla" title="Escuchar">🔊</button>
-      <button type="button" class="barra-accesibilidad__boton" id="btn-detener-lectura" aria-label="Detener la lectura en voz alta" title="Detener" hidden>⏹</button>
-      <button type="button" class="barra-accesibilidad__boton" id="btn-abrir-ayuda" aria-label="Abrir la ayuda" title="Ayuda">?</button>
+      <button type="button" class="barra-accesibilidad__boton barra-accesibilidad__boton--texto" id="btn-leer-pantalla" aria-label="Escuchar el contenido de esta pantalla" title="Escuchar esta pantalla">Escuchar</button>
+      <button type="button" class="barra-accesibilidad__boton barra-accesibilidad__boton--texto" id="btn-detener-lectura" aria-label="Detener la lectura en voz alta" title="Detener la lectura" hidden>Detener</button>
+      <button type="button" class="barra-accesibilidad__boton barra-accesibilidad__boton--texto" id="btn-abrir-ayuda" aria-label="Abrir la ayuda" title="Abrir la ayuda">Ayuda</button>
     </div>
 
     <div id="aviso-conexion" class="aviso-conexion" role="status" hidden>
-      <span aria-hidden="true">&#x1F4F6;</span>
       Estás sin conexión. Podés seguir leyendo, pero tu avance se guardará en este dispositivo
       y se enviará cuando vuelva internet.
     </div>
@@ -2080,8 +2055,8 @@
       </div>
       <p class="tour__texto" id="tour-texto"></p>
       <div class="tour__acciones">
-        <button type="button" class="btn btn--fantasma" id="btn-tour-anterior">&#x2190; Anterior</button>
-        <button type="button" class="btn btn--primario" id="btn-tour-siguiente">Siguiente &#x2192;</button>
+        <button type="button" class="btn btn--fantasma" id="btn-tour-anterior">Anterior</button>
+        <button type="button" class="btn btn--primario" id="btn-tour-siguiente">Siguiente</button>
         <button type="button" class="btn btn--secundario" id="btn-tour-cerrar">Terminar</button>
       </div>
     </dialog>

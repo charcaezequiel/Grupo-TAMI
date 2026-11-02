@@ -49,7 +49,7 @@ Capa de **Presentación** y **Lógica** del proyecto. Interfaz accesible con con
   - 60% Fondo: Cian Glacial `#EBF8FA`
   - 30% Estructura: Teal Oscuro `#0A4B5C`
   - 10% Acentos: Teal de Contraste `#007A87`
-- El azul institucional es el tema por defecto. Las preferencias de lectura permiten agrandar la letra y elegir temas alternativos.
+- Paleta institucional única, sin temas alternativos ni modo nocturno. Las preferencias de lectura permiten agrandar la letra.
 - Tipografía de 18 a 36px, botones mínimos de 52px y botones masivos de 60px.
 - Estilos de skip link, breadcrumbs, foco visible, estados `:disabled` y `prefers-reduced-motion`.
 - Responsive: 1 columna en móvil y varias columnas en escritorio.
@@ -66,7 +66,7 @@ Capa de **Presentación** y **Lógica** del proyecto. Interfaz accesible con con
 - **Escudo**: motor de 15 mini retos con decisión estafa/confiable, tipo de estafa, señales, explicación y puntaje. En el inicio hay una demo pública de 3 casos.
 - **Progreso**: combina el avance de la API con el local, muestra el camino de aprendizaje, logros y certificado imprimible por curso.
 - **Opinión**: widget de 1–5 estrellas y comentario conectado a `/api/feedback`.
-- **Ayuda y accesibilidad**: botón de ayuda con formulario, tour guiado en `<dialog>`, lectura en voz alta, A−/A+, alto contraste y banner de sin conexión.
+- **Ayuda y accesibilidad**: botón de ayuda con formulario, tour guiado en `<dialog>`, lectura en voz alta, A−/A+ y banner de sin conexión.
 - **PWA**: registra el service worker, captura `beforeinstallprompt` y ofrece instalar la app desde la pantalla de ayuda.
 - **Foco y accesibilidad**: al cambiar de pantalla, el foco se mueve al título (`tabindex="-1"`).
 
@@ -97,7 +97,7 @@ Capa de **Presentación** y **Lógica** del proyecto. Interfaz accesible con con
 | 15 | Trabajos | Mini trabajos prácticos filtrados por nivel |
 | 16 | Configuración | Perfil, preferencias, correo, contraseña y datos personales |
 | 17 | Legal | Términos, privacidad (Ley 25.326) y accesibilidad |
-| 18 | Ayuda | Guía, tour, lectura en voz alta, contraste e instalación de la app |
+| 18 | Ayuda | Guía, tour, lectura en voz alta e instalación de la app |
 
 ## Conexión con la API
 
@@ -137,7 +137,7 @@ las llamadas usan `http://localhost:3000/api`. Las rutas privadas viajan con
 7. Verificá que el Nivel 2 se desbloquee recién al completar el Nivel 1.
 8. Entrá al Escudo y resolvé los 15 mini retos.
 9. Revisá tu avance en “Mi Progreso” y abrí el certificado de un curso completado.
-10. Desde el botón de ayuda, probá el tour guiado, la lectura en voz alta, A−/A+ y el alto contraste.
+10. Desde el botón de ayuda, probá el tour guiado, la lectura en voz alta y A−/A+.
 11. Desde Configuración, descargá tus datos personales.
 12. Para la recuperación, configurá SMTP en `server/.env` o usá `RESET_DEBUG_LINK=true`; luego tocá **“¿Olvidaste tu contraseña?”**.
 13. Para el panel admin, promové una cuenta con `npm run admin:promover` y abrí `http://localhost:3000/admin.html`.

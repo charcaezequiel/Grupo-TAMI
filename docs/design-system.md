@@ -8,8 +8,9 @@ Sistema de diseno **"Proteccion Proactiva"**: comunica confianza y proteccion pa
 
 1. **Proteccion proactiva**: la interfaz "cuida" al usuario, lo guia y lo previene de errores.
 2. **Inclusividad**: disenado para personas mayores y usuarios novatos.
-3. **Maxima legibilidad**: contraste alto, tipografia grande, botones gigantes.
+3. **Maxima legibilidad**: contraste AA, tipografia grande, botones amplios.
 4. **Minimalismo**: cada pantalla tiene un solo proposito, sin distracciones.
+5. **Tono institucional**: una unica paleta sobria, sin temas alternativos ni modo nocturno.
 
 ## 2. Paleta de colores (regla 60-30-10)
 
@@ -65,26 +66,27 @@ Sistema de diseno **"Proteccion Proactiva"**: comunica confianza y proteccion pa
 
 ## 6. Forma y espaciado
 
-- **Bordes**: radio 8px (elementos), 12px (contenedores grandes).
+- **Bordes**: radio 6-8px en elementos y contenedores; sin formas exageradamente redondeadas.
 - **Espaciado base**: 16px (escala: 4, 8, 16, 24, 32).
-- **Sombras**: sutiles, `rgba(10, 75, 92, 0.08)` para contenedores blancos.
+- **Sombras**: muy sutiles, `rgba(16, 45, 55, 0.06)`, solo para separar superficies.
+- **Fondos**: planos, sin degradados ni texturas decorativas.
 
 ## 7. Iconografia
 
-- **Trazo grueso**: maximo contraste y lectura desde lejos.
+- **Trazo fino y sobrio**: legible pero discreto, sin caricaturas.
 - **Siempre** con texto acompanante o `aria-label`/`role` descriptivo.
 - Los iconos decorativos llevan `aria-hidden="true"`.
-- Sin emojis como unico medio de informacion critica.
+- Sin emojis como unico medio de informacion critica. Las ilustraciones son editoriales y respetan la paleta institucional.
 
 ## 8. Componentes base
 
 | Componente | Caracteristicas |
 |------------|-----------------|
 | Header | Sticky, Teal Oscuro, con logo, titulo y acciones |
-| Tarjeta de acceso | Blanca, borde Teal, icono + titulo + descripcion, 140px minimo |
-| Boton primario | Teal Oscuro, texto blanco, hover Teal Contraste |
+| Tarjeta de acceso | Blanca, borde sutil con acento Teal a la izquierda, titulo + descripcion alineados a la izquierda, 120px minimo |
+| Boton primario | Teal Oscuro, texto blanco, hover Teal de Contraste |
 | Boton secundario | Blanco, borde Teal, texto Teal |
-| Campo de formulario | Borde gris, focus con anillo Teal Contraste |
+| Campo de formulario | Borde gris, focus con anillo Teal de Contraste |
 | Mensaje de error | Texto en `#B00020`, con `role="alert"`, junto al campo |
 | Breadcrumb | Niveles previos clicables, ultimo texto plano con `aria-current` |
 | Barra de progreso | Fondo gris claro, relleno Teal (test) o verde (examen) |

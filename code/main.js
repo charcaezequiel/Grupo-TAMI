@@ -622,7 +622,6 @@ function guardarSesion(usuario, token) {
     email: usuario.email,
     nivelDigital: usuario.nivel_digital,
     tamanoFuente: usuario.tamano_fuente || "normal",
-    temaPreferido: usuario.tema_preferido || "proteccion",
     rol: usuario.role_name || anterior.rol || null,
     token: token || anterior.token || null
   });
@@ -637,16 +636,14 @@ function actualizarSesionDesdeUsuario(usuario) {
     nombre: usuario.nombre !== undefined ? usuario.nombre : actual.nombre,
     email: usuario.email !== undefined ? usuario.email : actual.email,
     nivelDigital: usuario.nivel_digital !== undefined ? usuario.nivel_digital : actual.nivelDigital,
-    tamanoFuente: usuario.tamano_fuente !== undefined ? usuario.tamano_fuente : actual.tamanoFuente,
-    temaPreferido: usuario.tema_preferido !== undefined ? usuario.tema_preferido : actual.temaPreferido
+    tamanoFuente: usuario.tamano_fuente !== undefined ? usuario.tamano_fuente : actual.tamanoFuente
   };
   guardarSesion({
     id: fusionada.id,
     nombre: fusionada.nombre,
     email: fusionada.email,
     nivel_digital: fusionada.nivelDigital,
-    tamano_fuente: fusionada.tamanoFuente,
-    tema_preferido: fusionada.temaPreferido
+    tamano_fuente: fusionada.tamanoFuente
   });
   return fusionada;
 }
@@ -655,7 +652,7 @@ function cerrarSesion() {
   localStorage.removeItem(CLAVE_SESION);
   reiniciarDatosDeSesion();
   ocultarMensaje();
-  aplicarPreferencias("normal", "proteccion");
+  aplicarPreferencias("normal");
   refrescarInterfazSesion(null);
   mostrarPantalla("pantalla-inicio");
   window.TAMI_SESION_VENCIDA_MOSTRADA = false;
@@ -1053,8 +1050,8 @@ function renderizarPasoLeccion(indice) {
 
   if (botonSiguiente) {
     botonSiguiente.textContent = indice === pasos.length - 1
-      ? "✓ Ir al repaso del nivel"
-      : "Siguiente teoría →";
+      ? "Ir al repaso del nivel"
+      : "Siguiente teoría";
   }
 }
 
@@ -1124,12 +1121,6 @@ function crearTarjetaRetoEscudo(reto) {
   const barra = document.createElement("div");
   barra.className = "reto__app";
 
-  const icono = document.createElement("span");
-  icono.className = "reto__app-icono";
-  icono.setAttribute("aria-hidden", "true");
-  icono.textContent = reto.icono || "📩";
-  barra.appendChild(icono);
-
   const canal = document.createElement("span");
   canal.className = "reto__canal";
   canal.textContent = reto.canal;
@@ -1184,7 +1175,7 @@ function crearTarjetaRetoEscudo(reto) {
     cajaEnlace.className = "reto__enlace-caja";
     const etiquetaEnlace = document.createElement("span");
     etiquetaEnlace.className = "reto__enlace-etiqueta";
-    etiquetaEnlace.textContent = "🔗 Enlace";
+    etiquetaEnlace.textContent = "Enlace";
     const enlace = document.createElement("span");
     enlace.className = "reto__enlace";
     enlace.textContent = reto.enlace;
@@ -1197,7 +1188,7 @@ function crearTarjetaRetoEscudo(reto) {
   if (reto.adjunto) {
     const adjunto = document.createElement("p");
     adjunto.className = "reto__adjunto";
-    adjunto.textContent = "📎 " + reto.adjunto;
+    adjunto.textContent = reto.adjunto;
     cuerpo.appendChild(adjunto);
   }
 
@@ -1279,11 +1270,11 @@ function renderizarRetoEscudo(enfocar) {
     const titulo = document.createElement("p");
     titulo.className = "reto__feedback-titulo";
     if (acertado) {
-      titulo.textContent = "✅ ¡Correcto!";
+      titulo.textContent = "Correcto.";
     } else if (reto.esEstafa) {
-      titulo.textContent = "❌ Ojo: era una estafa";
+      titulo.textContent = "Incorrecto: era una estafa.";
     } else {
-      titulo.textContent = "❌ Era un mensaje confiable";
+      titulo.textContent = "Incorrecto: el mensaje era confiable.";
     }
     caja.appendChild(titulo);
 
@@ -1319,8 +1310,8 @@ function renderizarRetoEscudo(enfocar) {
       const tituloSenales = document.createElement("p");
       tituloSenales.className = "reto__senales-titulo";
       tituloSenales.textContent = reto.esEstafa
-        ? "🔎 Señales para detectarlo"
-        : "🔎 Por qué es confiable";
+        ? "Señales para detectarlo"
+        : "Por qué es confiable";
       bloqueSenales.appendChild(tituloSenales);
 
       const listaSenales = document.createElement("ul");
@@ -1337,7 +1328,7 @@ function renderizarRetoEscudo(enfocar) {
     const consejo = document.createElement("div");
     consejo.className = "reto__consejo";
     const etiquetaConsejo = document.createElement("strong");
-    etiquetaConsejo.textContent = "🔒 Qué hacer: ";
+    etiquetaConsejo.textContent = "Qué hacer: ";
     consejo.appendChild(etiquetaConsejo);
     consejo.appendChild(document.createTextNode(reto.consejo));
     caja.appendChild(consejo);
@@ -1348,8 +1339,8 @@ function renderizarRetoEscudo(enfocar) {
     siguiente.type = "button";
     siguiente.className = "btn btn--primario reto__siguiente";
     siguiente.textContent = indiceRetoEscudo === retosEscudo.length - 1
-      ? "Ver mi resultado →"
-      : "Siguiente reto →";
+      ? "Ver mi resultado"
+      : "Siguiente reto";
     siguiente.addEventListener("click", siguienteRetoEscudo);
     contenedor.appendChild(siguiente);
 
@@ -1408,7 +1399,7 @@ function renderizarRetoEscudo(enfocar) {
   const botonEstafa = document.createElement("button");
   botonEstafa.type = "button";
   botonEstafa.className = "btn btn--primario reto__opcion";
-  botonEstafa.textContent = "🚨 Sí, es una estafa";
+  botonEstafa.textContent = "Es una estafa";
   botonEstafa.addEventListener("click", function () {
     elegirDecisionReto(true);
   });
@@ -1416,7 +1407,7 @@ function renderizarRetoEscudo(enfocar) {
   const botonConfiable = document.createElement("button");
   botonConfiable.type = "button";
   botonConfiable.className = "btn btn--secundario reto__opcion";
-  botonConfiable.textContent = "✅ No, es confiable";
+  botonConfiable.textContent = "Es confiable";
   botonConfiable.addEventListener("click", function () {
     elegirDecisionReto(false);
   });
@@ -1498,7 +1489,7 @@ function renderizarFinRetosEscudo(contenedor) {
 
   const titulo = document.createElement("h3");
   titulo.className = "reto__fin-titulo";
-  titulo.textContent = "🛡️ ¡Terminaste los mini retos!";
+  titulo.textContent = "Completaste los mini retos.";
   fin.appendChild(titulo);
 
   const puntaje = document.createElement("p");
@@ -1627,7 +1618,7 @@ function responderDemoEscudo(indicaEstafa) {
 
   const titulo = document.createElement("p");
   titulo.className = "demo-escudo__veredicto";
-  titulo.textContent = acerto ? "✅ ¡Muy bien!" : "❌ No era esa opción";
+  titulo.textContent = acerto ? "Respuesta correcta." : "Respuesta incorrecta.";
   resultado.appendChild(titulo);
 
   const texto = document.createElement("p");
@@ -1688,7 +1679,7 @@ function siguienteDemoEscudo() {
 
   const titulo = document.createElement("p");
   titulo.className = "demo-escudo__veredicto";
-  titulo.textContent = "🛡️ Acertaste " + demoEscudoAciertos + " de " + CASOS_DEMO_ESCUDO.length + " casos";
+  titulo.textContent = "Acertaste " + demoEscudoAciertos + " de " + CASOS_DEMO_ESCUDO.length + " casos";
   resultado.appendChild(titulo);
 
   const texto = document.createElement("p");
@@ -1827,7 +1818,7 @@ async function renderizarProgreso() {
 
   const tituloCursos = document.createElement("h3");
   tituloCursos.className = "progreso__titulo-seccion";
-  tituloCursos.textContent = "🗺️ Tu camino de aprendizaje";
+  tituloCursos.textContent = "Tu camino de aprendizaje";
   seccionCursos.appendChild(tituloCursos);
 
   const nivelesCompletados = modulos.filter(function (fila) {
@@ -1928,11 +1919,11 @@ async function renderizarProgreso() {
       const diferencia = porcentajeExamen - porcentajeInicial;
       let textoComparacion = "";
       if (diferencia > 0) {
-        textoComparacion = "¡Mejoraste " + diferencia + "% respecto a tu nivel inicial! 🎉";
+        textoComparacion = "Mejoraste un " + diferencia + "% respecto a tu nivel inicial.";
       } else if (diferencia === 0) {
-        textoComparacion = "Mantuviste tu nivel. ¡Seguí aprendiendo!";
+        textoComparacion = "Mantuviste tu nivel. Continuá con el próximo contenido.";
       } else {
-        textoComparacion = "Repasá el nivel para reforzar tus conocimientos. 💪";
+        textoComparacion = "Conviene repasar el nivel para reforzar los contenidos.";
       }
       comparacion.textContent = textoComparacion;
       seccionExamen.appendChild(comparacion);
@@ -1970,7 +1961,7 @@ function crearCaminoDeCurso(curso) {
 
   const nombre = document.createElement("h4");
   nombre.className = "camino-curso__nombre";
-  nombre.textContent = curso.icono + " Curso " + curso.id + ": " + curso.titulo;
+  nombre.textContent = "Curso " + curso.id + ": " + curso.titulo;
   cabecera.appendChild(nombre);
 
   const completados = nivelesCompletadosDeCurso(curso.id);
@@ -2060,7 +2051,7 @@ function crearSeccionLogros() {
 
   const titulo = document.createElement("h3");
   titulo.className = "progreso__titulo-seccion";
-  titulo.textContent = "🏅 Mis logros y certificados";
+  titulo.textContent = "Logros y certificados";
   seccion.appendChild(titulo);
 
   const hechos = cursosCompletados();
@@ -2080,13 +2071,13 @@ function crearSeccionLogros() {
     destacado.className = "logro-destacado";
     const texto = document.createElement("p");
     texto.className = "logro-destacado__texto";
-    texto.textContent = "¡Completaste los " + TOTAL_NIVELES_CAMPUS + " niveles del Campus TAMI! 🎉";
+    texto.textContent = "Completaste los " + TOTAL_NIVELES_CAMPUS + " niveles del Campus TAMI.";
     destacado.appendChild(texto);
 
     const boton = document.createElement("button");
     boton.type = "button";
     boton.className = "btn btn--primario btn--masivo";
-    boton.textContent = "📜 Ver mi certificado TAMI";
+    boton.textContent = "Ver mi certificado TAMI";
     boton.addEventListener("click", function () {
       abrirCertificado(null);
     });
@@ -2103,7 +2094,7 @@ function crearSeccionLogros() {
 
     const texto = document.createElement("span");
     texto.className = "logro__texto";
-    texto.textContent = "✔ Curso " + curso.id + ": " + curso.titulo;
+    texto.textContent = "Curso " + curso.id + ": " + curso.titulo;
     item.appendChild(texto);
 
     const boton = document.createElement("button");
@@ -2168,7 +2159,7 @@ function crearWidgetFeedback() {
 
   const titulo = document.createElement("h3");
   titulo.className = "progreso__titulo-seccion";
-  titulo.textContent = "💬 ¿Qué te pareció TAMI?";
+  titulo.textContent = "¿Qué te pareció TAMI?";
   seccion.appendChild(titulo);
 
   const ayuda = document.createElement("p");
@@ -2257,7 +2248,7 @@ function crearWidgetFeedback() {
     });
 
     if (resultado.exito) {
-      estado.textContent = "¡Gracias por tu opinión! Nos ayuda a mejorar. 💚";
+      estado.textContent = "Gracias por tu opinión. Nos ayuda a mejorar.";
       enviar.textContent = "Opinión enviada";
       area.disabled = true;
       estrellas.forEach(function (estrella) { estrella.disabled = true; });
@@ -2421,7 +2412,6 @@ function crearCursoCache(curso) {
     id: curso.id,
     titulo: curso.titulo,
     resumen: curso.resumen,
-    icono: curso.icono,
     tema: curso.tema,
     nivel: curso.nivel,
     duracion: curso.duracion,
@@ -2628,7 +2618,6 @@ async function renderizarCampus() {
       id: base.id,
       titulo: api && api.titulo ? api.titulo : base.titulo,
       resumen: base.resumen,
-      icono: base.icono,
       tema: base.tema,
       nivel: api && api.nivel ? api.nivel : base.nivel,
       duracion: base.duracion,
@@ -2676,11 +2665,11 @@ function renderizarListaCampus(cursos) {
     boton.type = "button";
     boton.className = "modulo modulo--disponible";
 
-    const icono = document.createElement("span");
-    icono.className = "modulo__icono";
-    icono.setAttribute("aria-hidden", "true");
     const portada = PORTADAS_CURSOS[curso.id];
     if (portada) {
+      const icono = document.createElement("span");
+      icono.className = "modulo__icono";
+      icono.setAttribute("aria-hidden", "true");
       const imagen = document.createElement("img");
       imagen.className = "modulo__imagen";
       imagen.src = portada;
@@ -2689,10 +2678,8 @@ function renderizarListaCampus(cursos) {
       imagen.height = 56;
       imagen.loading = "lazy";
       icono.appendChild(imagen);
-    } else {
-      icono.textContent = curso.icono || "📘";
+      boton.appendChild(icono);
     }
-    boton.appendChild(icono);
 
     const info = document.createElement("span");
     info.className = "modulo__info";
@@ -2706,7 +2693,7 @@ function renderizarListaCampus(cursos) {
     const estado = document.createElement("span");
     estado.className = "modulo__estado" + (completo || curso.nivelesCompletados > 0 ? " modulo__estado--disponible" : "");
     if (completo) {
-      estado.textContent = "✓ Curso completado";
+      estado.textContent = "Curso completado";
     } else if (curso.nivelesCompletados > 0) {
       estado.textContent = curso.nivelesCompletados + " de " + curso.totalNiveles + " niveles completados";
     } else {
@@ -2778,7 +2765,7 @@ function renderizarContinuarCampus() {
 
   if (!objetivo) {
     etiqueta.textContent = "CAMINO COMPLETO";
-    titulo.textContent = "¡Completaste los " + CURSOS.length + " cursos! Podés repasar cualquier nivel o mirar tu certificado.";
+    titulo.textContent = "Completaste los " + CURSOS.length + " cursos. Podés repasar cualquier nivel o consultar tu certificado.";
     boton.textContent = "Ver mi Progreso";
     boton.addEventListener("click", function () {
       const botonProgreso = document.getElementById("btn-nav-progreso");
@@ -2838,10 +2825,10 @@ function renderizarCurso(curso) {
   if (meta) {
     meta.innerHTML = "";
     const etiquetas = [
-      "📚 " + detalle.modulos.length + " niveles",
-      "📖 " + teoriasDelNivel(detalle.id, detalle.modulos[0]).length + " teorías por nivel",
-      "⏱️ " + detalle.duracion + " min en total",
-      "🎯 Nivel " + formatearNivel(detalle.nivel)
+      detalle.modulos.length + " niveles",
+      teoriasDelNivel(detalle.id, detalle.modulos[0]).length + " teorías por nivel",
+      detalle.duracion + " min en total",
+      "Nivel " + formatearNivel(detalle.nivel)
     ];
     etiquetas.forEach(function (texto) {
       const badge = document.createElement("span");
@@ -2929,12 +2916,12 @@ function renderizarCurso(curso) {
       const metaNivel = document.createElement("p");
       metaNivel.className = "nivel-card__meta";
       if (bloqueado) {
-        metaNivel.textContent = "🔒 Completá el Nivel " + (modulo.numero - 1) + " para desbloquear este nivel.";
+        metaNivel.textContent = "Completá el Nivel " + (modulo.numero - 1) + " para desbloquear este nivel.";
       } else {
         const teorias = teoriasDelNivel(detalle.id, modulo).length;
         const preguntas = examenDelNivel(detalle.id, modulo).length;
-        metaNivel.textContent = "⏱️ " + modulo.duracion + " min · " + teorias + " teorías · " +
-          (hecho ? "✓ Completado" : preguntas + " preguntas de repaso");
+        metaNivel.textContent = modulo.duracion + " min · " + teorias + " teorías · " +
+          (hecho ? "Completado" : preguntas + " preguntas de repaso");
       }
       cuerpo.appendChild(metaNivel);
 
@@ -2942,7 +2929,7 @@ function renderizarCurso(curso) {
       boton.type = "button";
       boton.className = "btn " + (hecho ? "btn--secundario" : "btn--primario") + " nivel-card__boton";
       boton.textContent = bloqueado
-        ? "🔒 Primero completá el Nivel " + (modulo.numero - 1)
+        ? "Primero completá el Nivel " + (modulo.numero - 1)
         : (hecho ? "Repasar nivel" : "Empezar nivel");
       boton.disabled = bloqueado;
       if (bloqueado) {
@@ -2967,7 +2954,7 @@ function iniciarNivel(curso, modulo) {
 
   if (!nivelDesbloqueado(detalle.id, modulo.numero)) {
     mostrarMensaje(
-      "🔒 Para entrar al Nivel " + modulo.numero + " primero tenés que completar el Nivel " +
+      "Para entrar al Nivel " + modulo.numero + " primero tenés que completar el Nivel " +
         (modulo.numero - 1) + ", incluido su repaso final.",
       4500
     );
@@ -3115,12 +3102,6 @@ function renderizarListaTrabajos() {
     const tarjeta = document.createElement("article");
     tarjeta.className = "trabajo" + (hecho ? " trabajo--hecho" : "");
 
-    const icono = document.createElement("span");
-    icono.className = "trabajo__icono";
-    icono.setAttribute("aria-hidden", "true");
-    icono.textContent = curso.icono || "🛠️";
-    tarjeta.appendChild(icono);
-
     const cuerpo = document.createElement("div");
     cuerpo.className = "trabajo__cuerpo";
 
@@ -3139,7 +3120,7 @@ function renderizarListaTrabajos() {
     const boton = document.createElement("button");
     boton.type = "button";
     boton.className = "btn " + (hecho ? "btn--secundario" : "btn--primario") + " trabajo__boton";
-    boton.textContent = hecho ? "✓ Hecho" : "Marcar como hecho";
+    boton.textContent = hecho ? "Hecho" : "Marcar como hecho";
     boton.setAttribute("aria-pressed", hecho ? "true" : "false");
     boton.addEventListener("click", function () {
       guardarMiniTrabajo(curso.id, nivelTrabajos, !hecho);
@@ -3182,11 +3163,11 @@ async function guardarMiniTrabajo(moduloId, nivel, completado) {
   }
 
   if (resultado.exito) {
-    mostrarMensaje(completado ? "¡Trabajo guardado como hecho! 🎉" : "Trabajo marcado como pendiente.", 3000);
+    mostrarMensaje(completado ? "Trabajo guardado como hecho." : "Trabajo marcado como pendiente.", 3000);
   } else {
     mostrarMensaje(
       completado
-        ? "¡Trabajo guardado como hecho en este dispositivo!"
+        ? "Trabajo guardado como hecho en este dispositivo."
         : "Trabajo marcado como pendiente en este dispositivo.",
       4500
     );
@@ -3197,12 +3178,9 @@ async function guardarMiniTrabajo(moduloId, nivel, completado) {
 // PERFIL Y CONFIGURACION
 // ============================================
 
-function aplicarPreferencias(tamano, tema) {
+function aplicarPreferencias(tamano) {
   const tamanos = ["normal", "grande", "xl"];
-  const temas = ["proteccion", "bosque", "calido"];
   const tamanoValido = tamanos.indexOf(tamano) >= 0 ? tamano : "normal";
-  const temaValido = temas.indexOf(tema) >= 0 ? tema : "proteccion";
-  document.documentElement.setAttribute("data-tema", temaValido);
 
   const estado = leerEstadoAccesibilidad();
   if (estado.tamano !== tamanoValido) {
@@ -3211,11 +3189,9 @@ function aplicarPreferencias(tamano, tema) {
   aplicarEstadoAccesibilidad(Object.assign(estado, { tamano: tamanoValido }));
 }
 
-function marcarPreferenciasEnFormulario(tamano, tema) {
+function marcarPreferenciasEnFormulario(tamano) {
   const radioTamano = document.querySelector("input[name='tamano-fuente'][value='" + tamano + "']");
-  const radioTema = document.querySelector("input[name='tema'][value='" + tema + "']");
   if (radioTamano) radioTamano.checked = true;
-  if (radioTema) radioTema.checked = true;
 }
 
 function aplicarAvatar() {
@@ -3324,18 +3300,16 @@ async function mostrarConfiguracion() {
   if (campoEmail) campoEmail.value = sesion.email || "";
 
   let tamano = sesion.tamanoFuente || "normal";
-  let tema = sesion.temaPreferido || "proteccion";
 
   const resultado = await apiGet("usuarios/" + sesion.id);
   if (resultado.exito && resultado.datos) {
     tamano = resultado.datos.tamano_fuente || tamano;
-    tema = resultado.datos.tema_preferido || tema;
     actualizarSesionDesdeUsuario(resultado.datos);
     pintarIdentidad(obtenerSesion());
   }
 
-  aplicarPreferencias(tamano, tema);
-  marcarPreferenciasEnFormulario(tamano, tema);
+  aplicarPreferencias(tamano);
+  marcarPreferenciasEnFormulario(tamano);
 }
 
 async function guardarDatosPerfil(evento) {
@@ -3374,7 +3348,7 @@ async function guardarDatosPerfil(evento) {
   pintarIdentidad(obtenerSesion());
   const campoPassword = document.getElementById("campo-config-password-actual");
   if (campoPassword) campoPassword.value = "";
-  mostrarMensaje("Tus datos se guardaron correctamente. ✅", 3000);
+  mostrarMensaje("Tus datos se guardaron correctamente.", 3000);
 }
 
 async function guardarEmail(evento) {
@@ -3413,7 +3387,7 @@ async function guardarEmail(evento) {
   pintarIdentidad(obtenerSesion());
   const campoPassword = document.getElementById("campo-config-email-password");
   if (campoPassword) campoPassword.value = "";
-  mostrarMensaje("Tu correo electrónico se actualizó. ✅", 3000);
+  mostrarMensaje("Tu correo electrónico se actualizó.", 3000);
 }
 
 async function guardarPassword(evento) {
@@ -3453,7 +3427,7 @@ async function guardarPassword(evento) {
 
   const formulario = document.getElementById("formulario-password");
   if (formulario) formulario.reset();
-  mostrarMensaje("Tu contraseña se actualizó correctamente. ✅", 3000);
+  mostrarMensaje("Tu contraseña se actualizó correctamente.", 3000);
 }
 
 async function guardarPreferencias(evento) {
@@ -3462,23 +3436,19 @@ async function guardarPreferencias(evento) {
   if (!sesion) return;
 
   const radioTamano = document.querySelector("input[name='tamano-fuente']:checked");
-  const radioTema = document.querySelector("input[name='tema']:checked");
   const tamano = radioTamano ? radioTamano.value : "normal";
-  const tema = radioTema ? radioTema.value : "proteccion";
 
-  aplicarPreferencias(tamano, tema);
+  aplicarPreferencias(tamano);
 
   const resultado = await apiPut("usuarios/" + sesion.id + "/perfil", {
-    tamanoFuente: tamano,
-    tema: tema
+    tamanoFuente: tamano
   });
 
   if (!resultado.exito) {
     // Mantiene la eleccion en este dispositivo aunque la API no responda.
     const sesionLocal = actualizarSesionDesdeUsuario({
       id: sesion.id,
-      tamano_fuente: tamano,
-      tema_preferido: tema
+      tamano_fuente: tamano
     });
     refrescarInterfazSesion(sesionLocal);
     mostrarMensaje("Las preferencias se aplicaron en este dispositivo, pero no se pudieron guardar en tu cuenta.", 4500);
@@ -3487,7 +3457,7 @@ async function guardarPreferencias(evento) {
 
   actualizarSesionDesdeUsuario(resultado.datos);
   refrescarInterfazSesion(obtenerSesion());
-  mostrarMensaje("Preferencias de lectura guardadas. ✅", 3000);
+  mostrarMensaje("Preferencias de lectura guardadas.", 3000);
 }
 
 function guardarFoto(evento) {
@@ -3517,7 +3487,7 @@ function guardarFoto(evento) {
       guardarLocal(claveAvatar(sesion.id), { tipo: "foto", valor: lector.result });
       aplicarAvatar();
       renderizarOpcionesAvatar();
-      mostrarMensaje("Foto guardada en este dispositivo. 📷", 3000);
+      mostrarMensaje("Foto guardada en este dispositivo.", 3000);
     }
   };
   lector.readAsDataURL(archivo);
@@ -3557,9 +3527,9 @@ async function renderizarResumenDashboard(sesion) {
   contenedor.innerHTML = "";
 
   const datos = [
-    { etiqueta: "Tu nivel", valor: formatearNivel(sesion.nivelDigital), icono: "🎯" },
-    { etiqueta: "Niveles completados", valor: modulosCompletados + " de " + TOTAL_NIVELES_CAMPUS, icono: "📚" },
-    { etiqueta: "Trabajos hechos", valor: String(trabajosHechos), icono: "🛠️" }
+    { etiqueta: "Tu nivel", valor: formatearNivel(sesion.nivelDigital) },
+    { etiqueta: "Niveles completados", valor: modulosCompletados + " de " + TOTAL_NIVELES_CAMPUS },
+    { etiqueta: "Trabajos hechos", valor: String(trabajosHechos) }
   ];
 
   if (examen && examen.total_preguntas) {
@@ -3568,20 +3538,13 @@ async function renderizarResumenDashboard(sesion) {
       etiqueta: nivelDelExamen
         ? "Último repaso: Nivel " + nivelDelExamen.modulo.numero
         : "Último repaso",
-      valor: examen.puntaje + " de " + examen.total_preguntas,
-      icono: "🏅"
+      valor: examen.puntaje + " de " + examen.total_preguntas
     });
   }
 
   datos.forEach(function (dato) {
     const item = document.createElement("div");
     item.className = "dashboard__dato";
-
-    const icono = document.createElement("span");
-    icono.className = "dashboard__dato-icono";
-    icono.setAttribute("aria-hidden", "true");
-    icono.textContent = dato.icono;
-    item.appendChild(icono);
 
     const valor = document.createElement("span");
     valor.className = "dashboard__dato-valor";
@@ -3650,9 +3613,9 @@ function refrescarInterfazSesion(sesion) {
 
   if (haySesion) {
     pintarIdentidad(sesion);
-    aplicarPreferencias(sesion.tamanoFuente || "normal", sesion.temaPreferido || "proteccion");
+    aplicarPreferencias(sesion.tamanoFuente || "normal");
   } else {
-    aplicarPreferencias("normal", "proteccion");
+    aplicarPreferencias("normal");
     aplicarAvatar();
   }
 
@@ -3757,19 +3720,13 @@ let lecturaEnCurso = false;
 function leerEstadoAccesibilidad() {
   const guardado = leerLocal(CLAVE_ACCESIBILIDAD, null) || {};
   return {
-    tamano: TAMANOS_ACCESIBLES.indexOf(guardado.tamano) >= 0 ? guardado.tamano : "normal",
-    contraste: Boolean(guardado.contraste)
+    tamano: TAMANOS_ACCESIBLES.indexOf(guardado.tamano) >= 0 ? guardado.tamano : "normal"
   };
 }
 
 function aplicarEstadoAccesibilidad(estado) {
   const seguro = estado || leerEstadoAccesibilidad();
   document.documentElement.setAttribute("data-tamano", seguro.tamano);
-  document.documentElement.setAttribute("data-contraste", seguro.contraste ? "alto" : "normal");
-  const botonContraste = document.getElementById("btn-contraste");
-  if (botonContraste) {
-    botonContraste.setAttribute("aria-pressed", seguro.contraste ? "true" : "false");
-  }
 }
 
 function guardarEstadoAccesibilidad(cambios) {
@@ -3804,17 +3761,6 @@ function cambiarTamanoTexto(direccion) {
       if (resultado.exito && resultado.datos) actualizarSesionDesdeUsuario(resultado.datos);
     });
   }
-}
-
-function alternarContraste() {
-  const estado = leerEstadoAccesibilidad();
-  const nuevo = guardarEstadoAccesibilidad({ contraste: !estado.contraste });
-  mostrarMensaje(
-    nuevo.contraste
-      ? "Alto contraste activado: fondo oscuro y letras claras."
-      : "Volviste a los colores originales.",
-    3000
-  );
 }
 
 function detenerLectura() {
@@ -3869,8 +3815,10 @@ function actualizarAvisoConexion() {
 }
 
 function marcarSinConexion() {
-  const aviso = document.getElementById("aviso-conexion");
-  if (aviso) aviso.hidden = false;
+  // Una consulta lenta puede abortar por tiempo de espera sin que el
+  // dispositivo haya perdido internet: el aviso solo se muestra si el
+  // navegador confirma que no hay conexión.
+  actualizarAvisoConexion();
 }
 
 function marcarConConexion() {
@@ -3996,15 +3944,15 @@ function pasosDelTour() {
       selector: sesion ? "#pantalla-dashboard" : "#pantalla-inicio"
     },
     {
-      titulo: "Letra y colores a tu medida",
+      titulo: "Letra a tu medida",
       texto:
-        "Abajo a la derecha están los botones A− y A+ para agrandar o achicar la letra, el botón de alto contraste y el de escuchar en voz alta.",
+        "Abajo a la derecha están los botones A− y A+ para achicar o agrandar la letra, y el botón Escuchar para oír el contenido de la pantalla.",
       selector: ".barra-accesibilidad"
     },
     {
       titulo: "Siempre hay ayuda",
       texto:
-        "Con el botón ? abrís esta pantalla de ayuda. También podés escribirnos y te respondemos por correo.",
+        "Con el botón Ayuda abrís esta pantalla. También podés escribirnos y te respondemos por correo.",
       selector: "#btn-abrir-ayuda"
     }
   ];
@@ -4042,7 +3990,7 @@ function mostrarPasoDelTour(indice) {
   if (contador) contador.textContent = "Paso " + (paso + 1) + " de " + pasos.length;
   if (btnAnterior) btnAnterior.disabled = paso === 0;
   if (btnSiguiente) {
-    btnSiguiente.textContent = paso === pasos.length - 1 ? "Terminar" : "Siguiente →";
+    btnSiguiente.textContent = paso === pasos.length - 1 ? "Terminar" : "Siguiente";
   }
 
   resaltarElementoTour(pasos[paso].selector);
@@ -4068,7 +4016,7 @@ function tourSiguiente() {
   const total = pasosDelTour().length;
   if (pasoActualTour >= total - 1) {
     cerrarTour();
-    mostrarMensaje("Eso es todo. ¡Ya podés empezar a usar TAMI!", 4000);
+    mostrarMensaje("Eso es todo. Ya podés empezar a usar TAMI.", 4000);
     return;
   }
   mostrarPasoDelTour(pasoActualTour + 1);
@@ -4096,7 +4044,7 @@ function mostrarDashboard(sesion) {
 
   const saludoEl = document.getElementById("dashboard-titulo");
   if (saludoEl) {
-    saludoEl.textContent = "¡Hola, " + sesion.nombre + "! 👋";
+    saludoEl.textContent = "Hola, " + sesion.nombre;
   }
 
   pintarIdentidad(sesion);
@@ -4412,7 +4360,7 @@ function inicializar() {
       return;
     }
 
-    mostrarMensaje("¡Cuenta creada con éxito! 🔒", 3000);
+    mostrarMensaje("Cuenta creada correctamente.", 3000);
     await continuarDespuesDeAcceso(resultado.usuario);
   });
 
@@ -4446,7 +4394,7 @@ function inicializar() {
       return;
     }
 
-    mostrarMensaje("¡Bienvenido/a de vuelta, " + resultado.usuario.nombre + "! 🔒", 3000);
+    mostrarMensaje("Bienvenido/a nuevamente, " + resultado.usuario.nombre + ".", 3000);
     await continuarDespuesDeAcceso(resultado.usuario);
   });
 
@@ -4609,7 +4557,7 @@ function inicializar() {
     btnOmitirTest.addEventListener("click", function () {
       const sesion = obtenerSesion();
       if (sesion) {
-        mostrarMensaje("Podés hacer el test cuando quieras desde Mi Progreso. ¡Empecemos!", 4000);
+        mostrarMensaje("Podés hacer el test cuando quieras desde Mi Progreso. Comenzamos.", 4000);
         mostrarDashboard(sesion);
       }
     });
@@ -4715,7 +4663,7 @@ function inicializar() {
       const sesion = obtenerSesion();
       if (sesion) await guardarProgresoModulo(sesion.id, moduloActual.id, pasos.length, false);
       mostrarMensaje(
-        "¡Leíste las " + pasos.length + " teorías! Respondé el repaso para completar el nivel y desbloquear el siguiente.",
+        "Leíste las " + pasos.length + " teorías. Respondé el repaso para completar el nivel y desbloquear el siguiente.",
         4500
       );
       iniciarExamen(moduloActual);
@@ -4831,7 +4779,7 @@ function inicializar() {
   window.addEventListener("appinstalled", function () {
     eventoInstalacion = null;
     if (btnInstalarApp) btnInstalarApp.hidden = true;
-    mostrarMensaje("¡TAMI quedó instalada en tu celular! La vas a encontrar con el escudo.", 5000);
+    mostrarMensaje("TAMI quedó instalada en tu celular. La vas a encontrar con el escudo.", 5000);
   });
   if (btnInstalarApp) {
     btnInstalarApp.addEventListener("click", async function () {
@@ -4864,9 +4812,6 @@ function inicializar() {
       cambiarTamanoTexto(1);
     });
   }
-
-  const btnContraste = document.getElementById("btn-contraste");
-  if (btnContraste) btnContraste.addEventListener("click", alternarContraste);
 
   const btnAbrirAyuda = document.getElementById("btn-abrir-ayuda");
   if (btnAbrirAyuda) {
@@ -5068,7 +5013,7 @@ function vincularBotonesEnvio() {
 
           const resultadoEl = document.getElementById("test-resultado");
           const resultadoTexto = document.getElementById("test-resultado-texto");
-          resultadoTexto.textContent = "Tu nivel inicial es: " + resultado.nivel + ". ¡Ahora entrás a TAMI!";
+          resultadoTexto.textContent = "Tu nivel inicial es: " + resultado.nivel + ". Ahora entrás a TAMI.";
 
           contenedorTest.hidden = true;
           boton.hidden = true;
@@ -5112,7 +5057,7 @@ function vincularBotonesEnvio() {
           const siguienteNumero = moduloExamenActual ? moduloExamenActual.numero + 1 : null;
           const avisoDesbloqueo = siguienteNumero && siguienteNumero <= TOTAL_NIVELES_POR_CURSO
             ? " Nivel completado: ya podés entrar al Nivel " + siguienteNumero + "."
-            : " Nivel completado. ¡Terminaste los cuatro niveles de este curso!";
+            : " Nivel completado. Terminaste los cuatro niveles de este curso.";
           resultadoTexto.textContent =
             "Obtuviste " + resultado.puntaje + " de " + resultado.total +
             " respuestas correctas en " + nombreNivelExamen + "." + avisoDesbloqueo;

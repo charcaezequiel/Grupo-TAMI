@@ -12,7 +12,6 @@
 const RETOS_ESCUDO = [
   {
     canal: "Correo electrónico",
-    icono: "📧",
     hora: "08:42",
     remitente: "Banco del Río <seguridad@bancodelrio-cuentas.com>",
     asunto: "Último aviso: transferencia de $480.000 pendiente",
@@ -36,7 +35,6 @@ const RETOS_ESCUDO = [
   },
   {
     canal: "Mensaje de texto (SMS)",
-    icono: "💬",
     hora: "12:07",
     remitente: "CorreoExpress",
     asunto: "",
@@ -60,7 +58,6 @@ const RETOS_ESCUDO = [
   },
   {
     canal: "Llamada telefónica",
-    icono: "📞",
     hora: "16:18",
     remitente: "Banco del Río (nombre que muestra el teléfono)",
     asunto: "",
@@ -84,7 +81,6 @@ const RETOS_ESCUDO = [
   },
   {
     canal: "WhatsApp",
-    icono: "📱",
     hora: "19:34",
     remitente: "+54 9 11 5555-7712 (no está en tus contactos)",
     asunto: "",
@@ -108,7 +104,6 @@ const RETOS_ESCUDO = [
   },
   {
     canal: "Sitio web",
-    icono: "🌐",
     hora: "21:05",
     remitente: "premios.tami-sorteo.com",
     asunto: "¡Felicitaciones! Ganaste un celular 0 km",
@@ -132,7 +127,6 @@ const RETOS_ESCUDO = [
   },
   {
     canal: "Llamada telefónica",
-    icono: "☎️",
     hora: "10:52",
     remitente: "Soporte técnico de Windows (nombre en pantalla)",
     asunto: "",
@@ -156,7 +150,6 @@ const RETOS_ESCUDO = [
   },
   {
     canal: "Red social",
-    icono: "🛒",
     hora: "13:26",
     remitente: "Ofertas Tech (@ofertas_tech_ar)",
     asunto: "iPhone 15 Pro 256 GB — $380.000",
@@ -180,7 +173,6 @@ const RETOS_ESCUDO = [
   },
   {
     canal: "WhatsApp",
-    icono: "💬",
     hora: "09:15",
     remitente: "+54 9 11 5555-8890 (no está en tus contactos)",
     asunto: "",
@@ -204,7 +196,6 @@ const RETOS_ESCUDO = [
   },
   {
     canal: "Llamada telefónica",
-    icono: "😨",
     hora: "22:47",
     remitente: "Número desconocido",
     asunto: "",
@@ -228,7 +219,6 @@ const RETOS_ESCUDO = [
   },
   {
     canal: "WhatsApp",
-    icono: "💬",
     hora: "17:58",
     remitente: "+54 9 11 5555-6631 (no está en tus contactos)",
     asunto: "",
@@ -252,7 +242,6 @@ const RETOS_ESCUDO = [
   },
   {
     canal: "Correo electrónico",
-    icono: "📧",
     hora: "11:03",
     remitente: "Facturación - Distribuidora del Sur <facturas@distribuidora-delsur.net>",
     asunto: "Factura A 0001-00004281 — vencimiento hoy",
@@ -276,7 +265,6 @@ const RETOS_ESCUDO = [
   },
   {
     canal: "WhatsApp",
-    icono: "💼",
     hora: "08:10",
     remitente: "+54 9 11 5555-4820 (no está en tus contactos)",
     asunto: "",
@@ -300,7 +288,6 @@ const RETOS_ESCUDO = [
   },
   {
     canal: "Mensaje de texto (SMS)",
-    icono: "🏦",
     hora: "10:22",
     remitente: "Banco del Río",
     asunto: "",
@@ -320,7 +307,6 @@ const RETOS_ESCUDO = [
   },
   {
     canal: "WhatsApp",
-    icono: "👩",
     hora: "18:20",
     remitente: "Lucía (contacto guardado)",
     asunto: "",
@@ -340,7 +326,6 @@ const RETOS_ESCUDO = [
   },
   {
     canal: "Mensaje de texto (SMS)",
-    icono: "🏥",
     hora: "07:30",
     remitente: "Hospital Central",
     asunto: "",

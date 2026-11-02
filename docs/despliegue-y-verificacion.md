@@ -245,7 +245,7 @@ Marcar cada punto antes de la entrega o demo.
 - [ ] “Creá tu cuenta gratis” lleva al registro.
 - [ ] Las preguntas frecuentes abren y cierran con teclado; el enlace de
       privacidad abre la pantalla legal correcta.
-- [ ] A−/A+ cambian el tamaño, el alto contraste se mantiene legible y
+- [ ] A−/A+ cambian el tamaño, la paleta AA se mantiene legible y
       “Escuchar” lee la pantalla.
 - [ ] Con teclado se llega a todo y el foco siempre es visible.
 

@@ -3,7 +3,7 @@
    leyendo con mala conexión. Las llamadas a /api/ siempre van a la red: los
    datos personales no se cachean. */
 
-const VERSION = "tami-v1.3.0";
+const VERSION = "tami-v1.4.3";
 const CACHE = "tami-cache-" + VERSION;
 
 const RECURSOS = [
@@ -19,7 +19,7 @@ const RECURSOS = [
   "/main.js",
   "/img/icono.svg",
   "/img/logo.svg",
-  "/img/hero-ilustracion.svg",
+  "/img/hero-ilustracion-formal.jpg",
   "/img/icono-192.png",
   "/img/icono-512.png",
   "/img/icono-maskable-512.png",

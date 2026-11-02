@@ -103,15 +103,15 @@ Los retos se presentan como mensajes reales: correo, SMS, WhatsApp, llamada, red
 - **Arquitectura**: Cliente-Servidor en 3 capas (Presentación, Lógica y Datos). Express sirve el frontend y la API en el mismo origen.
 - **Seguridad**: contraseñas con hashing irreversible **bcrypt**, sesiones **JWT firmadas** con vencimiento, recuperación con token de un solo uso, consultas SQL parametrizadas, RLS, auditoría de accesos, bloqueo por fuerza bruta, cabeceras HTTP de protección, CORS restringido y **RBAC** para el panel de administración.
 - **Persistencia**: Supabase/PostgreSQL (principal) y LocalStorage (caché, cola de pendientes y fallback sin conexión).
-- **Accesibilidad**: WCAG 2.1 AA, ARIA roles, skip link, breadcrumbs, foco visible, contraste alto, botones mínimos de 52px y respeto por `prefers-reduced-motion`.
-- **Design System**: "Protección Proactiva" (paleta 60-30-10: `#EBF8FA` / `#0A4B5C` / `#007A87`). El azul institucional es el tema por defecto; las preferencias de lectura permiten agrandar la letra y elegir temas alternativos sin alterar la identidad visual.
+- **Accesibilidad**: WCAG 2.1 AA, ARIA roles, skip link, breadcrumbs, foco visible, contraste AA, botones mínimos de 52px y respeto por `prefers-reduced-motion`.
+- **Design System**: "Protección Proactiva" (paleta 60-30-10: `#EBF8FA` / `#0A4B5C` / `#007A87`), en una única paleta institucional sobria, sin temas alternativos ni modo nocturno. Las preferencias de lectura permiten agrandar la letra.
 
 ---
 
 ## PMV V1.0 - Funcionalidades Implementadas
 
 ### 1. Pantalla de Inicio (Presentación del proyecto)
-- Logo institucional (`img/logo.svg`), icono (`img/icono.svg`) e ilustración propia (`img/hero-ilustracion.svg`).
+- Logo institucional (`img/logo.svg`), icono (`img/icono.svg`) e ilustración editorial (`img/hero-ilustracion-formal.jpg`).
 - Orden pensado para personas mayores: **qué es TAMI → cómo funciona → demo interactiva del Escudo → lecciones → impacto → preguntas frecuentes → llamada final**.
 - Tarjetas con los **4 pilares**, el problema que resuelve, el detalle de los **5 cursos** y el impacto buscado.
 - **Demo pública “¿Es estafa o es confiable?”**: 3 casos con explicación y señales de alerta, sin necesidad de cuenta.
@@ -168,7 +168,7 @@ Los retos se presentan como mensajes reales: correo, SMS, WhatsApp, llamada, red
 
 ### 9. Configuración y Accesibilidad
 - Perfil con nombre, foto/inicial y nivel de aprendizaje.
-- Preferencias de lectura: tamaño de letra (normal, grande, XL) y tema (azul institucional por defecto, más opciones personales).
+- Preferencias de lectura: tamaño de letra (normal, grande, XL).
 - Cambio de correo y contraseña con verificación de la contraseña actual.
 - Skip link, breadcrumbs, `aria-live`, `aria-pressed`, `aria-current`, foco visible y objetivos táctiles de 52px o más.
 
@@ -196,7 +196,7 @@ Los retos se presentan como mensajes reales: correo, SMS, WhatsApp, llamada, red
 ### 13. Acompañamiento y ayuda
 - Botón **Ayuda** visible en todas las pantallas con formulario de solicitud (categoría, mensaje y datos de contacto).
 - Las solicitudes quedan auditadas y el equipo las atiende desde el backoffice (`superadmin`, `moderador` y `analista`).
-- Tour guiado con `<dialog>`, lectura en voz alta (TTS es-AR), tamaño de letra A−/A+ y alto contraste.
+- Tour guiado con `<dialog>`, lectura en voz alta (TTS es-AR) y tamaño de letra A−/A+.
 - Banner de sin conexión y mensajes claros cuando la API no responde.
 
 ### 14. Camino de aprendizaje, certificados y opinión
@@ -241,7 +241,7 @@ Grupo-TAMI/
 ├── img/                    Marca oficial y materiales gráficos
 │   ├── logo.svg            Logo institucional
 │   ├── icono.svg           Icono/escudo (favicon, header y footer)
-│   ├── hero-ilustracion.svg Ilustración del inicio
+│   ├── hero-ilustracion-formal.jpg Ilustración del inicio
 │   ├── curso-1…5.svg       Portadas de los 5 cursos
 │   ├── nivel-1…4.svg       Iconos de los 4 niveles de comprensión
 │   ├── icono-app.svg, icono-maskable.svg  Iconos PWA
@@ -676,6 +676,7 @@ npm run smoke
 ## Enlaces
 
 - [Documentación técnica](docs/README.md)
+- [Pendientes y próximos pasos](docs/pendientes.md)
 - [Guía de marca](resources/branding-guide.md)
 - [Recursos gráficos (logo e iconos)](resources/README.md)
 - [Backend - API REST](server/README.md)

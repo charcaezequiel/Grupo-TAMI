@@ -62,7 +62,7 @@
       width="500"
       height="140"
     >
-    <h1>🔐 Acceso Administrador</h1>
+    <h1> Acceso Administrador</h1>
     <form id="loginAdminForm">
       <div class="form-group">
         <label>Email</label>
@@ -89,7 +89,7 @@
           aria-hidden="true"
         >
         <div>
-          <h1>🛡️ Panel de Administración TAMI</h1>
+          <h1>Panel de Administración TAMI</h1>
           <p id="adminRol" style="margin: 5px 0 0 0; opacity: 0.9;">Control de Acceso Basado en Roles (RBAC)</p>
         </div>
       </div>
@@ -101,7 +101,7 @@
 
       <section class="admin-section" id="seccionAyuda">
         <div class="admin-section__cabecera">
-          <h2>🆘 Solicitudes de ayuda</h2>
+          <h2>Solicitudes de ayuda</h2>
           <span class="badge badge-moderador" id="ayudaPendientes">0 pendientes</span>
         </div>
         <p class="admin-nota">
@@ -126,7 +126,7 @@
 
       <section class="admin-section" id="seccionFeedback">
         <div class="admin-section__cabecera">
-          <h2>💬 Opiniones de la experiencia</h2>
+          <h2> Opiniones de la experiencia</h2>
           <span class="badge badge-analista" id="feedbackTotal">0 opiniones</span>
         </div>
         <p class="admin-nota">
@@ -149,7 +149,7 @@
       </section>
 
       <section class="admin-section" data-solo-superadmin>
-        <h2>👥 Gestión de Usuarios</h2>
+        <h2> Gestión de Usuarios</h2>
         <div style="overflow-x: auto;">
           <table class="admin-table">
             <thead>
@@ -169,7 +169,7 @@
       </section>
 
       <section class="admin-section" data-solo-superadmin>
-        <h2>📋 Logs de Auditoría (Últimos 50)</h2>
+        <h2> Logs de Auditoría (Últimos 50)</h2>
         <div style="overflow-x: auto;">
           <table class="admin-table">
             <thead>
@@ -283,7 +283,7 @@
             <td>${escaparHtml(u.nombre)}</td>
             <td>${escaparHtml(u.email)}</td>
             <td><span class="badge badge-${clase}">${rol}</span></td>
-            <td>${u.is_active ? '✅ Activo' : '❌ Inactivo'}</td>
+            <td>${u.is_active ? ' Activo' : ' Inactivo'}</td>
             <td>${u.twofa_enabled ? 'Sí' : 'No'}</td>
             <td><button class="btn btn-primary" data-accion="estado" data-id="${Number(u.id)}" data-estado="${u.is_active ? "false" : "true"}">${u.is_active ? 'Desactivar' : 'Activar'}</button></td>
           </tr>

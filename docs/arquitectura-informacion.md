@@ -38,7 +38,7 @@ TAMI
 │   │   └── [3] Certificado imprimible por curso
 │   └── [2] Mi Cuenta
 │       ├── [3] Configuracion (perfil, preferencias, datos personales)
-│       ├── [3] Ayuda (tour, lectura en voz alta, contraste, instalar app)
+│       ├── [3] Ayuda (tour, lectura en voz alta, instalar app)
 │       └── [3] Legal (terminos, privacidad, accesibilidad)
 ```
 
