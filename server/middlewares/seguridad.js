@@ -23,10 +23,36 @@ function encabezadosSeguridad(req, res, next) {
   res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
   res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
   res.setHeader("Cross-Origin-Resource-Policy", "same-site");
-  // Los datos de la API no deben guardarse en caché (contienen datos personales)
-  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
-  res.setHeader("Pragma", "no-cache");
-  res.setHeader("Expires", "0");
+  res.setHeader("X-Permitted-Cross-Domain-Policies", "none");
+  // Política de contenido: los scripts solo pueden venir del propio sitio.
+  // Los estilos en línea se permiten porque el frontend ajusta tamaños,
+  // colores y barras de progreso desde JavaScript.
+  const produccion = String(process.env.NODE_ENV || "").toLowerCase() === "production";
+  const politica = [
+    "default-src 'self'",
+    "script-src 'self'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob:",
+    "font-src 'self'",
+    "connect-src 'self' http://localhost:* http://127.0.0.1:* https:",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'"
+  ];
+  if (produccion) politica.push("upgrade-insecure-requests");
+  res.setHeader("Content-Security-Policy", politica.join("; "));
+  // Los datos de la API no deben guardarse en caché (contienen datos personales).
+  // El HTML y los assets sí pueden revalidarse: bloquearlos también rompe la
+  // caché de ida y vuelta del navegador (bfcache) sin aportar privacidad.
+  const esApi = req.path === "/api" || String(req.path || "").indexOf("/api/") === 0;
+  if (esApi) {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+  } else {
+    res.setHeader("Cache-Control", "no-cache");
+  }
   // Solo aplica si en el futuro se publica por HTTPS (en HTTP los navegadores lo ignoran)
   if (String(process.env.NODE_ENV || "").toLowerCase() === "production") {
     res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");

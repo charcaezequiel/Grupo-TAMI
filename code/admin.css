@@ -1,0 +1,50 @@
+.admin-marca { display: block; width: 100%; max-width: 280px; height: auto; margin: 0 auto 24px; }
+.admin-header__marca { display: flex; align-items: center; gap: 14px; }
+.admin-header__icono { width: 46px; height: 46px; flex: 0 0 auto; border-radius: 50%; background: #fff; }
+.admin-header { background: linear-gradient(135deg, #0A4B5C 0%, #007A87 100%); color: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; }
+.admin-header h1 { margin: 0; font-size: 24px; }
+.admin-container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+.admin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+.admin-card { background: white; border: 1px solid #D6E4E7; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+.admin-card h3 { margin: 0 0 10px 0; color: #0A4B5C; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+.admin-card .numero { font-size: 32px; font-weight: bold; color: #007A87; }
+.admin-section { background: white; border: 1px solid #D6E4E7; border-radius: 12px; padding: 25px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+.admin-section h2 { margin: 0 0 20px 0; color: #0A4B5C; font-size: 20px; }
+.admin-table { width: 100%; border-collapse: collapse; }
+.admin-table th, .admin-table td { padding: 12px; text-align: left; border-bottom: 1px solid #D6E4E7; }
+.admin-table th { background: #F4F8F9; color: #0A4B5C; font-weight: 600; font-size: 13px; text-transform: uppercase; }
+.admin-table tr:hover { background: #F4F8F9; }
+.badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+.badge-admin { background: #FFE5E5; color: #D32F2F; }
+.badge-editor { background: #E3F2FD; color: #1976D2; }
+.badge-analista { background: #E8F5E9; color: #388E3C; }
+.badge-moderador { background: #FFF3E0; color: #F57C00; }
+.badge-usuario { background: #F5F5F5; color: #616161; }
+.btn { padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; }
+.btn-primary { background: #007A87; color: white; }
+.btn-primary:hover { background: #0A4B5C; }
+.btn-danger { background: #D32F2F; color: white; }
+.btn-success { background: #388E3C; color: white; }
+.login-admin { max-width: 400px; margin: 100px auto; background: white; padding: 40px; border-radius: 16px; border: 1px solid #D6E4E7; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+.login-admin h1 { text-align: center; color: #0A4B5C; margin-bottom: 30px; }
+.form-group { margin-bottom: 20px; }
+.form-group label { display: block; margin-bottom: 8px; color: #0A4B5C; font-weight: 600; }
+.form-group input { width: 100%; padding: 12px; border: 1px solid #D6E4E7; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
+.admin-section__cabecera { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.admin-section__cabecera h2 { margin: 0; }
+.admin-mensaje { white-space: pre-line; max-width: 420px; }
+.admin-acciones { display: flex; flex-wrap: wrap; gap: 6px; }
+.admin-acciones .btn { padding: 6px 10px; font-size: 12px; }
+.admin-nota { margin: -8px 0 16px; color: #55666D; font-size: 14px; }
+.admin-vacio { padding: 18px; color: #55666D; text-align: center; }
+.badge-estado-pendiente { background: #FFF3E0; color: #F57C00; }
+.badge-estado-en_proceso { background: #E3F2FD; color: #1976D2; }
+.badge-estado-resuelto { background: #E8F5E9; color: #388E3C; }
+.admin-estrellas { color: #E6A700; letter-spacing: 2px; }
+[hidden] { display: none !important; }
+
+body {
+  background: #F4F8F9;
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+}

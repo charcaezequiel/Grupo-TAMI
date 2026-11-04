@@ -1,4 +1,5 @@
 require("dotenv").config();
+const fs = require("fs");
 const path = require("path");
 const express = require("express");
 const cors = require("cors");
@@ -20,6 +21,35 @@ const feedbackRoutes = require("./routes/feedback");
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 const RAIZ = path.join(__dirname, "..");
+
+// El HTML se sirve con la URL pública del pedido inyectada en __BASE_URL__,
+// así og:url, canonical y las imágenes absolutas funcionan en cualquier dominio.
+const PLANTILLA_INDEX = fs.readFileSync(
+  path.join(RAIZ, "code", "index.html"),
+  "utf8"
+);
+
+function basePublica(req) {
+  // En producción manda FRONTEND_URL: evita que un Host falsificado cambie
+  // og:url o canonical. Sin ella se usa el host real del pedido.
+  const configurada = String(process.env.FRONTEND_URL || "").trim();
+  if (configurada) {
+    try {
+      const url = new URL(configurada);
+      if (url.protocol === "http:" || url.protocol === "https:") {
+        return url.origin;
+      }
+    } catch (error) {
+      console.warn("[Frontend] FRONTEND_URL inválida; se usa el host del pedido.");
+    }
+  }
+  const host = req.get("host") || "localhost";
+  return req.protocol + "://" + host;
+}
+
+function enviarIndex(req, res) {
+  res.type("html").send(PLANTILLA_INDEX.split("__BASE_URL__").join(basePublica(req)));
+}
 
 // ============================================
 // ENDURECIMIENTO BÁSICO DEL SERVIDOR
@@ -75,12 +105,10 @@ app.use(express.json({ limit: "100kb" }));
 
 // El frontend se sirve desde el mismo servidor: así la API queda en el
 // mismo origen y no hace falta configurar CORS en producción.
+app.get("/", enviarIndex);
+app.get("/index.html", enviarIndex);
 app.use(express.static(path.join(RAIZ, "code")));
 app.use("/img", express.static(path.join(RAIZ, "img")));
-
-app.get("/", (req, res) => {
-  res.sendFile(path.join(RAIZ, "code", "index.html"));
-});
 
 app.get("/api/salud", async (req, res) => {
   const baseDeDatos = await verificarConexion();

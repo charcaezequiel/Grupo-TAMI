@@ -144,8 +144,9 @@ Tiempo de completitud = promedio de tiempos individuales                <= 180 s
 
 | Sprint | Objetivo | Fecha | Estado | Notas |
 |--------|----------|-------|--------|-------|
-| Sprint 1 | Sistema de autenticacion accesible (registro + login) | Semana 1 | En curso | US-001 a US-005 |
-| Sprint 2 | Campus educativo completo y gamificacion | Semana 2 | Planificado | US-006 + modulos 1,2,3,5 |
-| Sprint 3 | Retroalimentacion docentes y entrega final | Semana 3 | Planificado | Demo ante Profesores |
+| Sprint 1 | Sistema de autenticacion accesible (registro + login) | Semana 1 | Completado | US-001 a US-005 implementadas y verificadas con smoke 9/9 |
+| Sprint 2 | Campus educativo completo y gamificacion | Semana 2 | Completado | US-006, 5 cursos, 20 niveles, Escudo de 15 retos y certificados |
+| Sprint 3 | Retroalimentacion docentes y entrega final | Semana 3 | En curso | Falta QA manual, prueba con personas mayores y publicacion |
 
 > **Documento vivo**: se actualiza en cada Daily Stand-up y al cierre de cada Sprint.
+> Ultima actualizacion: 4 de noviembre de 2026.

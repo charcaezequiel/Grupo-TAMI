@@ -202,7 +202,7 @@ Los retos se presentan como mensajes reales: correo, SMS, WhatsApp, llamada, red
 ### 14. Camino de aprendizaje, certificados y opinión
 - “Mi Progreso” muestra el **camino de aprendizaje** por curso, con los 4 niveles, teorías leídas y estado de cada uno.
 - **Logros** e insignias por curso y por campus completo.
-- **Certificado imprimible** al completar un curso, con nombre, curso, fecha y detalle.
+- **Certificado imprimible** al completar un curso, con nombre, curso, fecha y detalle. Solo se emite con el curso completo y la fecha queda fija la primera vez.
 - Widget de **opinión** (1 a 5 estrellas + comentario) para mejorar la experiencia.
 
 ### 15. Inicio interactivo y PWA
@@ -224,10 +224,14 @@ Los retos se presentan como mensajes reales: correo, SMS, WhatsApp, llamada, red
 ```text
 Grupo-TAMI/
 ├── README.md               Documentación principal del proyecto
-├── .gitignore              Excluye node_modules/, .env y *.log
+├── .gitignore              Excluye node_modules/, .env, *.log y backups/
+├── .github/
+│   └── workflows/ci.yml    Integración continua: sintaxis + pruebas
 ├── code/                   Capa de Presentación y Lógica (frontend)
 │   ├── index.html          SPA accesible de 18 pantallas + breadcrumbs
 │   ├── admin.html          Panel de administración (Backoffice RBAC)
+│   ├── admin.css           Estilos del panel (sin estilos inline, compatible con CSP)
+│   ├── admin.js            Lógica del panel (sin scripts inline, compatible con CSP)
 │   ├── config.js           URL pública de la API (window.TAMI_API_URL)
 │   ├── styles.css          Design System "Protección Proactiva"
 │   ├── main.js             Lógica + API JWT + fallback LocalStorage
@@ -241,7 +245,8 @@ Grupo-TAMI/
 ├── img/                    Marca oficial y materiales gráficos
 │   ├── logo.svg            Logo institucional
 │   ├── icono.svg           Icono/escudo (favicon, header y footer)
-│   ├── hero-ilustracion-formal.jpg Ilustración del inicio
+│   ├── hero-ilustracion-formal.jpg Ilustración del inicio (1200 px)
+│   ├── hero-ilustracion-formal-600.jpg, -800.jpg  Variantes responsive
 │   ├── curso-1…5.svg       Portadas de los 5 cursos
 │   ├── nivel-1…4.svg       Iconos de los 4 niveles de comprensión
 │   ├── icono-app.svg, icono-maskable.svg  Iconos PWA
@@ -259,8 +264,12 @@ Grupo-TAMI/
 │   │   ├── rbac-apply.js   npm run db:rbac → carga roles y permisos
 │   │   ├── migrar-rbac-seguridad.js  npm run db:rbac:full → esquema + RBAC
 │   │   ├── promover-admin.js  npm run admin:promover → asigna rol superadmin
+│   │   ├── respaldo.js     npm run db:respaldo → respaldo con pg_dump
 │   │   ├── smoke.js        npm run smoke → verificación rápida de la API
 │   │   └── rbac_seed.sql   Roles, permisos y asignaciones base
+│   ├── tests/
+│   │   ├── contenido.test.js  Valida cursos, teorías, preguntas y retos
+│   │   └── seguridad.test.js  Valida CSP, límites y CORS
 │   ├── middlewares/
 │   │   ├── seguridad.js    Cabeceras HTTP, límite por IP y CORS restringido
 │   │   ├── auth.js         Firma y verificación de tokens JWT
@@ -279,10 +288,7 @@ Grupo-TAMI/
 │   ├── .env                Credenciales reales (ignorado por git)
 │   ├── .env.example        Variables de entorno de ejemplo
 │   └── README.md
-├── resources/              Activos multimedia
-│   ├── img/                Imágenes optimizadas
-│   ├── icons/              Iconografía SVG de trazo grueso
-│   ├── fonts/              Tipografías locales legibles
+├── resources/              Guía de marca y criterios de accesibilidad
 │   ├── branding-guide.md   Paleta cromática proactiva
 │   └── README.md
 ├── actividades hechas/      Registro de las actividades del Proyecto Integrador
@@ -301,6 +307,8 @@ Grupo-TAMI/
     ├── auditoria-usabilidad.md   Auditoría UX (6 dimensiones + QA)
     ├── plan-ejecucion-10-dias.md Cronograma rápido día a día
     ├── despliegue-y-verificacion.md Despliegue, SMTP/Brevo, respaldos y QA
+    ├── operacion.md              Monitoreo, respaldos, rotación de secretos e incidentes
+    ├── prueba-usabilidad-mayores.md Protocolo de prueba con personas mayores
     └── README.md
 ```
 
@@ -609,6 +617,9 @@ limita CORS y rompe la instalación de la PWA).
 | `npm run db:rbac:full` | Aplica el esquema completo + seed RBAC |
 | `npm run db:estado` | Informe de estado (rol, tablas, duplicados, RLS) |
 | `npm run admin:promover -- email` | Asigna rol `superadmin` a una cuenta |
+| `npm test` | Pruebas automatizadas de contenido y seguridad (12 en total) |
+| `npm run db:respaldo` | Respaldo completo con `pg_dump` en `server/backups/` |
+| `npm run db:respaldo:esquema` | Respaldo solo del esquema (sin datos) |
 | `npm run smoke` | Verifica salud, frontend, PWA, catálogo y rutas protegidas |
 
 ---
@@ -622,10 +633,12 @@ limita CORS y rompe la instalación de la PWA).
 - **Privacidad**: consentimiento en el registro, exportación de datos propios, eliminación con contraseña + confirmación y protección de la última cuenta `superadmin`.
 - **SQL**: consultas parametrizadas y constraints en PostgreSQL.
 - **Base de datos**: RLS, políticas y privilegios mínimos para `anon` y `authenticated`.
-- **Cabeceras HTTP**: `nosniff`, `DENY`, `no-referrer`, `Permissions-Policy`, `Cache-Control: no-store` y HSTS en producción.
+- **Cabeceras HTTP**: `nosniff`, `DENY`, `no-referrer`, `Permissions-Policy`, `X-Permitted-Cross-Domain-Policies`, HSTS en producción y **CSP estricta** (`script-src 'self'`).
+- **Caché**: `no-store` solo para la API; HTML y assets con `no-cache`, para que el botón Atrás y el service worker no muestren versiones viejas.
 - **CORS**: solo orígenes locales y los declarados en `CORS_ORIGINS`.
 - **Auditoría**: logins, registros, bloqueos, recuperación y cambios sensibles en `auditoria_seguridad`.
 - **Secretos**: solo en `.env`; `.env.example` no contiene credenciales reales.
+- **Verificación continua**: 12 pruebas automatizadas (`npm test`) y flujo de CI en `.github/workflows/ci.yml`.
 
 > Recomendación: si en algún momento se compartió la contraseña de la base, rotarla en Supabase y actualizar `DATABASE_URL`.
 
@@ -644,12 +657,21 @@ La guía completa está en
 - limitaciones conocidas (vencimiento del JWT, rate limiting en memoria,
   caché del service worker y metadatos Open Graph absolutos).
 
+La operación del día a día (monitoreo del endpoint `/api/salud`, respaldos,
+simulacro de restauración, rotación de secretos e incidentes) está en
+[docs/operacion.md](docs/operacion.md).
+
 Verificación rápida con el servidor levantado:
 
 ```bash
 cd server
-npm run smoke
+npm test        # contenido y seguridad, sin base de datos
+npm run smoke   # salud, frontend, PWA, catálogo y rutas protegidas
+npm run db:respaldo
 ```
+
+Rendimiento medido con Lighthouse sobre el inicio: **83 rendimiento, 100
+accesibilidad, 100 buenas prácticas y 100 SEO**, sin fallos binarios.
 
 ---
 
@@ -677,6 +699,8 @@ npm run smoke
 
 - [Documentación técnica](docs/README.md)
 - [Pendientes y próximos pasos](docs/pendientes.md)
+- [Guía de operación](docs/operacion.md)
+- [Prueba de usabilidad con personas mayores](docs/prueba-usabilidad-mayores.md)
 - [Guía de marca](resources/branding-guide.md)
 - [Recursos gráficos (logo e iconos)](resources/README.md)
 - [Backend - API REST](server/README.md)

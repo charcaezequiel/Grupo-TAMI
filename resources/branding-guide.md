@@ -8,6 +8,7 @@ Tecnología Amigable para Mayores e Inclusiva
 |------------|---------------|-----------|---------------------------------------------------------------------|
 | Fondo      | Cian Glacial  | `#EBF8FA` | Fondo general, superficies amplias y zonas de descanso visual.      |
 | Primario   | Teal Oscuro   | `#0A4B5C` | Textos, botones, navegación y elementos de acento.                  |
+| Acento     | Teal Medio    | `#00717D` | Enlaces y detalles. Contraste AA sobre fondos claros (≥ 4.9:1).     |
 
 ## Contraste y accesibilidad
 

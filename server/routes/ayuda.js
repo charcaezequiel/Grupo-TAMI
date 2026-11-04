@@ -88,11 +88,15 @@ router.post("/", limiteAyuda, autenticacionOpcional(), async (req, res) => {
 router.get("/", requireAuth(), requireRole(["superadmin", "moderador", "analista"]), async (req, res) => {
   const estado = String(req.query.estado || "").toLowerCase();
   const filtro = ESTADOS.includes(estado) ? estado : null;
+  // El analista solo revisa el contenido de la consulta; el correo de contacto
+  // queda para quienes atienden o administran (superadmin y moderador).
+  const rol = String((req.usuario && req.usuario.role_name) || "").toLowerCase();
+  const verEmail = rol === "superadmin" || rol === "moderador";
 
   try {
     const { rows } = await pool.query(
-      `SELECT s.id, s.usuario_id, s.nombre, s.email, s.categoria, s.mensaje,
-              s.estado, s.creado_en, s.atendido_en,
+      `SELECT s.id, s.usuario_id, s.nombre, ${verEmail ? "s.email" : "NULL::text AS email"},
+              s.categoria, s.mensaje, s.estado, s.creado_en, s.atendido_en,
               u.nombre AS usuario_nombre
          FROM solicitudes_ayuda s
          LEFT JOIN usuarios u ON u.id = s.usuario_id

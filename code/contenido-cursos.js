@@ -1315,14 +1315,14 @@ const CONTENIDO_CURSOS = [
         ],
         pasos: [
           {
-            titulo: "Contraseñas fuertes y distintas",
+            titulo: "Contraseñas largas y diferentes",
             contenido: `<p>Si usás la misma contraseña en el correo, el banco y las redes, un solo robo pone todo en riesgo. La solución es tener contraseñas <strong>largas y distintas</strong> para cada cuenta importante.</p>
 <p>Una contraseña de frase es fácil de recordar y difícil de adivinar: «SábadoConTéYGalletitas2026». Agregá un símbolo y listo. Evitá nombres de familiares y fechas.</p>
 <p>Si te cuesta recordar muchas, usá un cuaderno guardado en un lugar seguro o un gestor de contraseñas. Lo que nunca sirve es repetir la misma en todos lados.</p>`,
             consejo: "Consejo: Empezá por cambiar la contraseña del correo. Es la llave que recupera todas las demás."
           },
           {
-            titulo: "Verificación en dos pasos",
+            titulo: "Doble factor en el correo y el banco",
             contenido: `<p>La <strong>verificación en dos pasos</strong> es la protección más efectiva después de una buena contraseña. Aunque alguien la descubra, no puede entrar sin el segundo código.</p>
 <p>Activala en el correo electrónico, en el banco y en las redes sociales. Se configura en «Seguridad» o «Privacidad» de cada cuenta.</p>
 <p>El código llega por SMS o por una app de autenticación. Recordá: ese código <strong>nunca se comparte</strong>, ni con alguien que dice ser del banco, ni con un familiar que lo pide por WhatsApp.</p>`,

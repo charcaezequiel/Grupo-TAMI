@@ -19,6 +19,7 @@ const CLAVE_EXAMEN_CACHE = "tami:examenCache";
 const CLAVE_AVATAR = "tami:avatar";
 const CLAVE_PROGRESO_CACHE = "tami:progresoCache";
 const CLAVE_MINI_TRABAJOS_CACHE = "tami:miniTrabajosCache";
+const CLAVE_CERTIFICADOS = "tami:certificados";
 const TIEMPO_MAXIMO_API_MS = 2500;
 
 // Token del enlace de recuperación que llega en la URL (?reset=...).
@@ -489,11 +490,20 @@ function validarPassword(password) {
   return null;
 }
 
+function marcarCamposDescritos(idSpan, invalido) {
+  const selector = '[aria-describedby~="' + CSS.escape(idSpan) + '"]';
+  document.querySelectorAll(selector).forEach(function (campo) {
+    if (invalido) campo.setAttribute("aria-invalid", "true");
+    else campo.removeAttribute("aria-invalid");
+  });
+}
+
 function mostrarError(idSpan, mensaje) {
   const span = document.getElementById(idSpan);
   if (span) {
     span.textContent = mensaje;
     span.hidden = false;
+    marcarCamposDescritos(idSpan, true);
   }
 }
 
@@ -502,7 +512,15 @@ function ocultarTodosLosErrores() {
   todosLosErrores.forEach(function (error) {
     error.hidden = true;
     error.textContent = "";
+    marcarCamposDescritos(error.id, false);
   });
+}
+
+function enfocarPrimerCampoInvalido(idFormulario) {
+  const formulario = document.getElementById(idFormulario);
+  if (!formulario) return;
+  const campo = formulario.querySelector('[aria-invalid="true"]');
+  if (campo) campo.focus();
 }
 
 // ============================================
@@ -978,6 +996,7 @@ async function enviarTest(usuarioId, respuestas, preguntas) {
   }
 
   if (resultado.exito) {
+    actualizarSesionDesdeUsuario({ nivel_digital: nivel });
     return { exito: true, nivel: nivel, puntaje: puntaje, total: preguntas.length, desdeApi: true };
   }
 
@@ -2113,16 +2132,36 @@ function crearSeccionLogros() {
   return seccion;
 }
 
+// La fecha del certificado queda fija la primera vez que se emite: volver a
+// abrirlo o imprimirlo otro día no debe cambiar la fecha del documento.
+function fechaEmisionCertificado(usuarioId, cursoId) {
+  const clave = CLAVE_CERTIFICADOS + ":" + (usuarioId || "anon");
+  const emitidos = leerLocal(clave, {});
+  const id = cursoId ? String(cursoId) : "campus";
+  if (!emitidos[id]) {
+    emitidos[id] = new Date().toISOString();
+    guardarLocal(clave, emitidos);
+  }
+  return new Date(emitidos[id]);
+}
+
 function abrirCertificado(cursoId) {
   const sesion = obtenerSesion();
   if (!sesion) return;
+
+  const curso = cursoId ? buscarCurso(cursoId) : null;
+  const completo = curso
+    ? nivelesCompletadosDeCurso(curso.id) === curso.modulos.length
+    : cursosCompletados().length === CURSOS.length;
+  if (!completo) {
+    mostrarMensaje("Completá todos los niveles para obtener el certificado.", 4000);
+    return;
+  }
 
   const nombre = document.getElementById("certificado-nombre");
   const texto = document.getElementById("certificado-texto");
   const detalle = document.getElementById("certificado-detalle");
   const fecha = document.getElementById("certificado-fecha");
-
-  const curso = cursoId ? buscarCurso(cursoId) : null;
 
   if (nombre) nombre.textContent = sesion.nombre;
 
@@ -2141,7 +2180,7 @@ function abrirCertificado(cursoId) {
   }
 
   if (fecha) {
-    const hoy = new Date();
+    const hoy = fechaEmisionCertificado(sesion.id, cursoId);
     fecha.textContent = "Emitido el " + hoy.toLocaleDateString("es-AR", {
       day: "numeric",
       month: "long",
@@ -3305,7 +3344,11 @@ async function mostrarConfiguracion() {
   if (resultado.exito && resultado.datos) {
     tamano = resultado.datos.tamano_fuente || tamano;
     actualizarSesionDesdeUsuario(resultado.datos);
-    pintarIdentidad(obtenerSesion());
+    const fresco = obtenerSesion();
+    if (campoNombre) campoNombre.value = fresco.nombre || "";
+    if (campoNivel) campoNivel.value = fresco.nivelDigital || "principiante";
+    if (campoEmail) campoEmail.value = fresco.email || "";
+    pintarIdentidad(fresco);
   }
 
   aplicarPreferencias(tamano);
@@ -4346,13 +4389,18 @@ function inicializar() {
         errorTerminos.textContent =
           "Para crear tu cuenta tenés que aceptar la Política de privacidad y los Términos de uso.";
         errorTerminos.hidden = false;
+        acepta.setAttribute("aria-invalid", "true");
       }
       hayErrores = true;
     } else if (errorTerminos) {
       errorTerminos.hidden = true;
+      acepta.removeAttribute("aria-invalid");
     }
 
-    if (hayErrores) return;
+    if (hayErrores) {
+      enfocarPrimerCampoInvalido("formulario-registro");
+      return;
+    }
 
     const resultado = await registrarUsuario(nombre, email, password, Boolean(acepta && acepta.checked));
     if (!resultado.exito) {
@@ -4386,7 +4434,10 @@ function inicializar() {
       hayErrores = true;
     }
 
-    if (hayErrores) return;
+    if (hayErrores) {
+      enfocarPrimerCampoInvalido("formulario-login");
+      return;
+    }
 
     const resultado = await iniciarSesion(email, password);
     if (!resultado.exito) {

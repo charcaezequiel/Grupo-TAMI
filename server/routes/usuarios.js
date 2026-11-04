@@ -74,7 +74,7 @@ const VENTANA_BLOQUEO_MINUTOS = Number(process.env.VENTANA_BLOQUEO_LOGIN) || 15;
 
 // Mensaje unico de credenciales: NO revela si el correo existe o no
 // (evita la enumeracion de cuentas).
-const MENSAJE_CREDENCIALES = "El correo o la contrasena es incorrecta";
+const MENSAJE_CREDENCIALES = "El correo o la contraseña es incorrecta";
 
 // ============================================
 // UTILIDADES DE SEGURIDAD

@@ -38,7 +38,7 @@
   /* 30% Estructura, contenedor y navegación */
   --color-primario: #0A4B5C;
   /* 10% Botones, acentos e interacciones */
-  --color-acento: #007A87;
+  --color-acento: #00717D;
   /* Complementarios */
   --color-texto: #1F2D33;
   --color-texto-claro: #55666D;
@@ -2095,6 +2095,7 @@ body {
   outline-offset: 2px;
 }
 
+
 /* ============================================
    RESPONSIVE
    ============================================ */
@@ -2122,7 +2123,9 @@ body {
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

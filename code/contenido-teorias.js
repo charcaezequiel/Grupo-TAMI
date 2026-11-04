@@ -357,8 +357,8 @@ const TEORIAS_EXTRA = {
       consejo: "Consejo: guardá una copia de cada constancia y anotá para qué trámite la usaste."
     },
     {
-      titulo: "Trámites de ANSES, AFIP y bancos",
-      contenido: `<p>Tres tipos de trámites se hacen mucho por internet: los de <strong>ANSES</strong> (jubilaciones, asignaciones, turnos), los de <strong>AFIP</strong> (clave fiscal, impuestos) y los del <strong>banco</strong> (consultas, transferencias, resúmenes).</p>
+      titulo: "Trámites de ANSES, ARCA y bancos",
+      contenido: `<p>Tres tipos de trámites se hacen mucho por internet: los de <strong>ANSES</strong> (jubilaciones, asignaciones, turnos), los de <strong>ARCA</strong>, antes AFIP (clave fiscal, impuestos) y los del <strong>banco</strong> (consultas, transferencias, resúmenes).</p>
 <p>Cada organismo tiene su propio sitio oficial y su forma de identificarte. Lo importante es entrar siempre desde el sitio verdadero y no desde un enlace que llegó por mensaje.</p>`,
       consejo: "Consejo: guardá en favoritos los sitios oficiales que usás seguido. Así evitás confusiones."
     },
@@ -466,7 +466,7 @@ const TEORIAS_EXTRA = {
   "304": [
     {
       titulo: "Reconocer un correo oficial",
-      contenido: `<p>Los correos oficiales suelen llegar desde una dirección del dominio del organismo, por ejemplo algo que termina en <em>@anses.gob.ar</em> o <em>@afip.gob.ar</em>. Mirá esa dirección y no solo el nombre que aparece como remitente.</p>
+      contenido: `<p>Los correos oficiales suelen llegar desde una dirección del dominio del organismo, por ejemplo algo que termina en <em>@anses.gob.ar</em> o en <em>@arca.gob.ar</em> (el organismo que antes se llamaba AFIP). Mirá esa dirección y no solo el nombre que aparece como remitente.</p>
 <p>Desconfiá de los correos que piden contraseñas, que amenazan con suspender tu cuenta o que te apuran con un enlace. Los organismos no piden claves por correo.</p>`,
       consejo: "Consejo: si el correo te apura o te asusta, no toques el enlace. Entrá al sitio oficial escribiendo la dirección vos mismo."
     },
@@ -654,7 +654,7 @@ const TEORIAS_EXTRA = {
       titulo: "Mantener el celular actualizado",
       contenido: `<p>Las actualizaciones del sistema y de las aplicaciones corrigen fallas de seguridad. Aunque a veces tardan y ocupan espacio, conviene instalarlas cuando el celular está cargado y conectado al WiFi.</p>
 <p>También activá el bloqueo automático de pantalla y el borrado de datos tras varios intentos fallidos. Son protecciones simples que funcionan si te roban el equipo.</p>`,
-      consejo: "Consejo: dejá el celular cargando de noche con el WiFi encendido para que se actualice solo."
+      consejo: "Consejo: dejá el celular cargando durante el día, en un lugar visible y con el WiFi encendido, para que se actualice solo."
     }
   ],
 

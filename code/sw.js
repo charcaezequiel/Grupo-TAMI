@@ -3,13 +3,15 @@
    leyendo con mala conexión. Las llamadas a /api/ siempre van a la red: los
    datos personales no se cachean. */
 
-const VERSION = "tami-v1.4.3";
+const VERSION = "tami-v1.4.7";
 const CACHE = "tami-cache-" + VERSION;
 
 const RECURSOS = [
   "/",
   "/index.html",
+  "/admin.html",
   "/styles.css",
+  "/admin.css",
   "/manifest.json",
   "/config.js",
   "/contenido-cursos.js",
@@ -17,9 +19,12 @@ const RECURSOS = [
   "/contenido-repaso.js",
   "/contenido-retos.js",
   "/main.js",
+  "/admin.js",
   "/img/icono.svg",
   "/img/logo.svg",
   "/img/hero-ilustracion-formal.jpg",
+  "/img/hero-ilustracion-formal-600.jpg",
+  "/img/hero-ilustracion-formal-800.jpg",
   "/img/icono-192.png",
   "/img/icono-512.png",
   "/img/icono-maskable-512.png",

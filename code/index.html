@@ -13,12 +13,18 @@
   <meta property="og:site_name" content="TAMI">
   <meta property="og:title" content="TAMI | Tecnología Amigable para Mayores e Inclusiva">
   <meta property="og:description" content="Aprendé a usar tu celular y a protegerte de las estafas a tu ritmo, con letras grandes, ayuda y lectura en voz alta.">
-  <meta property="og:image" content="../img/og-image.png">
+  <meta property="og:url" content="__BASE_URL__/">
+  <meta property="og:image" content="__BASE_URL__/img/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="TAMI: educación digital accesible para personas mayores">
   <meta property="og:locale" content="es_AR">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="TAMI | Tecnología Amigable para Mayores e Inclusiva">
   <meta name="twitter:description" content="Aprendé a usar tu celular y a protegerte de las estafas a tu ritmo.">
-  <meta name="twitter:image" content="../img/og-image.png">
+  <meta name="twitter:image" content="__BASE_URL__/img/og-image.png">
+  <meta name="twitter:image:alt" content="TAMI: educación digital accesible para personas mayores">
+  <link rel="canonical" href="__BASE_URL__/">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -220,9 +226,13 @@
         <img
           class="hero__ilustracion"
           src="../img/hero-ilustracion-formal.jpg"
+          srcset="../img/hero-ilustracion-formal-600.jpg 600w, ../img/hero-ilustracion-formal-800.jpg 800w, ../img/hero-ilustracion-formal.jpg 1200w"
+          sizes="(max-width: 768px) 78vw, 520px"
           alt="Dos personas mayores consultan juntas una tableta en un ambiente tranquilo"
           width="1200"
           height="800"
+          fetchpriority="high"
+          decoding="async"
         >
       </div>
 
@@ -2033,8 +2043,8 @@
          BARRA DE ACCESIBILIDAD SIEMPRE VISIBLE
          ============================================ -->
     <div class="barra-accesibilidad" role="group" aria-label="Herramientas de accesibilidad">
-      <button type="button" class="barra-accesibilidad__boton" id="btn-reducir-texto" aria-label="Reducir el tamaño de la letra" title="Letra más chica">A−</button>
-      <button type="button" class="barra-accesibilidad__boton" id="btn-aumentar-texto" aria-label="Aumentar el tamaño de la letra" title="Letra más grande">A+</button>
+      <button type="button" class="barra-accesibilidad__boton" id="btn-reducir-texto" aria-label="A− Reducir el tamaño de la letra" title="Letra más chica">A−</button>
+      <button type="button" class="barra-accesibilidad__boton" id="btn-aumentar-texto" aria-label="A+ Aumentar el tamaño de la letra" title="Letra más grande">A+</button>
       <button type="button" class="barra-accesibilidad__boton barra-accesibilidad__boton--texto" id="btn-leer-pantalla" aria-label="Escuchar el contenido de esta pantalla" title="Escuchar esta pantalla">Escuchar</button>
       <button type="button" class="barra-accesibilidad__boton barra-accesibilidad__boton--texto" id="btn-detener-lectura" aria-label="Detener la lectura en voz alta" title="Detener la lectura" hidden>Detener</button>
       <button type="button" class="barra-accesibilidad__boton barra-accesibilidad__boton--texto" id="btn-abrir-ayuda" aria-label="Abrir la ayuda" title="Abrir la ayuda">Ayuda</button>

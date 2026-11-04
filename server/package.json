@@ -13,7 +13,10 @@
     "db:seguridad": "node scripts/seguridad.js",
     "db:rbac": "node scripts/rbac-apply.js",
     "db:rbac:full": "node scripts/migrar-rbac-seguridad.js",
+    "db:respaldo": "node scripts/respaldo.js",
+    "db:respaldo:esquema": "node scripts/respaldo.js --esquema",
     "admin:promover": "node scripts/promover-admin.js",
+    "test": "node --test \"tests/**/*.test.js\"",
     "smoke": "node scripts/smoke.js"
   },
   "keywords": [

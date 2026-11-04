@@ -16,6 +16,8 @@ Carpeta de **documentación técnica y administrativa** del proyecto. Contiene l
 | `auditoria-usabilidad.md` | Auditoría UX | Lista de chequeo en 6 dimensiones y matriz de hallazgos QA. |
 | `plan-ejecucion-10-dias.md` | Cronograma rápido | Plan de trabajo día a día del ciclo de 10 días. |
 | `despliegue-y-verificacion.md` | Despliegue y verificación | Variables de entorno, puesta en marcha, respaldos y checklist de QA. |
+| `operacion.md` | Operación | Monitoreo, respaldos y restauración, rotación de secretos e incidentes. |
+| `prueba-usabilidad-mayores.md` | Prueba de usabilidad | Protocolo con personas mayores de 60 años, tareas, planilla y KPI. |
 | `pendientes.md` | Pendientes | Todo lo que falta para publicar, verificar y entregar la plataforma. |
 
 ## Coherencia entre Documentos y Prototipo

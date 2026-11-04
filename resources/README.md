@@ -1,21 +1,18 @@
 # Recursos Gráficos - TAMI
 
-Carpeta de **activos multimedia** del proyecto. Todo archivo respeta la nomenclatura **kebab-case**.
+Carpeta de **guía de marca** del proyecto. Los activos gráficos reales viven en `img/`, en la raíz del repositorio.
 
 ## Estructura y Uso
 
 ```text
 resources/
-├── img/         Imágenes: fotos, ilustraciones y logo (logo-tami.png)
-├── icons/       Iconografía de la interfaz, preferentemente SVG vectorial
-├── fonts/       Tipografías locales de alta legibilidad (si no se usan fuentes del sistema)
 ├── branding-guide.md   Guía de marca y paleta cromática
 └── README.md
 ```
 
-- **img/**: solo imágenes optimizadas (PNG/SVG). Al usarlas en HTML, siempre con `alt` descriptivo.
-- **icons/**: iconos de **trazo grueso** y tamaño mínimo de interacción de **44px** (objetivo táctil recomendado por accesibilidad), con `aria-label` o `role="img"`.
-- **fonts/**: fuentes **sans-serif** de alta legibilidad y tamaño base 18px o superior, con buen interlineado.
+- **img/ (raíz del repositorio)**: logo, icono/escudo, portadas de los 5 cursos, iconos de los 4 niveles, iconos PWA e imágenes de vista previa para redes. Solo archivos optimizados (SVG, JPG y PNG).
+- **Iconos de interfaz**: SVG en línea dentro de `code/index.html` y `code/admin.html`, con `aria-label` o `role="img"` cuando son informativos.
+- **Tipografías**: se usan pilas de fuentes del sistema, sin archivos locales, para evitar descargas adicionales.
 
 ## Normas de Accesibilidad
 
